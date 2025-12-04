@@ -34,8 +34,11 @@ local function StripTextures(textureToStrip)
     end
 end
 
-local function SizeIconsInCooldownViewer(viewerName, iconSize)
-    if not viewerName or not iconSize then return end
+local function SizeIconsInCooldownViewer(viewerName)
+    local CooldownManagerDB = BCDM.db.global
+    local CooldownViewerDB = CooldownManagerDB[CooldownViewerToDB[viewerName]]
+    local IconSize = CooldownViewerDB.IconSize
+    if not viewerName then return end
     local viewer = _G[viewerName]
     if not viewer then return end
     local icons = {viewer:GetChildren()}
@@ -49,7 +52,7 @@ local function SizeIconsInCooldownViewer(viewerName, iconSize)
     table.sort(icons, function(a, b) local la = a.layoutIndex or a:GetID() or a._creationOrder or 0 local lb = b.layoutIndex or b:GetID() or b._creationOrder or 0 return la < lb end)
     for _, icon in ipairs(icons) do
         if icon then
-            icon:SetSize(iconSize, iconSize)
+            icon:SetSize(IconSize[1], IconSize[2])
         end
     end
 end
@@ -80,15 +83,6 @@ local function AdjustChargeCount(cooldownViewer)
     end
 end
 
-local function SizeAllIcons()
-    for cooldownViewer, _ in pairs(IconPerCooldownViewer) do
-        local CooldownManagerDB = BCDM.db.global
-        local CooldownViewerDB = CooldownManagerDB[CooldownViewerToDB[cooldownViewer]]
-        local iconSize = (CooldownViewerDB.IconSize)
-        SizeIconsInCooldownViewer(cooldownViewer, iconSize)
-    end
-end
-
 local function UpdateIconZoom()
     local CooldownManagerDB = BCDM.db.global
     local GeneralDB = CooldownManagerDB.General
@@ -104,13 +98,10 @@ end
 local function SkinCooldownManager()
     local CooldownManagerDB = BCDM.db.global
     local GeneralDB = CooldownManagerDB.General
-    local EssentialDB = CooldownManagerDB.Essential
-    local UtilityDB = CooldownManagerDB.Utility
-    local BuffsDB = CooldownManagerDB.Buffs
     C_CVar.SetCVar("cooldownViewerEnabled", 1)
-    SizeIconsInCooldownViewer("EssentialCooldownViewer", EssentialDB.IconSize)
-    SizeIconsInCooldownViewer("UtilityCooldownViewer", UtilityDB.IconSize)
-    SizeIconsInCooldownViewer("BuffIconCooldownViewer", BuffsDB.IconSize)
+    SizeIconsInCooldownViewer("EssentialCooldownViewer")
+    SizeIconsInCooldownViewer("UtilityCooldownViewer")
+    SizeIconsInCooldownViewer("BuffIconCooldownViewer")
     for _, cooldownViewer in ipairs(CooldownManagerViewers) do
         for _, viewerChild in ipairs({_G[cooldownViewer]:GetChildren()}) do
             if viewerChild and not viewerChild.isSkinned then
@@ -221,17 +212,17 @@ end
 function BCDM:SetupCooldownManager()
     PositionCooldownViewers()
     for cooldownViewer, _ in pairs(IconPerCooldownViewer) do ApplyCooldownText(cooldownViewer) end
-    hooksecurefunc(EditModeManagerFrame, "EnterEditMode", function() PositionCooldownViewers() SizeAllIcons() BCDM:SetPowerBarWidth() AdjustCooldownManagerStrata() end)
-    hooksecurefunc(EditModeManagerFrame, "ExitEditMode", function() PositionCooldownViewers() SizeAllIcons() BCDM:SetPowerBarWidth() AdjustCooldownManagerStrata() end)
+    hooksecurefunc(EditModeManagerFrame, "EnterEditMode", function() PositionCooldownViewers() SizeIconsInCooldownViewer("EssentialCooldownViewer") SizeIconsInCooldownViewer("UtilityCooldownViewer") SizeIconsInCooldownViewer("BuffIconCooldownViewer") BCDM:SetPowerBarWidth() AdjustCooldownManagerStrata() end)
+    hooksecurefunc(EditModeManagerFrame, "ExitEditMode", function() PositionCooldownViewers() SizeIconsInCooldownViewer("EssentialCooldownViewer") SizeIconsInCooldownViewer("UtilityCooldownViewer") SizeIconsInCooldownViewer("BuffIconCooldownViewer") BCDM:SetPowerBarWidth() AdjustCooldownManagerStrata() end)
     for _, cooldownViewer in ipairs(CooldownManagerViewers) do
-        hooksecurefunc(_G[cooldownViewer], "RefreshLayout", function() SkinCooldownManager() PositionCooldownViewers() SizeAllIcons() BCDM:SetPowerBarWidth() AdjustCooldownManagerStrata() end)
+        hooksecurefunc(_G[cooldownViewer], "RefreshLayout", function() SkinCooldownManager() PositionCooldownViewers() SizeIconsInCooldownViewer("EssentialCooldownViewer") SizeIconsInCooldownViewer("UtilityCooldownViewer") SizeIconsInCooldownViewer("BuffIconCooldownViewer") BCDM:SetPowerBarWidth() AdjustCooldownManagerStrata() end)
     end
 end
 
 function BCDM:UpdateCooldownViewer(cooldownViewer)
     BCDM:ResolveMedia()
     UpdateIconZoom()
-    SizeIconsInCooldownViewer(cooldownViewer, BCDM.db.global[CooldownViewerToDB[cooldownViewer]].IconSize)
+    SizeIconsInCooldownViewer(cooldownViewer)
     AdjustChargeCount(cooldownViewer)
     ApplyCooldownText(cooldownViewer)
     AdjustCooldownManagerStrata()

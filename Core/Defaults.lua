@@ -13,7 +13,7 @@ BCDM.Defaults = {
             },
         },
         Essential = {
-            IconSize = 42,
+            IconSize = {42, 42},
             Anchors = {"CENTER", UIParent, "CENTER", 0, -275.1},
             Count = {
                 FontSize = 15,
@@ -22,8 +22,8 @@ BCDM.Defaults = {
             },
         },
         Utility = {
-            IconSize = 36,
-            Anchors = {"TOP", "EssentialCooldownViewer", "BOTTOM", 0, -2},
+            IconSize = {36, 36},
+            Anchors = {"TOP", "EssentialCooldownViewer", "BOTTOM", 0, -3},
             Count = {
                 FontSize = 12,
                 Colour = {1, 1, 1},
@@ -31,8 +31,8 @@ BCDM.Defaults = {
             },
         },
         Buffs = {
-            IconSize = 36,
-            Anchors = {"BOTTOM", "EssentialCooldownViewer", "TOP", 0, 2},
+            IconSize = {36, 36},
+            Anchors = {"BOTTOM", "BCDM_PowerBar", "TOP", 0, 2},
             Count = {
                 FontSize = 12,
                 Colour = {1, 1, 1},
@@ -47,9 +47,9 @@ BCDM.Defaults = {
             BGColour = {20/255, 20/255, 20/255, 1},
             Anchors = {"BOTTOM", "EssentialCooldownViewer", "TOP", 0, 2},
             Text = {
-                FontSize = 12,
+                FontSize = 18,
                 Colour = {1, 1, 1},
-                Anchors = {"CENTER", "CENTER", 0, 0}
+                Anchors = {"BOTTOM", "BOTTOM", 0, 3}
             }
         }
     }
