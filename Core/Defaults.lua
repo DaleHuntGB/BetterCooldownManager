@@ -38,7 +38,7 @@ BCDM.Defaults = {
                     STAGGER                        = { 0.00, 1.00, 0.59 },
                     [Enum.PowerType.Runes]         = { 0.77, 0.12, 0.23 },
                     SOUL                           = { 0.29, 0.42, 1.00},
-                    MAELSTROM                      = { 0.25, 0.50, 0.80},
+                    [Enum.PowerType.Maelstrom]     = { 0.25, 0.50, 0.80},
                 }
             }
         },

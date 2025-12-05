@@ -37,9 +37,9 @@ local PowerNames = {
     [17] = "Fury",
     [18] = "Pain",
     [19] = "Essence",
+    [20] = "Maelstrom",
     ["STAGGER"] = "Stagger",
     ["SOUL"] = "Soul",
-    ["MAELSTROM"] = "Maelstrom"
 }
 
 local BarParents = {
@@ -208,10 +208,10 @@ local function DrawGeneralSettings(parentContainer)
             [Enum.PowerType.ArcaneCharges] = {0.10, 0.10, 0.98},
             [Enum.PowerType.Essence]       = { 0.20, 0.58, 0.50 },
             [Enum.PowerType.SoulShards]    = { 0.58, 0.51, 0.79 },
-            STAGGER                        = { 0.00, 1.00, 0.59 },
+            [Enum.PowerType.Maelstrom]     = { 0.25, 0.50, 0.80},
             [Enum.PowerType.Runes]         = { 0.77, 0.12, 0.23 },
+            STAGGER                        = { 0.00, 1.00, 0.59 },
             SOUL                           = { 0.29, 0.42, 1.00},
-            MAELSTROM                      = { 0.25, 0.50, 0.80},
         }
     }
 
@@ -240,7 +240,7 @@ local function DrawGeneralSettings(parentContainer)
     SecondaryColoursContainer:SetLayout("Flow")
     CustomColoursContainer:AddChild(SecondaryColoursContainer)
 
-    local SecondaryPowerOrder = { Enum.PowerType.Chi, Enum.PowerType.ComboPoints, Enum.PowerType.HolyPower, Enum.PowerType.ArcaneCharges, Enum.PowerType.Essence, Enum.PowerType.SoulShards, "STAGGER", Enum.PowerType.Runes, "SOUL", "MAELSTROM", }
+    local SecondaryPowerOrder = { Enum.PowerType.Chi, Enum.PowerType.ComboPoints, Enum.PowerType.HolyPower, Enum.PowerType.ArcaneCharges, Enum.PowerType.Essence, Enum.PowerType.SoulShards, "STAGGER", Enum.PowerType.Runes, "SOUL", Enum.PowerType.Maelstrom, }
     for _, powerType in ipairs(SecondaryPowerOrder) do
         local powerColour = BCDM.db.profile.General.CustomColours.SecondaryPower[powerType]
         local PowerColour = AG:Create("ColorPicker")
