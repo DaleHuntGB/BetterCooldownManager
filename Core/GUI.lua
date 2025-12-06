@@ -51,6 +51,30 @@ local BarParents = {
     { "EssentialCooldownViewer", "UtilityCooldownViewer", "BCDM_PowerBar"}
 }
 
+local ParentAnchors = {
+    Utility = {
+        {
+            ["EssentialCooldownViewer"] = "Essential",
+            ["BCDM_PowerBar"] = "Power Bar",
+        },
+        { "EssentialCooldownViewer", "BCDM_PowerBar" }
+    },
+
+    Buffs = {
+        {
+            ["EssentialCooldownViewer"] = "Essential",
+            ["UtilityCooldownViewer"]   = "Utility",
+            ["BCDM_PowerBar"]           = "Power Bar",
+        },
+        { "EssentialCooldownViewer", "UtilityCooldownViewer", "BCDM_PowerBar" }
+    }
+}
+
+local function AddAnchor(anchorGroup, key, label)
+    anchorGroup[1][key] = label
+    table.insert(anchorGroup[2], key)
+end
+
 local PowerBarAnchorToName = {
     ["EssentialCooldownViewer"] = "Essential Cooldown Viewer",
     ["UtilityCooldownViewer"] = "Utility Cooldown Viewer",
@@ -295,17 +319,26 @@ local function DrawCooldownSettings(parentContainer, cooldownViewer)
         ToggleContainer:AddChild(CentreBuffsHorizontally)
     end
 
+    if not isEssential then
+        local UtilityBuffsInfoTag = CreateInfoTag("Edit Mode |cFF8080FFPositioning|r & |cFF8080FFAnchoring|r will be overwritten by these settings.")
+        ScrollFrame:AddChild(UtilityBuffsInfoTag)
+    end
+
     local LayoutContainer = AG:Create("InlineGroup")
     LayoutContainer:SetTitle("Layout Settings")
     LayoutContainer:SetFullWidth(true)
     LayoutContainer:SetLayout("Flow")
     ScrollFrame:AddChild(LayoutContainer)
+    if not isEssential then
+        local AnchorParentInfoTag = CreateInfoTag("The |cFF8080FFAnchor Parent|r Frame must be set to an existing frame. You can use the |cFF8080FFParent Selector|r dropdown to select some more common frames.")
+        LayoutContainer:AddChild(AnchorParentInfoTag)
+    end
 
     local Viewer_AnchorFrom = AG:Create("Dropdown")
     Viewer_AnchorFrom:SetLabel("Anchor From")
     Viewer_AnchorFrom:SetList(Anchors[1], Anchors[2])
     Viewer_AnchorFrom:SetValue(CooldownViewerDB.Anchors[1])
-    Viewer_AnchorFrom:SetRelativeWidth(isEssential and 0.5 or 0.33)
+    Viewer_AnchorFrom:SetRelativeWidth(isEssential and 0.5 or 0.25)
     Viewer_AnchorFrom:SetCallback("OnValueChanged", function(_, _, value) CooldownViewerDB.Anchors[1] = value BCDM:UpdateCooldownViewer(cooldownViewer) end)
     LayoutContainer:AddChild(Viewer_AnchorFrom)
 
@@ -313,16 +346,32 @@ local function DrawCooldownSettings(parentContainer, cooldownViewer)
         local Viewer_AnchorParent = AG:Create("EditBox")
         Viewer_AnchorParent:SetLabel("Anchor Parent Frame")
         Viewer_AnchorParent:SetText(CooldownViewerDB.Anchors[2])
-        Viewer_AnchorParent:SetRelativeWidth(0.33)
+        Viewer_AnchorParent:SetRelativeWidth(0.25)
         Viewer_AnchorParent:SetCallback("OnEnterPressed", function(_, _, value) CooldownViewerDB.Anchors[2] = value BCDM:UpdateCooldownViewer(cooldownViewer) end)
         LayoutContainer:AddChild(Viewer_AnchorParent)
+
+        if C_AddOns.IsAddOnLoaded("UnhaltedUnitFrames") then
+            AddAnchor(ParentAnchors.Utility, "UUF_Player", "Unhalted Unit Frames - Player")
+            AddAnchor(ParentAnchors.Utility, "UUF_Target", "Unhalted Unit Frames - Target")
+
+            AddAnchor(ParentAnchors.Buffs, "UUF_Player", "Unhalted Unit Frames - Player")
+            AddAnchor(ParentAnchors.Buffs, "UUF_Target", "Unhalted Unit Frames - Target")
+        end
+
+        local ParentSelector = AG:Create("Dropdown")
+        ParentSelector:SetLabel("Parent Selector")
+        ParentSelector:SetList(ParentAnchors[isUtility and "Utility" or "Buffs"][1], ParentAnchors[isUtility and "Utility" or "Buffs"][2])
+        ParentSelector:SetValue(CooldownViewerDB.Anchors[2])
+        ParentSelector:SetRelativeWidth(0.25)
+        ParentSelector:SetCallback("OnValueChanged", function(_, _, value) CooldownViewerDB.Anchors[2] = value Viewer_AnchorParent:SetText(value) BCDM:UpdateCooldownViewer(cooldownViewer) end)
+        LayoutContainer:AddChild(ParentSelector)
     end
 
     local Viewer_AnchorTo = AG:Create("Dropdown")
     Viewer_AnchorTo:SetLabel("Anchor To")
     Viewer_AnchorTo:SetList(Anchors[1], Anchors[2])
     Viewer_AnchorTo:SetValue(isEssential and CooldownViewerDB.Anchors[2] or CooldownViewerDB.Anchors[3])
-    Viewer_AnchorTo:SetRelativeWidth(isEssential and 0.5 or 0.33)
+    Viewer_AnchorTo:SetRelativeWidth(isEssential and 0.5 or 0.25)
     Viewer_AnchorTo:SetCallback("OnValueChanged", function(_, _, value) CooldownViewerDB.Anchors[isEssential and 2 or 3] = value BCDM:UpdateCooldownViewer(cooldownViewer) end)
     LayoutContainer:AddChild(Viewer_AnchorTo)
 
