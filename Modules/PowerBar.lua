@@ -48,6 +48,8 @@ local function CreatePowerBar()
     PowerBar.StatusBar.Value:SetTextColor(FetchPowerTextColour("player"))
     PowerBar.StatusBar.Value:SetPoint(PowerBarDB.Text.Anchors[1], PowerBar.StatusBar, PowerBarDB.Text.Anchors[2], PowerBarDB.Text.Anchors[3], PowerBarDB.Text.Anchors[4])
     PowerBar.StatusBar.Value:SetText("")
+    PowerBar.StatusBar.Value:SetShadowColor(BCDM.db.profile.General.Shadows.Colour[1], BCDM.db.profile.General.Shadows.Colour[2], BCDM.db.profile.General.Shadows.Colour[3], BCDM.db.profile.General.Shadows.Colour[4])
+    PowerBar.StatusBar.Value:SetShadowOffset(BCDM.db.profile.General.Shadows.OffsetX, BCDM.db.profile.General.Shadows.OffsetY)
     PowerBar.StatusBar.Value:SetDrawLayer("OVERLAY", 7)
 
     local function UpdatePowerBar()
@@ -108,7 +110,8 @@ function BCDM:UpdatePowerBar()
         BCDM.PowerBar.StatusBar.Value:SetPoint(PowerBarDB.Text.Anchors[1], BCDM.PowerBar.StatusBar, PowerBarDB.Text.Anchors[2], PowerBarDB.Text.Anchors[3], PowerBarDB.Text.Anchors[4])
         BCDM.PowerBar.StatusBar.Value:SetFont(BCDM.Media.Font, PowerBarDB.Text.FontSize, BCDM.db.profile.General.FontFlag)
         BCDM.PowerBar.StatusBar.Value:SetTextColor(FetchPowerTextColour("player"))
-
+        BCDM.PowerBar.StatusBar.Value:SetShadowColor(BCDM.db.profile.General.Shadows.Colour[1], BCDM.db.profile.General.Shadows.Colour[2], BCDM.db.profile.General.Shadows.Colour[3], BCDM.db.profile.General.Shadows.Colour[4])
+        BCDM.PowerBar.StatusBar.Value:SetShadowOffset(BCDM.db.profile.General.Shadows.OffsetX, BCDM.db.profile.General.Shadows.OffsetY)
         BCDM:SetPowerBarHeight()
         BCDM:SetPowerBarWidth()
     end

@@ -40,11 +40,17 @@ local function CreateCastBar()
     CastBar.SpellName:SetFont(BCDM.Media.Font, CastBarDB.SpellName.FontSize, BCDM.db.profile.General.FontFlag)
     CastBar.SpellName:SetPoint(CastBarDB.SpellName.Anchors[1], CastBar, CastBarDB.SpellName.Anchors[2], CastBarDB.SpellName.Anchors[3], CastBarDB.SpellName.Anchors[4])
     CastBar.SpellName:SetText("")
+    CastBar.SpellName:SetTextColor(CastBarDB.SpellName.Colour[1], CastBarDB.SpellName.Colour[2], CastBarDB.SpellName.Colour[3], CastBarDB.SpellName.Colour[4])
+    CastBar.SpellName:SetShadowColor(GeneralDB.Shadows.Colour[1], GeneralDB.Shadows.Colour[2], GeneralDB.Shadows.Colour[3], GeneralDB.Shadows.Colour[4])
+    CastBar.SpellName:SetShadowOffset(GeneralDB.Shadows.OffsetX, GeneralDB.Shadows.OffsetY)
 
     CastBar.Duration = CastBar:CreateFontString(nil, "OVERLAY")
     CastBar.Duration:SetFont(BCDM.Media.Font, CastBarDB.Duration.FontSize, BCDM.db.profile.General.FontFlag)
     CastBar.Duration:SetPoint(CastBarDB.Duration.Anchors[1], CastBar, CastBarDB.Duration.Anchors[2], CastBarDB.Duration.Anchors[3], CastBarDB.Duration.Anchors[4])
     CastBar.Duration:SetText("")
+    CastBar.Duration:SetTextColor(CastBarDB.Duration.Colour[1], CastBarDB.Duration.Colour[2], CastBarDB.Duration.Colour[3], CastBarDB.Duration.Colour[4])
+    CastBar.Duration:SetShadowColor(GeneralDB.Shadows.Colour[1], GeneralDB.Shadows.Colour[2], GeneralDB.Shadows.Colour[3], GeneralDB.Shadows.Colour[4])
+    CastBar.Duration:SetShadowOffset(GeneralDB.Shadows.OffsetX, GeneralDB.Shadows.OffsetY)
 
     CastBar.Icon = CastBarIcon
 
@@ -182,6 +188,7 @@ function BCDM:SetCastBarWidth()
 end
 
 function BCDM:UpdateCastBar()
+    local GeneralDB = BCDM.db.profile.General
     local CastBarDB = BCDM.db.profile.CastBar
     if BCDM.CastBar then
         BCDM:ResolveMedia()
@@ -196,10 +203,14 @@ function BCDM:UpdateCastBar()
         BCDM.CastBar.SpellName:SetPoint(CastBarDB.SpellName.Anchors[1], BCDM.CastBar, CastBarDB.SpellName.Anchors[2], CastBarDB.SpellName.Anchors[3], CastBarDB.SpellName.Anchors[4])
         BCDM.CastBar.SpellName:SetFont(BCDM.Media.Font, CastBarDB.SpellName.FontSize, BCDM.db.profile.General.FontFlag)
         BCDM.CastBar.SpellName:SetTextColor(CastBarDB.SpellName.Colour[1], CastBarDB.SpellName.Colour[2], CastBarDB.SpellName.Colour[3], CastBarDB.SpellName.Colour[4])
+        BCDM.CastBar.SpellName:SetShadowColor(GeneralDB.Shadows.Colour[1], GeneralDB.Shadows.Colour[2], GeneralDB.Shadows.Colour[3], GeneralDB.Shadows.Colour[4])
+        BCDM.CastBar.SpellName:SetShadowOffset(GeneralDB.Shadows.OffsetX, GeneralDB.Shadows.OffsetY)
         BCDM.CastBar.Duration:ClearAllPoints()
         BCDM.CastBar.Duration:SetPoint(CastBarDB.Duration.Anchors[1], BCDM.CastBar, CastBarDB.Duration.Anchors[2], CastBarDB.Duration.Anchors[3], CastBarDB.Duration.Anchors[4])
         BCDM.CastBar.Duration:SetFont(BCDM.Media.Font, CastBarDB.Duration.FontSize, BCDM.db.profile.General.FontFlag)
         BCDM.CastBar.Duration:SetTextColor(CastBarDB.Duration.Colour[1], CastBarDB.Duration.Colour[2], CastBarDB.Duration.Colour[3], CastBarDB.Duration.Colour[4])
+        BCDM.CastBar.Duration:SetShadowColor(GeneralDB.Shadows.Colour[1], GeneralDB.Shadows.Colour[2], GeneralDB.Shadows.Colour[3], GeneralDB.Shadows.Colour[4])
+        BCDM.CastBar.Duration:SetShadowOffset(GeneralDB.Shadows.OffsetX, GeneralDB.Shadows.OffsetY)
         BCDM:SetCastBarHeight()
         BCDM:SetCastBarWidth()
     end

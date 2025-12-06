@@ -13,7 +13,12 @@ BCDM.Defaults = {
             CooldownText = {
                 FontSize = 15,
                 Colour = {1, 1, 1},
-                Anchors = {"CENTER", "CENTER", 0, 0}
+                Anchors = {"CENTER", "CENTER", 0, 0},
+            },
+            Shadows = {
+                Colour = {0, 0, 0, 1},
+                OffsetX = 0,
+                OffsetY = 0
             },
             CustomColours = {
                 PrimaryPower = {

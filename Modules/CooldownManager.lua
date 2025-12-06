@@ -68,7 +68,8 @@ local function AdjustChargeCount(cooldownViewer)
             current:ClearAllPoints()
             current:SetPoint(CooldownViewerDB.Count.Anchors[1], child, CooldownViewerDB.Count.Anchors[2], CooldownViewerDB.Count.Anchors[3], CooldownViewerDB.Count.Anchors[4])
             current:SetTextColor(CooldownViewerDB.Count.Colour[1], CooldownViewerDB.Count.Colour[2], CooldownViewerDB.Count.Colour[3], 1)
-            current:SetShadowColor(0, 0, 0, 0)
+            current:SetShadowColor(GeneralDB.Shadows.Colour[1], GeneralDB.Shadows.Colour[2], GeneralDB.Shadows.Colour[3], GeneralDB.Shadows.Colour[4])
+            current:SetShadowOffset(GeneralDB.Shadows.OffsetX, GeneralDB.Shadows.OffsetY)
         end
     end
     for _, child in ipairs({ _G[cooldownViewer]:GetChildren() }) do
@@ -78,7 +79,8 @@ local function AdjustChargeCount(cooldownViewer)
             max:ClearAllPoints()
             max:SetPoint(CooldownViewerDB.Count.Anchors[1], child, CooldownViewerDB.Count.Anchors[2], CooldownViewerDB.Count.Anchors[3], CooldownViewerDB.Count.Anchors[4])
             max:SetTextColor(CooldownViewerDB.Count.Colour[1], CooldownViewerDB.Count.Colour[2], CooldownViewerDB.Count.Colour[3], 1)
-            max:SetShadowColor(0, 0, 0, 0)
+            max:SetShadowColor(GeneralDB.Shadows.Colour[1], GeneralDB.Shadows.Colour[2], GeneralDB.Shadows.Colour[3], GeneralDB.Shadows.Colour[4])
+            max:SetShadowOffset(GeneralDB.Shadows.OffsetX, GeneralDB.Shadows.OffsetY)
         end
     end
 end
@@ -202,7 +204,8 @@ local function ApplyCooldownText(cooldownViewer)
                 textRegion:SetTextColor(CooldownTextDB.Colour[1], CooldownTextDB.Colour[2], CooldownTextDB.Colour[3], 1)
                 textRegion:ClearAllPoints()
                 textRegion:SetPoint(CooldownTextDB.Anchors[1], icon, CooldownTextDB.Anchors[2], CooldownTextDB.Anchors[3], CooldownTextDB.Anchors[4])
-                textRegion:SetShadowColor(0, 0, 0, 0)
+                textRegion:SetShadowColor(GeneralDB.Shadows.Colour[1], GeneralDB.Shadows.Colour[2], GeneralDB.Shadows.Colour[3], GeneralDB.Shadows.Colour[4])
+                textRegion:SetShadowOffset(GeneralDB.Shadows.OffsetX, GeneralDB.Shadows.OffsetY)
             end
         end
     end
