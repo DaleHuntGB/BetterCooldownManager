@@ -98,6 +98,7 @@ end
 
 function BCDM:UpdateBCDM()
     BCDM:UpdatePowerBar()
+    BCDM:UpdateSecondaryPowerBar()
     BCDM:RefreshAllViewers()
 end
 

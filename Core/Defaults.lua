@@ -29,16 +29,17 @@ BCDM.Defaults = {
                     [18] = {1, 0.61, 0}         -- Pain
                 },
                 SecondaryPower = {
-                    [Enum.PowerType.Chi]           = {0.00, 1.00, 0.59 },
-                    [Enum.PowerType.ComboPoints]   = {1.00, 0.96, 0.41 },
-                    [Enum.PowerType.HolyPower]     = {0.95, 0.90, 0.60 },
-                    [Enum.PowerType.ArcaneCharges] = {0.10, 0.10, 0.98},
-                    [Enum.PowerType.Essence]       = { 0.20, 0.58, 0.50 },
-                    [Enum.PowerType.SoulShards]    = { 0.58, 0.51, 0.79 },
-                    STAGGER                        = { 0.00, 1.00, 0.59 },
-                    [Enum.PowerType.Runes]         = { 0.77, 0.12, 0.23 },
-                    SOUL                           = { 0.29, 0.42, 1.00},
-                    [Enum.PowerType.Maelstrom]     = { 0.25, 0.50, 0.80},
+                    [Enum.PowerType.Chi]           = {0.00, 1.00, 0.59, 1.0 },
+                    [Enum.PowerType.ComboPoints]   = {1.00, 0.96, 0.41, 1.0 },
+                    [Enum.PowerType.HolyPower]     = {0.95, 0.90, 0.60, 1.0 },
+                    [Enum.PowerType.ArcaneCharges] = {0.10, 0.10, 0.98, 1.0},
+                    [Enum.PowerType.Essence]       = { 0.20, 0.58, 0.50, 1.0 },
+                    [Enum.PowerType.SoulShards]    = { 0.58, 0.51, 0.79, 1.0 },
+                    STAGGER                        = { 0.00, 1.00, 0.59, 1.0 },
+                    [Enum.PowerType.Runes]         = { 0.77, 0.12, 0.23, 1.0 },
+                    SOUL                           = { 0.29, 0.42, 1.00, 1.0},
+                    [Enum.PowerType.Maelstrom]     = { 0.25, 0.50, 0.80, 1.0},
+                    RUNE_RECHARGE                 = { 0.5, 0.5, 0.5, 1.0 }
                 }
             }
         },
