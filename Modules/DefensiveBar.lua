@@ -106,6 +106,7 @@ function CreateCustomIcon(spellId)
     customSpellIcon:SetPoint(unpack(DefensiveDB.Anchors))
     customSpellIcon:RegisterEvent("SPELL_UPDATE_COOLDOWN")
     customSpellIcon:RegisterEvent("PLAYER_ENTERING_WORLD")
+    customSpellIcon:RegisterEvent("SPELL_UPDATE_CHARGES")
 
     local HighLevelContainer = CreateFrame("Frame", nil, customSpellIcon)
     HighLevelContainer:SetAllPoints(customSpellIcon)
@@ -126,16 +127,16 @@ function CreateCustomIcon(spellId)
     customSpellIcon.Cooldown:SetHideCountdownNumbers(false)
     customSpellIcon.Cooldown:SetReverse(false)
 
-    local spellCharges = C_Spell.GetSpellCharges(spellId)
-    customSpellIcon.Charges:SetText(spellCharges and spellCharges.currentCharges or "")
     customSpellIcon:HookScript("OnEvent", function(self, event, ...)
-        if event == "SPELL_UPDATE_COOLDOWN" or event == "PLAYER_ENTERING_WORLD" then
-            local cooldownData = C_Spell.GetSpellCooldown(spellId)
+        if event == "SPELL_UPDATE_COOLDOWN" or event == "PLAYER_ENTERING_WORLD" or event == "SPELL_UPDATE_CHARGES" then
+            local spellCharges = C_Spell.GetSpellCharges(spellId)
             if spellCharges then
-                customSpellIcon.Charges:SetText(C_Spell.GetSpellCharges(spellId).currentCharges or "")
+                customSpellIcon.Charges:SetText(spellCharges and spellCharges.currentCharges or "")
+                customSpellIcon.Cooldown:SetCooldown(spellCharges.cooldownStartTime, spellCharges.cooldownDuration)
+            else
+                local cooldownData = C_Spell.GetSpellCooldown(spellId)
                 customSpellIcon.Cooldown:SetCooldown(cooldownData.startTime, cooldownData.duration)
             end
-            customSpellIcon.Cooldown:SetCooldown(cooldownData.startTime, cooldownData.duration)
         end
     end)
 
