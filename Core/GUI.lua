@@ -803,12 +803,12 @@ local function DrawDefensiveSettings(parentContainer)
     ChargesContainer:AddChild(Charges_FontSize)
 
     local SupportedDefensivesContainer = AG:Create("InlineGroup")
-    SupportedDefensivesContainer:SetTitle("Supported Defensive Abilities")
+    SupportedDefensivesContainer:SetTitle("Defensives")
     SupportedDefensivesContainer:SetFullWidth(true)
     SupportedDefensivesContainer:SetLayout("Flow")
     ScrollFrame:AddChild(SupportedDefensivesContainer)
 
-    local SupportedDefensiveContainerInfoTag = CreateInfoTag("Below are all the abilities for " .. ClassToPrettyClass[select(2, UnitClass("player"))] .. ". Check the ones you want to track in the Defensive Cooldown Viewer.")
+    local SupportedDefensiveContainerInfoTag = CreateInfoTag("Below are all the abilities for " .. ClassToPrettyClass[select(2, UnitClass("player"))] .. ". Check the ones you want to track in the |cFF8080FFDefensive Cooldown Viewer|r.")
     SupportedDefensivesContainer:AddChild(SupportedDefensiveContainerInfoTag)
 
     local playerClass = select(2, UnitClass("player"))
