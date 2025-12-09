@@ -189,12 +189,12 @@ function BCDM:UpdateItemIcons()
         if icon then
             icon:SetSize(ItemDB.IconSize[1], ItemDB.IconSize[2])
             icon.Icon:SetTexCoord((GeneralDB.IconZoom) * 0.5, 1 - (GeneralDB.IconZoom) * 0.5, (GeneralDB.IconZoom) * 0.5, 1 - (GeneralDB.IconZoom) * 0.5)
-            icon.Charges:ClearAllPoints()
-            icon.Charges:SetFont(BCDM.Media.Font, ItemDB.Count.FontSize, GeneralDB.FontFlag)
-            icon.Charges:SetPoint(ItemDB.Count.Anchors[1], icon, ItemDB.Count.Anchors[2], ItemDB.Count.Anchors[3], ItemDB.Count.Anchors[4])
-            icon.Charges:SetTextColor(ItemDB.Count.Colour[1], ItemDB.Count.Colour[2], ItemDB.Count.Colour[3], 1)
-            icon.Charges:SetShadowColor(GeneralDB.Shadows.Colour[1], GeneralDB.Shadows.Colour[2], GeneralDB.Shadows.Colour[3], GeneralDB.Shadows.Colour[4])
-            icon.Charges:SetShadowOffset(GeneralDB.Shadows.OffsetX, GeneralDB.Shadows.OffsetY)
+            icon.Count:ClearAllPoints()
+            icon.Count:SetFont(BCDM.Media.Font, ItemDB.Count.FontSize, GeneralDB.FontFlag)
+            icon.Count:SetPoint(ItemDB.Count.Anchors[1], icon, ItemDB.Count.Anchors[2], ItemDB.Count.Anchors[3], ItemDB.Count.Anchors[4])
+            icon.Count:SetTextColor(ItemDB.Count.Colour[1], ItemDB.Count.Colour[2], ItemDB.Count.Colour[3], 1)
+            icon.Count:SetShadowColor(GeneralDB.Shadows.Colour[1], GeneralDB.Shadows.Colour[2], GeneralDB.Shadows.Colour[3], GeneralDB.Shadows.Colour[4])
+            icon.Count:SetShadowOffset(GeneralDB.Shadows.OffsetX, GeneralDB.Shadows.OffsetY)
         end
     end
     LayoutItemIcons()
