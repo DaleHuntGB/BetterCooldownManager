@@ -20,7 +20,6 @@ WaitForAddOns:SetScript("OnEvent", function(self)
         BCDM:SetupCustomIcons()
         BCDM:SetupItemIcons()
     end
-    BCDM:SetupSecondaryPowerBar()
     self:UnregisterEvent("PLAYER_LOGIN")
 end)
 
@@ -31,5 +30,6 @@ function AddOn:OnEnable()
     BCDM:SetEditMode(BCDM.db.global.LayoutNumber)
     BCDM:SetupCooldownManager()
     BCDM:SetupPowerBar()
+    C_Timer.After(0.5, function() BCDM:SetupSecondaryPowerBar() end)
     BCDM:SetupCastBar()
 end
