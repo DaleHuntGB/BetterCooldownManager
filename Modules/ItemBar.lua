@@ -306,6 +306,16 @@ function BCDM:CopyCustomItemsToDB()
             target[itemId] = { isActive = data.isActive, layoutIndex = data.layoutIndex or (maxIndex + 1) }
         end
     end
+    local index = 1
+    local orderedItems = {}
+    for id, data in pairs(target) do
+        table.insert(orderedItems, { itemId = id, layoutIndex = data.layoutIndex })
+    end
+    table.sort(orderedItems, function(a, b) return a.layoutIndex < b.layoutIndex end)
+    for _, entry in ipairs(orderedItems) do
+        target[entry.itemId].layoutIndex = index
+        index = index + 1
+    end
 end
 
 function BCDM:ResetCustomItems()

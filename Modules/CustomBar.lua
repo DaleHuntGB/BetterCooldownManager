@@ -465,6 +465,18 @@ function BCDM:CopyCustomSpellsToDB()
             end
         end
     end
+    for specName, spellList in pairs(profileDB.Custom.CustomSpells[class] or {}) do
+        local layoutIndex = 1
+        local orderedSpells = {}
+        for id, data in pairs(spellList) do
+            table.insert(orderedSpells, { spellId = id, layoutIndex = data.layoutIndex })
+        end
+        table.sort(orderedSpells, function(a, b) return a.layoutIndex < b.layoutIndex end)
+        for _, entry in ipairs(orderedSpells) do
+            spellList[entry.spellId].layoutIndex = layoutIndex
+            layoutIndex = layoutIndex + 1
+        end
+    end
 end
 
 function BCDM:AddCustomSpell(value)
