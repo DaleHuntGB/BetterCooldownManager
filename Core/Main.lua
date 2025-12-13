@@ -23,7 +23,6 @@ WaitForAddOns:SetScript("OnEvent", function(self)
     self:UnregisterEvent("PLAYER_LOGIN")
 end)
 
-
 function AddOn:OnEnable()
     BCDM:SetupSlashCommands()
     BCDM:ResolveMedia()
