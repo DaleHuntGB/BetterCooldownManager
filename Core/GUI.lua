@@ -1867,34 +1867,24 @@ function BCDM:CreateGUI()
 
         if MainGroup == "General" then
             DrawGeneralSettings(Wrapper)
-            if CooldownViewerSettings:IsShown() then CooldownViewerSettings:Hide() end
         elseif MainGroup == "Essential" then
             DrawCooldownSettings(Wrapper, "EssentialCooldownViewer")
-            if CooldownViewerSettings:IsShown() then CooldownViewerSettings:Hide() end
         elseif MainGroup == "Utility" then
             DrawCooldownSettings(Wrapper, "UtilityCooldownViewer")
-            if CooldownViewerSettings:IsShown() then CooldownViewerSettings:Hide() end
         elseif MainGroup == "Buffs" then
             DrawCooldownSettings(Wrapper, "BuffIconCooldownViewer")
-            CooldownViewerSettings:Show() CooldownViewerSettings:SetDisplayMode("auras")
         elseif MainGroup == "CustomBar" then
             DrawCustomBarSettings(Wrapper)
-            if CooldownViewerSettings:IsShown() then CooldownViewerSettings:Hide() end
         elseif MainGroup == "ItemBar" then
             DrawItemBarSettings(Wrapper)
-            if CooldownViewerSettings:IsShown() then CooldownViewerSettings:Hide() end
         elseif MainGroup == "CastBar" then
             DrawCastBarSettings(Wrapper)
-            if CooldownViewerSettings:IsShown() then CooldownViewerSettings:Hide() end
         elseif MainGroup == "PowerBar" then
             DrawPowerBarSettings(Wrapper)
-            if CooldownViewerSettings:IsShown() then CooldownViewerSettings:Hide() end
         elseif MainGroup == "SecondaryBar" then
             DrawSecondaryBarSettings(Wrapper)
-            if CooldownViewerSettings:IsShown() then CooldownViewerSettings:Hide() end
         elseif MainGroup == "Profiles" then
             DrawProfileSettings(Wrapper)
-            if CooldownViewerSettings:IsShown() then CooldownViewerSettings:Hide() end
         end
     end
 
