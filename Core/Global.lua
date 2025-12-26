@@ -8,6 +8,7 @@ BCDMG = BCDMG or {}
 BCDM.AddOnName = C_AddOns.GetAddOnMetadata("BetterCooldownManager", "Title")
 
 BCDM.CustomBar = {}
+BCDM.AdditionalCustomBar = {}
 BCDM.ItemBar = {}
 
 BCDM.Icon = "Interface\\AddOns\\BetterCooldownManager\\Media\\Logo.png"
@@ -19,6 +20,7 @@ BCDM.CooldownViewerToDB = {
     ["UtilityCooldownViewer"] = "Utility",
     ["BuffIconCooldownViewer"] = "Buffs",
     ["CustomCooldownViewer"] = "Custom",
+    ["AdditionalCustomCooldownViewer"] = "AdditionalCustom",
     ["ItemCooldownViewer"] = "Items",
 }
 

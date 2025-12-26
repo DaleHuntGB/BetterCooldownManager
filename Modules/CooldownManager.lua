@@ -261,6 +261,9 @@ function BCDM:UpdateCooldownViewer(cooldownViewer)
     if cooldownViewer == "ItemCooldownViewer" then
         BCDM:UpdateItemIcons()
     end
+    if cooldownViewer == "AdditionalCustomCooldownViewer" then
+        BCDM:UpdateAdditionalCustomIcons()
+    end
 end
 
 function BCDM:RefreshAllViewers()
@@ -269,4 +272,5 @@ function BCDM:RefreshAllViewers()
     BCDM:UpdateCooldownViewer("BuffIconCooldownViewer")
     BCDM:UpdateCooldownViewer("CustomCooldownViewer")
     BCDM:UpdateCooldownViewer("ItemCooldownViewer")
+    BCDM:UpdateCooldownViewer("AdditionalCustomCooldownViewer")
 end
