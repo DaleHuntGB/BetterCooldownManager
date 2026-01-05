@@ -248,22 +248,18 @@ function BCDM:UpdateCooldownViewer(cooldownViewer)
     BCDM:ResolveMedia()
     UpdateIconZoom()
     SizeIconsInCooldownViewer(cooldownViewer)
-    AdjustChargeCount(cooldownViewer)
+    if cooldownViewer == "EssentialCooldownViewer" then AdjustChargeCount(cooldownViewer) end
+    if cooldownViewer == "UtilityCooldownViewer" then AdjustChargeCount(cooldownViewer) end
+    if cooldownViewer == "BuffIconCooldownViewer" then AdjustChargeCount(cooldownViewer) end
     ApplyCooldownText(cooldownViewer)
     AdjustCooldownManagerStrata()
     PositionCooldownViewers()
     BCDM:SetPowerBarWidth()
     BCDM:SetSecondaryPowerBarWidth()
     BCDM:SetCastBarWidth()
-    if cooldownViewer == "CustomCooldownViewer" then
-        BCDM:UpdateCustomIcons()
-    end
-    if cooldownViewer == "ItemCooldownViewer" then
-        BCDM:UpdateItemIcons()
-    end
-    if cooldownViewer == "AdditionalCustomCooldownViewer" then
-        BCDM:UpdateAdditionalCustomIcons()
-    end
+    if cooldownViewer == "CustomCooldownViewer" then BCDM:UpdateCustomIcons() end
+    if cooldownViewer == "AdditionalCustomCooldownViewer" then BCDM:UpdateAdditionalCustomIcons() end
+    if cooldownViewer == "ItemCooldownViewer" then BCDM:UpdateItemIcons() end
 end
 
 function BCDM:RefreshAllViewers()
@@ -271,6 +267,6 @@ function BCDM:RefreshAllViewers()
     BCDM:UpdateCooldownViewer("UtilityCooldownViewer")
     BCDM:UpdateCooldownViewer("BuffIconCooldownViewer")
     BCDM:UpdateCooldownViewer("CustomCooldownViewer")
-    BCDM:UpdateCooldownViewer("ItemCooldownViewer")
     BCDM:UpdateCooldownViewer("AdditionalCustomCooldownViewer")
+    BCDM:UpdateCooldownViewer("ItemCooldownViewer")
 end
