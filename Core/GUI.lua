@@ -882,7 +882,6 @@ local function DrawCustomBarSettings(parentContainer)
             DeleteSpellButton:SetText("X")
             DeleteSpellButton:SetRelativeWidth(0.1)
             DeleteSpellButton:SetCallback("OnClick", function() BCDM:RemoveCustomSpell(spellID) BCDM:Print("Removed: " .. FetchSpellInformation(spellID)) BuildCustomSpellList() end)
-            DeleteSpellButton:SetDisabled(not profile[spellID].isActive)
             SpellContainer:AddChild(DeleteSpellButton)
         end
 
@@ -1121,7 +1120,6 @@ local function DrawAdditionalCustomBarSettings(parentContainer)
             DeleteSpellButton:SetText("X")
             DeleteSpellButton:SetRelativeWidth(0.1)
             DeleteSpellButton:SetCallback("OnClick", function() BCDM:RemoveAdditionalCustomSpell(spellID) BCDM:Print("Removed: " .. FetchSpellInformation(spellID)) BuildCustomSpellList() end)
-            DeleteSpellButton:SetDisabled(not profile[spellID].isActive)
             SpellContainer:AddChild(DeleteSpellButton)
         end
 
@@ -1357,7 +1355,6 @@ local function DrawItemBarSettings(parentContainer)
             DeleteSpellButton:SetText("X")
             DeleteSpellButton:SetRelativeWidth(0.1)
             DeleteSpellButton:SetCallback("OnClick", function() BCDM:RemoveCustomItem(itemID) BCDM:Print("Removed: " .. FetchItemInformation(itemID)) BuildCustomItemsList() end)
-            DeleteSpellButton:SetDisabled(not profile[itemID].isActive)
             SpellContainer:AddChild(DeleteSpellButton)
         end
 
