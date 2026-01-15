@@ -267,6 +267,13 @@ local function UpdatePowerValues()
         SecondaryPowerBar.Status:SetValue(powerCurrent)
         SecondaryPowerBar.Text:SetText(tostring(powerCurrent))
         SecondaryPowerBar.Status:Show()
+    elseif powerType == Enum.PowerType.ArcaneCharges then
+        powerCurrent = UnitPower("player", Enum.PowerType.ArcaneCharges) or 0
+        local powerMax = UnitPowerMax("player", Enum.PowerType.ArcaneCharges) or 0
+        SecondaryPowerBar.Status:SetMinMaxValues(0, powerMax)
+        SecondaryPowerBar.Status:SetValue(powerCurrent)
+        SecondaryPowerBar.Text:SetText(tostring(powerCurrent))
+        SecondaryPowerBar.Status:Show()
     elseif powerType == Enum.PowerType.Runes then SecondaryPowerBar.Status:Hide() UpdateRuneDisplay() end
     SecondaryPowerBar:Show()
 end
