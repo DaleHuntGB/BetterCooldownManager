@@ -178,15 +178,15 @@ local function StyleBuffsBars()
             buffBar.BarBG:SetVertexColor(BuffBarDB.BackgroundColour[1], BuffBarDB.BackgroundColour[2], BuffBarDB.BackgroundColour[3], BuffBarDB.BackgroundColour[4])
 
             if buffIcon then
-                if not BuffBarDB.Icon.Enabled then buffIcon:Hide() else buffIcon:Show() end
+                -- if not BuffBarDB.Icon.Enabled then buffIcon:Hide() else buffIcon:Show() end
                 BCDM:StripTextures(buffIcon.Icon)
                 buffIcon.Icon:SetSize(BuffBarDB.Height, BuffBarDB.Height)
                 buffIcon.Icon:ClearAllPoints()
-                if BuffBarDB.Icon.Layout == "LEFT" then
-                    buffIcon.Icon:SetPoint("RIGHT", buffBar, "LEFT", 1, 0)
-                else
-                    buffIcon.Icon:SetPoint("LEFT", buffBar, "RIGHT", -1, 0)
-                end
+                -- if BuffBarDB.Icon.Layout == "LEFT" then
+                --     buffIcon.Icon:SetPoint("RIGHT", buffBar, "LEFT", 1, 0)
+                -- else
+                --     buffIcon.Icon:SetPoint("LEFT", buffBar, "RIGHT", -1, 0)
+                -- end
                 buffIcon.Icon:SetTexCoord(GeneralCooldownManagerSetting.IconZoom * 0.5, 1 - GeneralCooldownManagerSetting.IconZoom * 0.5, GeneralCooldownManagerSetting.IconZoom * 0.5, 1 - GeneralCooldownManagerSetting.IconZoom * 0.5)
             end
 
