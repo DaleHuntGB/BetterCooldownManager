@@ -3,6 +3,7 @@ local LSM = BCDM.LSM
 local AG = BCDM.AG
 local isGUIOpen = false
 local isUnitDeathKnight = BCDM.IS_DEATHKNIGHT
+BCDMGUI = {}
 
 local AnchorPoints = { { ["TOPLEFT"] = "Top Left", ["TOP"] = "Top", ["TOPRIGHT"] = "Top Right", ["LEFT"] = "Left", ["CENTER"] = "Center", ["RIGHT"] = "Right", ["BOTTOMLEFT"] = "Bottom Left", ["BOTTOM"] = "Bottom", ["BOTTOMRIGHT"] = "Bottom Right" }, { "TOPLEFT", "TOP", "TOPRIGHT", "LEFT", "CENTER", "RIGHT", "BOTTOMLEFT", "BOTTOM", "BOTTOMRIGHT", } }
 
@@ -269,8 +270,8 @@ local function CreateGlowSettings(containerParent)
         GlowLinesSlider:SetRelativeWidth(0.33)
         containerParent:AddChild(GlowLinesSlider)
 
-        BCDMG.GlowThicknessSlider = GlowThicknessSlider
-        BCDMG.GlowLinesSlider = GlowLinesSlider
+        BCDMGUI.GlowThicknessSlider = GlowThicknessSlider
+        BCDMGUI.GlowLinesSlider = GlowLinesSlider
     elseif BCDM.db.profile.CooldownManager.General.Glow.GlowType == "AUTO_CAST" then
         local GlowParticlesSlider = AG:Create("Slider")
         GlowParticlesSlider:SetLabel("Particles")
@@ -289,8 +290,8 @@ local function CreateGlowSettings(containerParent)
         GlowScaleSlider:SetIsPercent(true)
         containerParent:AddChild(GlowScaleSlider)
 
-        BCDMG.GlowParticlesSlider = GlowParticlesSlider
-        BCDMG.GlowScaleSlider = GlowScaleSlider
+        BCDMGUI.GlowParticlesSlider = GlowParticlesSlider
+        BCDMGUI.GlowScaleSlider = GlowScaleSlider
     end
 
     local GlowFrequencySlider = AG:Create("Slider")
@@ -307,22 +308,22 @@ local function CreateGlowSettings(containerParent)
             GlowColourPicker:SetDisabled(false)
             GlowFrequencySlider:SetDisabled(false)
             if BCDM.db.profile.CooldownManager.General.Glow.GlowType == "PIXEL" then
-                BCDMG.GlowThicknessSlider:SetDisabled(false)
-                BCDMG.GlowLinesSlider:SetDisabled(false)
+                BCDMGUI.GlowThicknessSlider:SetDisabled(false)
+                BCDMGUI.GlowLinesSlider:SetDisabled(false)
             elseif BCDM.db.profile.CooldownManager.General.Glow.GlowType == "AUTO_CAST" then
-                BCDMG.GlowParticlesSlider:SetDisabled(false)
-                BCDMG.GlowScaleSlider:SetDisabled(false)
+                BCDMGUI.GlowParticlesSlider:SetDisabled(false)
+                BCDMGUI.GlowScaleSlider:SetDisabled(false)
             end
         else
             GlowTypeDropdown:SetDisabled(true)
             GlowColourPicker:SetDisabled(true)
             GlowFrequencySlider:SetDisabled(true)
             if BCDM.db.profile.CooldownManager.General.Glow.GlowType == "PIXEL" then
-                BCDMG.GlowThicknessSlider:SetDisabled(true)
-                BCDMG.GlowLinesSlider:SetDisabled(true)
+                BCDMGUI.GlowThicknessSlider:SetDisabled(true)
+                BCDMGUI.GlowLinesSlider:SetDisabled(true)
             elseif BCDM.db.profile.CooldownManager.General.Glow.GlowType == "AUTO_CAST" then
-                BCDMG.GlowParticlesSlider:SetDisabled(true)
-                BCDMG.GlowScaleSlider:SetDisabled(true)
+                BCDMGUI.GlowParticlesSlider:SetDisabled(true)
+                BCDMGUI.GlowScaleSlider:SetDisabled(true)
             end
         end
     end

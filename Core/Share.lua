@@ -32,7 +32,7 @@ function BCDM:ImportSavedVariables(EncodedInfo, profileName)
         UIParent:SetScale(BCDM.db.profile.General.UIScale or 1)
     else
         StaticPopupDialogs["BCDM_IMPORT_NEW_PROFILE"] = {
-            text = BCDM.AddOnName.." - ".."Profile Name?",
+            text = BCDM.ADDON_NAME.." - ".."Profile Name?",
             button1 = "Import",
             button2 = "Cancel",
             hasEditBox = true,
@@ -55,8 +55,6 @@ function BCDM:ImportSavedVariables(EncodedInfo, profileName)
                 end
 
                 BCDMG.RefreshProfiles()
-
-                UIParent:SetScale(BCDM.db.profile.General.UIScale or 1)
 
             end,
         }
