@@ -97,6 +97,7 @@ local function CreateCustomIcon(spellId)
             if spellCharges then
                 customIcon.Charges:SetText(tostring(spellCharges.currentCharges))
                 customIcon.Cooldown:SetCooldown(spellCharges.cooldownStartTime, spellCharges.cooldownDuration)
+                customIcon.Charges:SetAlphaFromBoolean(spellCharges.maxCharges > 1, 1, 0)
             else
                 local cooldownData = C_Spell.GetSpellCooldown(spellId)
                 customIcon.Cooldown:SetCooldown(cooldownData.startTime, cooldownData.duration)
