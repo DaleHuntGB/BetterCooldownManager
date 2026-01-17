@@ -194,28 +194,46 @@ local function LayoutCustomCooldownViewer()
         CENTER      = { anchor="CENTER",      xMult=0,  yMult=0  },
     }
 
-    for i, spellIcon in ipairs(customCooldownViewerIcons) do
-        spellIcon:SetParent(BCDM.CustomCooldownViewerContainer)
-        spellIcon:SetSize(iconSize, iconSize)
-        spellIcon:ClearAllPoints()
+    local point = select(1, BCDM.CustomCooldownViewerContainer:GetPoint(1))
+    local useCenteredLayout = (point == "TOP" or point == "BOTTOM") and (growthDirection == "LEFT" or growthDirection == "RIGHT")
 
-        if i == 1 then
-            local point = select(1, BCDM.CustomCooldownViewerContainer:GetPoint(1))
-            local config = LayoutConfig[point] or LayoutConfig.TOPLEFT
-            spellIcon:SetPoint(config.anchor, BCDM.CustomCooldownViewerContainer, config.anchor, 0, 0)
-        else
-            if growthDirection == "RIGHT" then
-                spellIcon:SetPoint("LEFT", customCooldownViewerIcons[i - 1], "RIGHT", iconSpacing, 0)
-            elseif growthDirection == "LEFT" then
-                spellIcon:SetPoint("RIGHT", customCooldownViewerIcons[i - 1], "LEFT", -iconSpacing, 0)
-            elseif growthDirection == "UP" then
-                spellIcon:SetPoint("BOTTOM", customCooldownViewerIcons[i - 1], "TOP", 0, iconSpacing)
-            elseif growthDirection == "DOWN" then
-                spellIcon:SetPoint("TOP", customCooldownViewerIcons[i - 1], "BOTTOM", 0, -iconSpacing)
-            end
+    if useCenteredLayout then
+        local totalWidth = (#customCooldownViewerIcons * iconSize) + ((#customCooldownViewerIcons - 1) * iconSpacing)
+        local startOffset = -(totalWidth / 2) + (iconSize / 2)
+
+        for i, spellIcon in ipairs(customCooldownViewerIcons) do
+            spellIcon:SetParent(BCDM.CustomCooldownViewerContainer)
+            spellIcon:SetSize(iconSize, iconSize)
+            spellIcon:ClearAllPoints()
+
+            local xOffset = startOffset + ((i - 1) * (iconSize + iconSpacing))
+            spellIcon:SetPoint("CENTER", BCDM.CustomCooldownViewerContainer, "CENTER", xOffset, 0)
+            ApplyCooldownText()
+            spellIcon:Show()
         end
-        ApplyCooldownText()
-        spellIcon:Show()
+    else
+        for i, spellIcon in ipairs(customCooldownViewerIcons) do
+            spellIcon:SetParent(BCDM.CustomCooldownViewerContainer)
+            spellIcon:SetSize(iconSize, iconSize)
+            spellIcon:ClearAllPoints()
+
+            if i == 1 then
+                local config = LayoutConfig[point] or LayoutConfig.TOPLEFT
+                spellIcon:SetPoint(config.anchor, BCDM.CustomCooldownViewerContainer, config.anchor, 0, 0)
+            else
+                if growthDirection == "RIGHT" then
+                    spellIcon:SetPoint("LEFT", customCooldownViewerIcons[i - 1], "RIGHT", iconSpacing, 0)
+                elseif growthDirection == "LEFT" then
+                    spellIcon:SetPoint("RIGHT", customCooldownViewerIcons[i - 1], "LEFT", -iconSpacing, 0)
+                elseif growthDirection == "UP" then
+                    spellIcon:SetPoint("BOTTOM", customCooldownViewerIcons[i - 1], "TOP", 0, iconSpacing)
+                elseif growthDirection == "DOWN" then
+                    spellIcon:SetPoint("TOP", customCooldownViewerIcons[i - 1], "BOTTOM", 0, -iconSpacing)
+                end
+            end
+            ApplyCooldownText()
+            spellIcon:Show()
+        end
     end
 
     if #customCooldownViewerIcons == 0 then
