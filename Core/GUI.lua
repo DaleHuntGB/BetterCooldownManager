@@ -715,6 +715,28 @@ local function CreateGlobalSettings(parentContainer)
 
     RefreshShadowSettings()
 
+    local TextureContainer = AG:Create("InlineGroup")
+    TextureContainer:SetTitle("Texture Settings")
+    TextureContainer:SetFullWidth(true)
+    TextureContainer:SetLayout("Flow")
+    globalSettingsContainer:AddChild(TextureContainer)
+
+    local ForegroundTextureDropdown = AG:Create("LSM30_Statusbar")
+    ForegroundTextureDropdown:SetList(LSM:HashTable("statusbar"))
+    ForegroundTextureDropdown:SetLabel("Foreground Texture")
+    ForegroundTextureDropdown:SetValue(BCDM.db.profile.General.Textures.Foreground)
+    ForegroundTextureDropdown:SetRelativeWidth(0.5)
+    ForegroundTextureDropdown:SetCallback("OnValueChanged", function(widget, _, value) widget:SetValue(value) BCDM.db.profile.General.Textures.Foreground = value BCDM:ResolveLSM() BCDM:UpdateBCDM() end)
+    TextureContainer:AddChild(ForegroundTextureDropdown)
+
+    local BackgroundTextureDropdown = AG:Create("LSM30_Statusbar")
+    BackgroundTextureDropdown:SetList(LSM:HashTable("statusbar"))
+    BackgroundTextureDropdown:SetLabel("Background Texture")
+    BackgroundTextureDropdown:SetValue(BCDM.db.profile.General.Textures.Background)
+    BackgroundTextureDropdown:SetRelativeWidth(0.5)
+    BackgroundTextureDropdown:SetCallback("OnValueChanged", function(widget, _, value) widget:SetValue(value) BCDM.db.profile.General.Textures.Background = value BCDM:ResolveLSM() BCDM:UpdateBCDM() end)
+    TextureContainer:AddChild(BackgroundTextureDropdown)
+
     local CustomGlowContainer = AG:Create("InlineGroup")
     CustomGlowContainer:SetTitle("Custom Glow Settings")
     CustomGlowContainer:SetFullWidth(true)
