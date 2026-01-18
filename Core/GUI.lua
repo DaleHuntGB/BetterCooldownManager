@@ -658,12 +658,6 @@ local function CreateGlobalSettings(parentContainer)
     BackgroundTextureDropdown:SetCallback("OnValueChanged", function(widget, _, value) widget:SetValue(value) BCDM.db.profile.General.Textures.Background = value BCDM:ResolveLSM() BCDM:UpdateBCDM() end)
     TextureContainer:AddChild(BackgroundTextureDropdown)
 
-    local CustomGlowContainer = AG:Create("InlineGroup")
-    CustomGlowContainer:SetTitle("Custom Glow Settings")
-    CustomGlowContainer:SetFullWidth(true)
-    CustomGlowContainer:SetLayout("Flow")
-    globalSettingsContainer:AddChild(CustomGlowContainer)
-
     CreateCooldownTextSettings(globalSettingsContainer)
 
     ScrollFrame:DoLayout()
