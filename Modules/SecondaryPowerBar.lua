@@ -601,7 +601,7 @@ local function UpdateBarWidth()
         resizeTimer:Cancel()
     end
 
-    resizeTimer = C_Timer.After(0.1, function()
+    resizeTimer = C_Timer.After(0.5, function()
         local anchorWidth = anchorFrame:GetWidth()
         secondaryPowerBar:SetWidth(anchorWidth)
         local powerType = DetectSecondaryPower()
