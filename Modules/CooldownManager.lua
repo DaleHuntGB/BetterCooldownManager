@@ -262,9 +262,10 @@ local function StyleIcons()
                     childFrame.Icon:SetTexCoord(iconZoomAmount, 1 - iconZoomAmount, iconZoomAmount, 1 - iconZoomAmount)
                 end
                 if childFrame.Cooldown then
+                    local borderSize = cooldownManagerSettings.General.BorderSize
                     childFrame.Cooldown:ClearAllPoints()
-                    childFrame.Cooldown:SetPoint("TOPLEFT", childFrame, "TOPLEFT", 1, -1)
-                    childFrame.Cooldown:SetPoint("BOTTOMRIGHT", childFrame, "BOTTOMRIGHT", -1, 1)
+                    childFrame.Cooldown:SetPoint("TOPLEFT", childFrame, "TOPLEFT", borderSize, -borderSize)
+                    childFrame.Cooldown:SetPoint("BOTTOMRIGHT", childFrame, "BOTTOMRIGHT", -borderSize, borderSize)
                     childFrame.Cooldown:SetSwipeColor(0, 0, 0, 0.8)
                     childFrame.Cooldown:SetDrawEdge(false)
                     childFrame.Cooldown:SetDrawSwipe(true)
