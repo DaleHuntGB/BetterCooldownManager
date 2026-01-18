@@ -461,13 +461,6 @@ local function UpdatePowerValues()
         secondaryPowerBar.Status:SetValue(powerCurrent)
         secondaryPowerBar.Text:SetText(tostring(powerCurrent))
         secondaryPowerBar.Status:Show()
-    elseif powerType == Enum.PowerType.Mana then
-        powerCurrent = UnitPower("player", Enum.PowerType.Mana) or 0
-        local powerMax = UnitPowerMax("player", Enum.PowerType.Mana) or 0
-        secondaryPowerBar.Status:SetMinMaxValues(0, powerMax)
-        secondaryPowerBar.Status:SetValue(powerCurrent)
-        secondaryPowerBar.Text:SetText(string.format("%.0f%%", UnitPowerPercent("player", Enum.PowerType.Mana, false, CurveConstants.ScaleTo100)))
-        secondaryPowerBar.Status:Show()
     elseif powerType == "SOUL" then
         local hasSoulGlutton = C_SpellBook.IsSpellKnown(1247534)
         local isInMeta = IsInMetamorphosis(1217607)
