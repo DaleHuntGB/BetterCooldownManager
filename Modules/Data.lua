@@ -277,28 +277,33 @@ end
 
 -- Event Check to see what trinkets are equipped. Update DB if not present else toggle isActive.
 local trinketCheckEvent = CreateFrame("Frame")
-trinketCheckEvent:RegisterEvent("ITEM_LOCK_CHANGED")
-trinketCheckEvent:SetScript("OnEvent", function(self, event, ...)
+trinketCheckEvent:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
+trinketCheckEvent:RegisterEvent("PLAYER_LOGIN")
+trinketCheckEvent:SetScript("OnEvent", function(self, event, slot)
     if InCombatLockdown() then return end
-    if event == "ITEM_LOCK_CHANGED" then
-        local itemSlot = ...
-        if itemSlot == 13 or itemSlot == 14 then
-            -- BCDM:FetchEquippedTrinkets()
-        end
+    if slot == 13 or slot == 14 then
+        BCDM:FetchEquippedTrinkets()
     end
 end)
 
 function BCDM:FetchEquippedTrinkets()
-    local TrinketSlot1 = GetInventoryItemID("player", 13)
-    local TrinketSlot2 = GetInventoryItemID("player", 14)
-    local CooldownManagerDB = BCDM.db.profile
-    local CustomDB = CooldownManagerDB.CooldownManager.Item
-    for _, itemId in pairs({TrinketSlot1, TrinketSlot2}) do
-        local isUsable = C_Item.IsUsableItem(itemId)
-        if not itemId then return end
-        if not CustomDB.Items[itemId] and isUsable then
-            CustomDB.Items[itemId] = { isActive = true, layoutIndex = #CustomDB.Items + 1 }
-            BCDM:UpdateCooldownViewer("Item")
+    local trinketProfile = BCDM.db.profile.CooldownManager.Trinket
+    local equippedItemIds = { GetInventoryItemID("player", 13), GetInventoryItemID("player", 14) }
+    local usableCount = 0
+
+    for itemId in pairs(trinketProfile.Trinkets) do trinketProfile.Trinkets[itemId] = nil end
+
+    for slotIndex, itemId in ipairs(equippedItemIds) do
+        if itemId and C_Item.IsUsableItem(itemId) then
+            trinketProfile.Trinkets[itemId] = { isActive = true, layoutIndex = slotIndex }
+            usableCount = usableCount + 1
+            BCDM.TrinketBarContainer:Show()
         end
     end
+
+    if usableCount == 0 then BCDM.TrinketBarContainer:Hide() return end
+
+    BCDM:UpdateCooldownViewer("Trinket")
 end
+
+

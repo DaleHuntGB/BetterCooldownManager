@@ -355,6 +355,19 @@ local Defaults = {
                 },
                 Items = {},
             },
+            Trinket = {
+                IconSize = 38,
+                Layout = {"TOPLEFT", "UtilityCooldownViewer", "BOTTOMRIGHT", -1, -1},
+                Spacing = 1,
+                GrowthDirection = "LEFT",
+                OffsetByParentHeight = true,
+                Text = {
+                    FontSize = 12,
+                    Colour = {1, 1, 1},
+                    Layout = {"BOTTOMRIGHT", "BOTTOMRIGHT", 0, 2}
+                },
+                Trinkets = {},
+            },
         },
         PowerBar = {
             Enabled = true,

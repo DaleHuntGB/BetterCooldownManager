@@ -116,6 +116,15 @@ local AnchorParents = {
         },
         { "EssentialCooldownViewer", "UtilityCooldownViewer", "BCDM_PowerBar", "BCDM_SecondaryPowerBar" },
     },
+    ["Trinket"] = {
+        {
+            ["EssentialCooldownViewer"] = "|cFF00AEF7Blizzard|r: Essential Cooldown Viewer",
+            ["UtilityCooldownViewer"] = "|cFF00AEF7Blizzard|r: Utility Cooldown Viewer",
+            ["BCDM_PowerBar"] = "|cFF8080FFBetter|rCooldownManager: Power Bar",
+            ["BCDM_SecondaryPowerBar"] = "|cFF8080FFBetter|rCooldownManager: Secondary Power Bar",
+        },
+        { "EssentialCooldownViewer", "UtilityCooldownViewer", "BCDM_PowerBar", "BCDM_SecondaryPowerBar" },
+    },
     ["Power"] = {
         {
             ["EssentialCooldownViewer"] = "|cFF00AEF7Blizzard|r: Essential Cooldown Viewer",
@@ -1002,9 +1011,60 @@ local function CreateCooldownViewerItemSettings(parentContainer, containerToRefr
     return parentContainer
 end
 
+local function CreateCooldownViewerTrinketSettings(parentContainer, containerToRefresh)
+    local TrinketDB = BCDM.db.profile.CooldownManager.Trinket.Trinkets
+
+    if TrinketDB then
+
+        local sortedItems = {}
+
+        for spellId, data in pairs(TrinketDB) do table.insert(sortedItems, {id = spellId, data = data}) end
+        table.sort(sortedItems, function(a, b) return a.data.layoutIndex < b.data.layoutIndex end)
+
+        for _, item in ipairs(sortedItems) do
+            local itemId = item.id
+            local data = item.data
+
+            local itemCheckbox = AG:Create("CheckBox")
+            itemCheckbox:SetLabel("[" .. data.layoutIndex .. "] " .. FetchItemInformation(itemId))
+            itemCheckbox:SetValue(data.isActive)
+            itemCheckbox:SetCallback("OnValueChanged", function(_, _, value) TrinketDB[itemId].isActive = value BCDM:UpdateCooldownViewer("Item") end)
+            itemCheckbox:SetRelativeWidth(0.6)
+            parentContainer:AddChild(itemCheckbox)
+
+            local moveUpButton = AG:Create("Button")
+            moveUpButton:SetText("Up")
+            moveUpButton:SetRelativeWidth(0.1333)
+            moveUpButton:SetCallback("OnClick", function() BCDM:AdjustTrinketLayoutIndex(-1, itemId) parentContainer:ReleaseChildren() CreateCooldownViewerTrinketSettings(parentContainer, containerToRefresh) end)
+            parentContainer:AddChild(moveUpButton)
+
+            local moveDownButton = AG:Create("Button")
+            moveDownButton:SetText("Down")
+            moveDownButton:SetRelativeWidth(0.1333)
+            moveDownButton:SetCallback("OnClick", function() BCDM:AdjustTrinketLayoutIndex(1, itemId) parentContainer:ReleaseChildren() CreateCooldownViewerTrinketSettings(parentContainer, containerToRefresh) end)
+            parentContainer:AddChild(moveDownButton)
+
+            local removeItemButton = AG:Create("Button")
+            removeItemButton:SetText("X")
+            removeItemButton:SetRelativeWidth(0.1333)
+            removeItemButton:SetCallback("OnClick", function()
+                BCDM:AdjustTrinketList(itemId, "remove")
+                BCDM:UpdateCooldownViewer("Trinket")
+                parentContainer:ReleaseChildren()
+                CreateCooldownViewerTrinketSettings(parentContainer, containerToRefresh)
+            end)
+            parentContainer:AddChild(removeItemButton)
+        end
+    end
+
+    containerToRefresh:DoLayout()
+
+    return parentContainer
+end
+
 local function CreateCooldownViewerSettings(parentContainer, viewerType)
-    local hasAnchorParent = viewerType == "Utility" or viewerType == "Buffs" or viewerType == "Custom" or viewerType == "AdditionalCustom" or viewerType == "Item"
-    local isCustomViewer = viewerType == "Custom" or viewerType == "AdditionalCustom" or viewerType == "Item"
+    local hasAnchorParent = viewerType == "Utility" or viewerType == "Buffs" or viewerType == "Custom" or viewerType == "AdditionalCustom" or viewerType == "Item" or viewerType == "Trinket"
+    local isCustomViewer = viewerType == "Custom" or viewerType == "AdditionalCustom" or viewerType == "Item" or viewerType == "Trinket"
 
     local ScrollFrame = AG:Create("ScrollFrame")
     ScrollFrame:SetLayout("Flow")
@@ -2269,6 +2329,8 @@ function BCDM:CreateGUI()
             CreateCooldownViewerSettings(Wrapper, "AdditionalCustom")
         elseif MainTab == "Item" then
             CreateCooldownViewerSettings(Wrapper, "Item")
+        elseif MainTab == "Trinket" then
+            CreateCooldownViewerSettings(Wrapper, "Trinket")
         elseif MainTab == "PowerBar" then
             CreatePowerBarSettings(Wrapper)
         elseif MainTab == "SecondaryPowerBar" then
@@ -2299,6 +2361,7 @@ function BCDM:CreateGUI()
         { text = "Custom", value = "Custom"},
         { text = "Additional Custom", value = "AdditionalCustom"},
         { text = "Item", value = "Item"},
+        { text = "Trinkets", value = "Trinket"},
         { text = "Power Bar", value = "PowerBar"},
         { text = "Secondary Power Bar", value = "SecondaryPowerBar"},
         { text = "Cast Bar", value = "CastBar"},
