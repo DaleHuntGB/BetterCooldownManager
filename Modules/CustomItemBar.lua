@@ -344,10 +344,3 @@ function BCDM:AdjustItemList(itemId, adjustingHow)
 
     BCDM:UpdateCustomItemBar()
 end
-
-function BCDM:FetchTrinketSlots()
-    -- Loop through CharacterFrame
-    -- Get ItemID for Trinket Slots (13 & 14)
-    -- Return the ItemID and check if it's usable
-    local isItemUsable = C_Item.IsUsableItem(itemInfo)
-end
