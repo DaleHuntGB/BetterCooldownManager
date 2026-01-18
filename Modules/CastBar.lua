@@ -151,8 +151,8 @@ function BCDM:CreateCastBar()
 
     CastBar.Icon = CastBar:CreateTexture(nil, "OVERLAY")
     CastBar.Icon:SetSize(CastBarDB.Height, CastBarDB.Height)
-    local iconZoom = BCDM.db.profile.CooldownManager.General.IconZoom * 0.5
-    CastBar.Icon:SetTexCoord(iconZoom, 1 - iconZoom, iconZoom, 1 - iconZoom)
+    local zoom = BCDM.db.profile.CooldownManager.General.IconZoom
+    CastBar.Icon:SetTexCoord(BCDM:CalculateTexCoords(zoom, CastBarDB.Height, CastBarDB.Height))
 
     CastBar.Status = CreateFrame("StatusBar", nil, CastBar)
     CastBar.Status:SetStatusBarTexture(BCDM.Media.Foreground)
@@ -254,8 +254,8 @@ function BCDM:UpdateCastBar()
     end
 
     CastBar.Icon:SetSize(CastBarDB.Height, CastBarDB.Height)
-    local iconZoom = BCDM.db.profile.CooldownManager.General.IconZoom * 0.5
-    CastBar.Icon:SetTexCoord(iconZoom, 1 - iconZoom, iconZoom, 1 - iconZoom)
+    local zoom = BCDM.db.profile.CooldownManager.General.IconZoom
+    CastBar.Icon:SetTexCoord(BCDM:CalculateTexCoords(zoom, CastBarDB.Height, CastBarDB.Height))
 
     CastBar.Icon:ClearAllPoints()
     if CastBarDB.Icon.Enabled == false then

@@ -74,7 +74,7 @@ local function CreateCustomIcon(itemId)
     else
         customIcon:SetBackdropBorderColor(0, 0, 0, 1)
     end
-    customIcon:SetSize(CustomDB.IconSize, CustomDB.IconSize)
+    customIcon:SetSize(CustomDB.IconWidth, CustomDB.IconHeight)
     customIcon:SetPoint(CustomDB.Layout[1], _G[CustomDB.Layout[2]], CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
     customIcon:RegisterEvent("SPELL_UPDATE_COOLDOWN")
     customIcon:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -128,8 +128,8 @@ local function CreateCustomIcon(itemId)
     local borderSize = BCDM.db.profile.CooldownManager.General.BorderSize
     customIcon.Icon:SetPoint("TOPLEFT", customIcon, "TOPLEFT", borderSize, -borderSize)
     customIcon.Icon:SetPoint("BOTTOMRIGHT", customIcon, "BOTTOMRIGHT", -borderSize, borderSize)
-    local iconZoom = BCDM.db.profile.CooldownManager.General.IconZoom * 0.5
-    customIcon.Icon:SetTexCoord(iconZoom, 1 - iconZoom, iconZoom, 1 - iconZoom)
+    local zoom = BCDM.db.profile.CooldownManager.General.IconZoom
+    customIcon.Icon:SetTexCoord(BCDM:CalculateTexCoords(zoom, CustomDB.IconWidth, CustomDB.IconHeight))
     customIcon.Icon:SetTexture(select(10, C_Item.GetItemInfo(itemId)))
 
     return customIcon
@@ -204,7 +204,8 @@ local function LayoutCustomItemBar()
 
     CreateCustomIcons(customItemBarIcons)
 
-    local iconSize = CustomDB.IconSize
+    local iconWidth = CustomDB.IconWidth
+    local iconHeight = CustomDB.IconHeight
     local iconSpacing = CustomDB.Spacing
 
     if #customItemBarIcons == 0 then
@@ -215,11 +216,11 @@ local function LayoutCustomItemBar()
 
         local totalWidth, totalHeight = 0, 0
         if useCenteredLayout or growthDirection == "RIGHT" or growthDirection == "LEFT" then
-            totalWidth = (#customItemBarIcons * iconSize) + ((#customItemBarIcons - 1) * iconSpacing)
-            totalHeight = iconSize
+            totalWidth = (#customItemBarIcons * iconWidth) + ((#customItemBarIcons - 1) * iconSpacing)
+            totalHeight = iconHeight
         elseif growthDirection == "UP" or growthDirection == "DOWN" then
-            totalWidth = iconSize
-            totalHeight = (#customItemBarIcons * iconSize) + ((#customItemBarIcons - 1) * iconSpacing)
+            totalWidth = iconWidth
+            totalHeight = (#customItemBarIcons * iconHeight) + ((#customItemBarIcons - 1) * iconSpacing)
         end
         BCDM.CustomItemBarContainer:SetWidth(totalWidth)
         BCDM.CustomItemBarContainer:SetHeight(totalHeight)
@@ -241,15 +242,15 @@ local function LayoutCustomItemBar()
     local useCenteredLayout = (point == "TOP" or point == "BOTTOM") and (growthDirection == "LEFT" or growthDirection == "RIGHT")
 
     if useCenteredLayout and #customItemBarIcons > 0 then
-        local totalWidth = (#customItemBarIcons * iconSize) + ((#customItemBarIcons - 1) * iconSpacing)
-        local startOffset = -(totalWidth / 2) + (iconSize / 2)
+        local totalWidth = (#customItemBarIcons * iconWidth) + ((#customItemBarIcons - 1) * iconSpacing)
+        local startOffset = -(totalWidth / 2) + (iconWidth / 2)
 
         for i, spellIcon in ipairs(customItemBarIcons) do
             spellIcon:SetParent(BCDM.CustomItemBarContainer)
-            spellIcon:SetSize(iconSize, iconSize)
+            spellIcon:SetSize(iconWidth, iconHeight)
             spellIcon:ClearAllPoints()
 
-            local xOffset = startOffset + ((i - 1) * (iconSize + iconSpacing))
+            local xOffset = startOffset + ((i - 1) * (iconWidth + iconSpacing))
             spellIcon:SetPoint("CENTER", BCDM.CustomItemBarContainer, "CENTER", xOffset, 0)
             ApplyCooldownText()
             spellIcon:Show()
@@ -257,7 +258,7 @@ local function LayoutCustomItemBar()
     else
         for i, spellIcon in ipairs(customItemBarIcons) do
             spellIcon:SetParent(BCDM.CustomItemBarContainer)
-            spellIcon:SetSize(iconSize, iconSize)
+            spellIcon:SetSize(iconWidth, iconHeight)
             spellIcon:ClearAllPoints()
 
             if i == 1 then
