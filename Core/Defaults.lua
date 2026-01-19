@@ -255,7 +255,8 @@ local Defaults = {
                 },
             },
             AdditionalCustom = {
-                IconSize = 38,
+                IconWidth = 38,
+                IconHeight = 38,
                 Layout = {"TOP", "UtilityCooldownViewer", "BOTTOM", 0, -1},
                 Spacing = 1,
                 GrowthDirection = "RIGHT",
@@ -362,7 +363,8 @@ local Defaults = {
             },
             Trinket = {
                 Enabled = true,
-                IconSize = 38,
+                IconWidth = 38,
+                IconHeight = 38,
                 Layout = {"TOPLEFT", "UtilityCooldownViewer", "BOTTOMRIGHT", -1, -1},
                 Spacing = 1,
                 GrowthDirection = "LEFT",
