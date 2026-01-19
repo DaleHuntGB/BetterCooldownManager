@@ -1,6 +1,10 @@
 # BetterCooldownManager
 
-<a href="https://discord.gg/UZCgWRYvVE"><img src="https://img.shields.io/badge/Join-Discord-blue" alt="Discord"></a>
+[![Join Discord](https://img.shields.io/badge/Discord-7289DA?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/UZCgWRYvVE)
+[![Twitch](https://img.shields.io/badge/Subscribe-9146FF?style=for-the-badge&logo=twitch&logoColor=white)](https://www.twitch.tv/subs/UnhaltedGB)
+[![Patreon](https://img.shields.io/badge/Patreon-FF424D?style=for-the-badge&logo=patreon&logoColor=white)](https://patreon.com/Unhalted)
+[![Donate](https://img.shields.io/badge/Donate-1E88E5?style=for-the-badge&logo=streamlabs&logoColor=white)](https://streamelements.com/unhaltedgb/tip)
+[![KoFi](https://img.shields.io/badge/KoFi-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://ko-fi.com/unhalted)
 
 ## Midnight
 - BetterCooldownManager is ready for Pre-Patch & Midnight.
@@ -32,11 +36,3 @@ If you find [Issues](https://github.com/DaleHuntGB/BetterCooldownManager/issues)
 
 ## Future Plans
 In the future, skinning the Buff Bars will be available. The code & GUI are all present already but final improvements are still to be made. Along with this, Custom Glows will be added when I find time to implement them appropriately.
-
-## Supporting the Project
-If you feel the need to support, I have provided some ways in which you can do so.
-
-<a href="https://www.twitch.tv/subs/UnhaltedGB"><img src="https://img.shields.io/badge/Support-Twitch-purple" alt="Twitch"></a>
-<a href="https://patreon.com/Unhalted"><img src="https://img.shields.io/badge/Support-Patreon-orange" alt="Patreon"></a>
-<a href="https://streamelements.com/unhaltedgb/tip"><img src="https://img.shields.io/badge/Support-Donate-yellow" alt="StreamElements"></a>
-<a href="https://ko-fi.com/unhalted"><img src="https://img.shields.io/badge/Buy_Me-A_Coffee-red" alt="Ko-Fi"></a>

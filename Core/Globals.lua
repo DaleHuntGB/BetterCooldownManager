@@ -300,10 +300,39 @@ function BCDM:AdjustSpellLayoutIndex(direction, spellId, customDB)
     end
 
     DefensiveSpells[playerClass][playerSpecialization][spellId].layoutIndex = newIndex
+    BCDM:NormalizeSpellLayoutIndices(customDB, playerClass, playerSpecialization)
     if customDB == "Custom" then
         BCDM:UpdateCustomCooldownViewer()
     else
         BCDM:UpdateAdditionalCustomCooldownViewer()
+    end
+end
+
+function BCDM:NormalizeSpellLayoutIndices(customDB, playerClass, playerSpecialization)
+    local CooldownManagerDB = BCDM.db.profile
+    local CustomDB = CooldownManagerDB.CooldownManager[customDB]
+    local DefensiveSpells = CustomDB.Spells
+
+    if not DefensiveSpells[playerClass] or not DefensiveSpells[playerClass][playerSpecialization] then return end
+
+    local ordered = {}
+    for spellId, data in pairs(DefensiveSpells[playerClass][playerSpecialization]) do
+        ordered[#ordered + 1] = {
+            spellId = spellId,
+            data = data,
+            sortIndex = data.layoutIndex or math.huge,
+        }
+    end
+
+    table.sort(ordered, function(a, b)
+        if a.sortIndex == b.sortIndex then
+            return tostring(a.spellId) < tostring(b.spellId)
+        end
+        return a.sortIndex < b.sortIndex
+    end)
+
+    for index, entry in ipairs(ordered) do
+        entry.data.layoutIndex = index
     end
 end
 
@@ -333,5 +362,6 @@ function BCDM:AdjustSpellList(spellId, adjustingHow, customDB)
         DefensiveSpells[playerClass][playerSpecialization][spellId] = nil
     end
 
+    BCDM:NormalizeSpellLayoutIndices(customDB, playerClass, playerSpecialization)
     BCDM:UpdateAdditionalCustomCooldownViewer()
 end

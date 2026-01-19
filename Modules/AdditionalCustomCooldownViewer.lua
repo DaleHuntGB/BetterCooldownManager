@@ -106,7 +106,7 @@ local function CreateCustomIcon(spellId)
                 local cooldownData = C_Spell.GetSpellCooldown(spellId)
                 customIcon.Cooldown:SetCooldown(cooldownData.startTime, cooldownData.duration)
             end
-            IsCooldownFrameActive(self)
+            -- IsCooldownFrameActive(self)
         end
     end)
 

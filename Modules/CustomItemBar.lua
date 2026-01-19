@@ -319,8 +319,37 @@ function BCDM:AdjustItemLayoutIndex(direction, itemId)
     end
 
     Items[itemId].layoutIndex = newIndex
+    BCDM:NormalizeItemLayoutIndices()
 
     BCDM:UpdateCustomItemBar()
+end
+
+function BCDM:NormalizeItemLayoutIndices()
+    local CooldownManagerDB = BCDM.db.profile
+    local CustomDB = CooldownManagerDB.CooldownManager.Item
+    local Items = CustomDB.Items
+
+    if not Items then return end
+
+    local ordered = {}
+    for itemId, data in pairs(Items) do
+        ordered[#ordered + 1] = {
+            itemId = itemId,
+            data = data,
+            sortIndex = data.layoutIndex or math.huge,
+        }
+    end
+
+    table.sort(ordered, function(a, b)
+        if a.sortIndex == b.sortIndex then
+            return tostring(a.itemId) < tostring(b.itemId)
+        end
+        return a.sortIndex < b.sortIndex
+    end)
+
+    for index, entry in ipairs(ordered) do
+        entry.data.layoutIndex = index
+    end
 end
 
 function BCDM:AdjustItemList(itemId, adjustingHow)
@@ -342,5 +371,6 @@ function BCDM:AdjustItemList(itemId, adjustingHow)
         Items[itemId] = nil
     end
 
+    BCDM:NormalizeItemLayoutIndices()
     BCDM:UpdateCustomItemBar()
 end

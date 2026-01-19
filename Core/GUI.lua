@@ -2396,3 +2396,13 @@ function BCDM:CreateGUI()
     ContainerTabGroup:SelectTab("General")
     Container:AddChild(ContainerTabGroup)
 end
+
+function BCDMG:OpenBCDMGUI()
+    BCDM:CreateGUI()
+end
+
+function BCDMG:CloseBCDMGUI()
+    if isGUIOpen and Container then
+        Container:Hide()
+    end
+end
