@@ -641,17 +641,22 @@ function BCDM:CreateSecondaryPowerBar()
     SetHooks()
 
     local secondaryPowerBar = CreateFrame("Frame", "BCDM_SecondaryPowerBar", UIParent, "BackdropTemplate")
+    local borderSize = BCDM.db.profile.CooldownManager.General.BorderSize
 
     secondaryPowerBar:SetBackdrop(BCDM.BACKDROP)
+    if borderSize > 0 then
+        secondaryPowerBar:SetBackdropBorderColor(0, 0, 0, 1)
+    else
+        secondaryPowerBar:SetBackdropBorderColor(0, 0, 0, 0)
+    end
     secondaryPowerBar:SetBackdropColor(secondaryPowerBarDB.BackgroundColour[1], secondaryPowerBarDB.BackgroundColour[2], secondaryPowerBarDB.BackgroundColour[3], secondaryPowerBarDB.BackgroundColour[4])
-    secondaryPowerBar:SetBackdropBorderColor(0, 0, 0, 1)
     secondaryPowerBar:SetSize(secondaryPowerBarDB.Width, secondaryPowerBarDB.Height)
     secondaryPowerBar:SetPoint(secondaryPowerBarDB.Layout[1], _G[secondaryPowerBarDB.Layout[2]], secondaryPowerBarDB.Layout[3], secondaryPowerBarDB.Layout[4], secondaryPowerBarDB.Layout[5])
     secondaryPowerBar:SetFrameStrata("LOW")
 
     secondaryPowerBar.Status = CreateFrame("StatusBar", nil, secondaryPowerBar)
-    secondaryPowerBar.Status:SetPoint("TOPLEFT", secondaryPowerBar, "TOPLEFT", 1, -1)
-    secondaryPowerBar.Status:SetPoint("BOTTOMRIGHT", secondaryPowerBar, "BOTTOMRIGHT", -1, 1)
+    secondaryPowerBar.Status:SetPoint("TOPLEFT", secondaryPowerBar, "TOPLEFT", borderSize, -borderSize)
+    secondaryPowerBar.Status:SetPoint("BOTTOMRIGHT", secondaryPowerBar, "BOTTOMRIGHT", -borderSize, borderSize)
     secondaryPowerBar.Status:SetStatusBarTexture(BCDM.Media.Foreground)
 
     secondaryPowerBar.TickFrame = CreateFrame("Frame", nil, secondaryPowerBar)
@@ -722,20 +727,25 @@ function BCDM:UpdateSecondaryPowerBar()
     local generalDB = cooldownManagerDB.General
     local secondaryPowerBarDB = BCDM.db.profile.SecondaryPowerBar
     local requiresSecondaryBar = DetectSecondaryPower()
+    local borderSize = BCDM.db.profile.CooldownManager.General.BorderSize
 
     if not requiresSecondaryBar then if BCDM.SecondaryPowerBar then BCDM.SecondaryPowerBar:Hide() end return end
 
     local secondaryPowerBar = BCDM.SecondaryPowerBar
     if not secondaryPowerBar then return end
     secondaryPowerBar:SetBackdrop(BCDM.BACKDROP)
+    if borderSize > 0 then
+        secondaryPowerBar:SetBackdropBorderColor(0, 0, 0, 1)
+    else
+        secondaryPowerBar:SetBackdropBorderColor(0, 0, 0, 0)
+    end
     secondaryPowerBar:SetBackdropColor(secondaryPowerBarDB.BackgroundColour[1], secondaryPowerBarDB.BackgroundColour[2], secondaryPowerBarDB.BackgroundColour[3], secondaryPowerBarDB.BackgroundColour[4])
-    secondaryPowerBar:SetBackdropBorderColor(0, 0, 0, 1)
     secondaryPowerBar:SetSize(secondaryPowerBarDB.Width, secondaryPowerBarDB.Height)
 
     secondaryPowerBar:ClearAllPoints()
     secondaryPowerBar:SetPoint(secondaryPowerBarDB.Layout[1], _G[secondaryPowerBarDB.Layout[2]], secondaryPowerBarDB.Layout[3], secondaryPowerBarDB.Layout[4], secondaryPowerBarDB.Layout[5])
-    secondaryPowerBar.Status:SetPoint("TOPLEFT", secondaryPowerBar, "TOPLEFT", 1, -1)
-    secondaryPowerBar.Status:SetPoint("BOTTOMRIGHT", secondaryPowerBar, "BOTTOMRIGHT", -1, 1)
+    secondaryPowerBar.Status:SetPoint("TOPLEFT", secondaryPowerBar, "TOPLEFT", borderSize, -borderSize)
+    secondaryPowerBar.Status:SetPoint("BOTTOMRIGHT", secondaryPowerBar, "BOTTOMRIGHT", -borderSize, borderSize)
     secondaryPowerBar.Status:SetStatusBarTexture(BCDM.Media.Foreground)
     secondaryPowerBar.Status:SetStatusBarColor(GetPowerBarColor())
     secondaryPowerBar.Status:SetMinMaxValues(0, UnitPowerMax("player"))

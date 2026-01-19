@@ -61,7 +61,7 @@ local function UpdatePowerValues()
     local powerCurrent = UnitPower("player")
     local powerType = UnitPowerType("player")
     local PowerBar = BCDM.PowerBar
-    if PowerBar and PowerBar.Status then
+    if PowerBar and PowerBar.Status and powerType then
         if powerType == 0 then
             PowerBar.Text:SetText(string.format("%.0f%%", UnitPowerPercent("player", 0, false, CurveConstants.ScaleTo100)))
         else
@@ -96,10 +96,15 @@ function BCDM:CreatePowerBar()
     SetHooks()
 
     local PowerBar = CreateFrame("Frame", "BCDM_PowerBar", UIParent, "BackdropTemplate")
+    local borderSize = BCDM.db.profile.CooldownManager.General.BorderSize
 
     PowerBar:SetBackdrop(BCDM.BACKDROP)
+    if borderSize > 0 then
+        PowerBar:SetBackdropBorderColor(0, 0, 0, 1)
+    else
+        PowerBar:SetBackdropBorderColor(0, 0, 0, 0)
+    end
     PowerBar:SetBackdropColor(PowerBarDB.BackgroundColour[1], PowerBarDB.BackgroundColour[2], PowerBarDB.BackgroundColour[3], PowerBarDB.BackgroundColour[4])
-    PowerBar:SetBackdropBorderColor(0, 0, 0, 1)
     local hasSecondary = DetectSecondaryPower()
     PowerBar:SetSize(PowerBarDB.Width, hasSecondary and PowerBarDB.Height or PowerBarDB.HeightWithoutSecondary)
     PowerBar:SetPoint(PowerBarDB.Layout[1], _G[PowerBarDB.Layout[2]], PowerBarDB.Layout[3], PowerBarDB.Layout[4], PowerBarDB.Layout[5])
@@ -113,8 +118,8 @@ function BCDM:CreatePowerBar()
     end
 
     PowerBar.Status = CreateFrame("StatusBar", nil, PowerBar)
-    PowerBar.Status:SetPoint("TOPLEFT", PowerBar, "TOPLEFT", 1, -1)
-    PowerBar.Status:SetPoint("BOTTOMRIGHT", PowerBar, "BOTTOMRIGHT", -1, 1)
+    PowerBar.Status:SetPoint("TOPLEFT", PowerBar, "TOPLEFT", borderSize, -borderSize)
+    PowerBar.Status:SetPoint("BOTTOMRIGHT", PowerBar, "BOTTOMRIGHT", -borderSize, borderSize)
     PowerBar.Status:SetStatusBarTexture(BCDM.Media.Foreground)
     PowerBar.Status:SetStatusBarColor(FetchPowerBarColour())
     PowerBar.Status:SetMinMaxValues(0, UnitPowerMax("player"))
@@ -155,8 +160,17 @@ function BCDM:UpdatePowerBar()
     local GeneralDB = BCDM.db.profile.General
     local PowerBarDB = BCDM.db.profile.PowerBar
     local PowerBar = BCDM.PowerBar
+    local borderSize = BCDM.db.profile.CooldownManager.General.BorderSize
     if PowerBar then
         if PowerBarDB.Enabled then
+            PowerBar:SetBackdrop(BCDM.BACKDROP)
+            if borderSize > 0 then
+                PowerBar:SetBackdropBorderColor(0, 0, 0, 1)
+            else
+                PowerBar:SetBackdropBorderColor(0, 0, 0, 0)
+            end
+            PowerBar.Status:SetPoint("TOPLEFT", PowerBar, "TOPLEFT", borderSize, -borderSize)
+            PowerBar.Status:SetPoint("BOTTOMRIGHT", PowerBar, "BOTTOMRIGHT", -borderSize, borderSize)
             PowerBar:ClearAllPoints()
             PowerBar:SetPoint(PowerBarDB.Layout[1], _G[PowerBarDB.Layout[2]], PowerBarDB.Layout[3], PowerBarDB.Layout[4], PowerBarDB.Layout[5])
             if PowerBarDB.MatchWidthOfAnchor then

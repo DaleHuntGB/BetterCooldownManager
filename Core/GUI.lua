@@ -586,7 +586,7 @@ local function CreateGlobalSettings(parentContainer)
     borderSizeSlider:SetLabel("Border Size")
     borderSizeSlider:SetValue(CooldownManagerDB.General.BorderSize)
     borderSizeSlider:SetSliderValues(0, 3, 1)
-    borderSizeSlider:SetCallback("OnValueChanged", function(_, _, value) CooldownManagerDB.General.BorderSize = value BCDM:UpdateCooldownViewers() end)
+    borderSizeSlider:SetCallback("OnValueChanged", function(_, _, value) CooldownManagerDB.General.BorderSize = value BCDM:UpdateBCDM() end)
     borderSizeSlider:SetRelativeWidth(0.5)
     globalSettingsContainer:AddChild(borderSizeSlider)
 

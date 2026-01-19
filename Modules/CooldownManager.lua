@@ -372,4 +372,5 @@ function BCDM:UpdateCooldownViewers()
     BCDM:UpdateCustomCooldownViewer()
     BCDM:UpdateCustomItemBar()
     BCDM:UpdateCastBar()
+    BCDM:UpdateTrinketBar()
 end
