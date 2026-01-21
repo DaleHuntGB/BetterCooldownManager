@@ -267,7 +267,13 @@ local function StyleChargeCount()
     end
 end
 
+local centerBuffsUpdateThrottle = 0.05
+local nextcenterBuffsUpdate = 0
+
 local function CenterBuffs()
+    local currentTime = GetTime()
+    if currentTime < nextcenterBuffsUpdate then return end
+    nextcenterBuffsUpdate = currentTime + centerBuffsUpdateThrottle
     local visibleBuffIcons = {}
 
     for _, childFrame in ipairs({ BuffIconCooldownViewer:GetChildren() }) do

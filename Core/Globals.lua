@@ -155,6 +155,7 @@ function BCDM:UpdateBCDM()
     BCDM:UpdateCustomCooldownViewer()
     BCDM:UpdateAdditionalCustomCooldownViewer()
     BCDM:UpdateCustomItemBar()
+    BCDM:UpdateCustomItemsSpellsBar()
     BCDM:UpdateTrinketBar()
 end
 
