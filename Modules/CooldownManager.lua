@@ -263,6 +263,11 @@ local function CenterBuffs()
             table.insert(visibleBuffIcons, childFrame)
         end
     end
+
+    table.sort(visibleBuffIcons, function(a, b)
+        return (a.layoutIndex or 0) < (b.layoutIndex or 0)
+    end)
+    
     local visibleCount = #visibleBuffIcons
 
     if visibleCount == 0 then return 0 end
