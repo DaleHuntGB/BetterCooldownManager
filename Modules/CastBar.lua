@@ -141,12 +141,17 @@ function BCDM:CreateCastBar()
     SetHooks()
 
     local CastBar = CreateFrame("Frame", "BCDM_CastBar", UIParent, "BackdropTemplate")
-    local borderSize = BCDM.db.profile.CooldownManager.General.BorderSize
+    local borderSize = BCDM.db.profile.CastBar.BorderSize
 
     CastBar.Pips = {}
 
 
-    CastBar:SetBackdrop(BCDM.BACKDROP)
+    CastBar:SetBackdrop({ 
+        bgFile = BCDM.Media.Background,
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        edgeSize = borderSize,
+        insets = { left = 0, right = 0, top = 0, bottom = 0 }
+    })
     if borderSize > 0 then
         CastBar:SetBackdropBorderColor(0, 0, 0, 1)
     else
@@ -248,7 +253,7 @@ function BCDM:UpdateCastBar()
     local GeneralDB = BCDM.db.profile.General
     local CastBarDB = BCDM.db.profile.CastBar
     local CastBar = BCDM.CastBar
-    local borderSize = BCDM.db.profile.CooldownManager.General.BorderSize
+    local borderSize = BCDM.db.profile.CastBar.BorderSize
     if not CastBar then return end
 
     BCDM.CastBar:SetBackdropColor(CastBarDB.BackgroundColour[1], CastBarDB.BackgroundColour[2], CastBarDB.BackgroundColour[3], CastBarDB.BackgroundColour[4])
@@ -256,7 +261,12 @@ function BCDM:UpdateCastBar()
     BCDM.CastBar:ClearAllPoints()
     BCDM.CastBar:SetPoint(CastBarDB.Layout[1], _G[CastBarDB.Layout[2]], CastBarDB.Layout[3], CastBarDB.Layout[4], CastBarDB.Layout[5])
     BCDM.CastBar:SetFrameStrata(CastBarDB.FrameStrata or "LOW")
-    CastBar:SetBackdrop(BCDM.BACKDROP)
+    CastBar:SetBackdrop({ 
+        bgFile = BCDM.Media.Background,
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        edgeSize = borderSize,
+        insets = { left = 0, right = 0, top = 0, bottom = 0 }
+    })
     if borderSize > 0 then
         CastBar:SetBackdropBorderColor(0, 0, 0, 1)
     else
@@ -348,7 +358,7 @@ end
 
 function BCDM:CreateTestCastBar()
     local CastBarDB = BCDM.db.profile.CastBar
-    local borderSize = BCDM.db.profile.CooldownManager.General.BorderSize
+    local borderSize = BCDM.db.profile.CastBar.BorderSize
     if not BCDM.CastBar then return end
     if BCDM.CAST_BAR_TEST_MODE then
         BCDM.CastBar:SetFrameStrata(CastBarDB.FrameStrata or "LOW")

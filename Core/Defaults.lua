@@ -442,6 +442,7 @@ local Defaults = {
             FrameStrata = "LOW",
             BackgroundColour = {34/255, 34/255, 34/255, 1},
             ForegroundColour = {34/255, 34/255, 34/255, 1},
+            BorderSize = 1,
             Layout = {"TOP", "UtilityCooldownViewer", "BOTTOM", 0, -1},
             Text = {
                 SpellName = {
