@@ -481,21 +481,6 @@ local function CreateKeybindSettings(containerParent)
     yOffsetSlider:SetRelativeWidth(0.5)
     keybindContainer:AddChild(yOffsetSlider)
 
-    local fontNameLabel = AG:Create("Label")
-    fontNameLabel:SetText("|cFFFFD100Font: " .. (GeneralDB.Fonts.Font or "Friz Quadrata TT") .. "|r")
-    fontNameLabel:SetFullWidth(true)
-    keybindContainer:AddChild(fontNameLabel)
-
-    local fontFlagLabel = AG:Create("Label")
-    fontFlagLabel:SetText("|cFFFFD100Font Flag: " .. (GeneralDB.Fonts.FontFlag or "OUTLINE") .. "|r")
-    fontFlagLabel:SetFullWidth(true)
-    keybindContainer:AddChild(fontFlagLabel)
-
-    local infoLabel = AG:Create("Label")
-    infoLabel:SetText("|cFF808080The Keybind text uses the same Font and Font Flag configured in Font Settings above.|r")
-    infoLabel:SetFullWidth(true)
-    keybindContainer:AddChild(infoLabel)
-
     function RefreshKeybindSettings()
         local enabled = KeybindDB.Enabled
         anchorFromDropdown:SetDisabled(not enabled)

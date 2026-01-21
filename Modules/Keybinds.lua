@@ -416,14 +416,8 @@ local function ApplyKeybindTextSettings(icon)
     keybindText:SetPoint(settings.anchor, icon, settings.anchor, settings.offsetX, settings.offsetY)
     local fontName = GetKeybindFontName()
     local fontPath = GetFontPath(fontName)
-    local fontFlags = BCDM.db.profile.CooldownManager.General.Keybinds.FontFlags or {}
-    local fontFlag = ""
-    for n, v in pairs(fontFlags) do
-        if v == true then
-            fontFlag = fontFlag .. n .. ","
-        end
-    end
-    keybindText:SetFont(fontPath, settings.fontSize, fontFlag or "")
+    local fontFlag = BCDM.db.profile.General.Fonts.FontFlag or ""
+    keybindText:SetFont(fontPath, settings.fontSize, fontFlag)
 end
 
 local function ExtractSpellIDFromIcon(icon)
