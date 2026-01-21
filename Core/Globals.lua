@@ -128,6 +128,7 @@ end
 function BCDM:Init()
     SetupSlashCommands()
     BCDM:ResolveLSM()
+    if C_AddOns.IsAddOnLoaded("Blizzard_CooldownViewer") then C_AddOns.LoadAddOn("Blizzard_CooldownViewer") end
 end
 
 function BCDM:CopyTable(defaultTable)

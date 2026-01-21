@@ -75,10 +75,13 @@ local function CreateCustomIcon(itemId)
         customIcon:SetBackdropBorderColor(0, 0, 0, 1)
     end
     customIcon:SetSize(CustomDB.IconWidth, CustomDB.IconHeight)
-    customIcon:SetPoint(CustomDB.Layout[1], _G[CustomDB.Layout[2]], CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
+    local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]]
+    customIcon:SetPoint(CustomDB.Layout[1], anchorParent, CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
     customIcon:RegisterEvent("SPELL_UPDATE_COOLDOWN")
     customIcon:RegisterEvent("PLAYER_ENTERING_WORLD")
     customIcon:RegisterEvent("ITEM_COUNT_CHANGED")
+    customIcon:EnableMouse(false)
+    customIcon:SetFrameStrata(CustomDB.FrameStrata or "LOW")
 
     local HighLevelContainer = CreateFrame("Frame", nil, customIcon)
     HighLevelContainer:SetAllPoints(customIcon)
@@ -140,23 +143,30 @@ local function CreateCustomIcons(iconTable)
     local isWarlock = select(2, UnitClass("player")) == "WARLOCK"
     local pactOfGluttony = C_SpellBook.IsSpellKnown(386689)
 
-    local healthstoneToSkip = nil
+    local healthstoneBaseId = 5512
+    local healthstoneGluttonyId = 224464
+    local activeHealthstoneId = nil
     if isWarlock then
-        if pactOfGluttony then
-            healthstoneToSkip = 5512
-        else
-            healthstoneToSkip = 224464
-        end
+        activeHealthstoneId = pactOfGluttony and healthstoneGluttonyId or healthstoneBaseId
     end
 
     wipe(iconTable)
 
     if Items then
         local items = {}
+        local healthstoneIndex = nil
         for itemId, data in pairs(Items) do
-            if data.isActive and itemId ~= healthstoneToSkip then
-                table.insert(items, {id = itemId, index = data.layoutIndex})
+            local layoutIndex = data.layoutIndex or math.huge
+            if isWarlock and (itemId == healthstoneBaseId or itemId == healthstoneGluttonyId) then
+                if data.isActive then
+                    healthstoneIndex = math.min(healthstoneIndex or math.huge, layoutIndex)
+                end
+            elseif data.isActive then
+                table.insert(items, {id = itemId, index = layoutIndex})
             end
+        end
+        if isWarlock and healthstoneIndex and activeHealthstoneId then
+            table.insert(items, {id = activeHealthstoneId, index = healthstoneIndex})
         end
 
         table.sort(items, function(a, b) return a.index < b.index end)
@@ -193,11 +203,12 @@ local function LayoutCustomItemBar()
     if not BCDM.CustomItemBarContainer then
         BCDM.CustomItemBarContainer = CreateFrame("Frame", "BCDM_CustomItemBar", UIParent, "BackdropTemplate")
         BCDM.CustomItemBarContainer:SetSize(1, 1)
-        BCDM.CustomItemBarContainer:SetFrameStrata("LOW")
     end
 
     BCDM.CustomItemBarContainer:ClearAllPoints()
-    BCDM.CustomItemBarContainer:SetPoint(containerAnchorFrom, _G[CustomDB.Layout[2]], CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
+    BCDM.CustomItemBarContainer:SetFrameStrata(CustomDB.FrameStrata or "LOW")
+    local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]]
+    BCDM.CustomItemBarContainer:SetPoint(containerAnchorFrom, anchorParent, CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
 
     for _, child in ipairs({BCDM.CustomItemBarContainer:GetChildren()}) do child:UnregisterAllEvents() child:Hide() child:SetParent(nil) end
 
@@ -291,7 +302,8 @@ function BCDM:UpdateCustomItemBar()
     local CustomDB = CooldownManagerDB.CooldownManager.Item
     if BCDM.CustomItemBarContainer then
         BCDM.CustomItemBarContainer:ClearAllPoints()
-        BCDM.CustomItemBarContainer:SetPoint(CustomDB.Layout[1], _G[CustomDB.Layout[2]], CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
+        local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]]
+        BCDM.CustomItemBarContainer:SetPoint(CustomDB.Layout[1], anchorParent, CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
     end
     LayoutCustomItemBar()
 end

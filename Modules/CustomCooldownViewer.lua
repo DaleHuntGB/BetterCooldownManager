@@ -66,10 +66,12 @@ local function CreateCustomIcon(spellId)
         customIcon:SetBackdropBorderColor(0, 0, 0, 1)
     end
     customIcon:SetSize(CustomDB.IconWidth, CustomDB.IconHeight)
-    customIcon:SetPoint(CustomDB.Layout[1], _G[CustomDB.Layout[2]], CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
+    local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]]
+    customIcon:SetPoint(CustomDB.Layout[1], anchorParent, CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
     customIcon:RegisterEvent("SPELL_UPDATE_COOLDOWN")
     customIcon:RegisterEvent("PLAYER_ENTERING_WORLD")
     customIcon:RegisterEvent("SPELL_UPDATE_CHARGES")
+    customIcon:EnableMouse(false)
 
     local HighLevelContainer = CreateFrame("Frame", nil, customIcon)
     HighLevelContainer:SetAllPoints(customIcon)
@@ -170,11 +172,12 @@ local function LayoutCustomCooldownViewer()
     if not BCDM.CustomCooldownViewerContainer then
         BCDM.CustomCooldownViewerContainer = CreateFrame("Frame", "BCDM_CustomCooldownViewer", UIParent, "BackdropTemplate")
         BCDM.CustomCooldownViewerContainer:SetSize(1, 1)
-        BCDM.CustomCooldownViewerContainer:SetFrameStrata("LOW")
     end
 
     BCDM.CustomCooldownViewerContainer:ClearAllPoints()
-    BCDM.CustomCooldownViewerContainer:SetPoint(containerAnchorFrom, _G[CustomDB.Layout[2]], CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
+    BCDM.CustomCooldownViewerContainer:SetFrameStrata(CustomDB.FrameStrata or "LOW")
+    local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]]
+    BCDM.CustomCooldownViewerContainer:SetPoint(containerAnchorFrom, anchorParent, CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
 
     for _, child in ipairs({BCDM.CustomCooldownViewerContainer:GetChildren()}) do child:UnregisterAllEvents() child:Hide() child:SetParent(nil) end
 
@@ -268,7 +271,8 @@ function BCDM:UpdateCustomCooldownViewer()
     local CustomDB = CooldownManagerDB.CooldownManager.Custom
     if BCDM.CustomCooldownViewerContainer then
         BCDM.CustomCooldownViewerContainer:ClearAllPoints()
-        BCDM.CustomCooldownViewerContainer:SetPoint(CustomDB.Layout[1], _G[CustomDB.Layout[2]], CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
+        local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]]
+        BCDM.CustomCooldownViewerContainer:SetPoint(CustomDB.Layout[1], anchorParent, CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
     end
     LayoutCustomCooldownViewer()
 end

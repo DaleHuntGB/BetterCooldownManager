@@ -1,6 +1,6 @@
 local _, BCDM = ...
 
-BCDM.DEFENSIVE_SPELLS = {
+local DEFENSIVE_SPELLS = {
     -- Monk
     ["MONK"] = {
         ["BREWMASTER"] = {
@@ -236,11 +236,38 @@ BCDM.DEFENSIVE_SPELLS = {
     }
 }
 
-BCDM.ITEMS = {
+local ITEMS = {
     [241304] = { isActive = true, layoutIndex = 1 }, -- Silvermoon Healing Potion
     [241308] = { isActive = true, layoutIndex = 2 }, -- Light's Potential
     [5512]   = { isActive = true, layoutIndex = 3 }, -- Healthstone
-    [224464] = { isActive = true, layoutIndex = 4 }, -- Demonic Healthstone
+}
+
+local RACIALS = {
+    [59752]  = { isActive = true, layoutIndex = 1 },  -- Will to Survive
+    [20594]  = { isActive = true, layoutIndex = 2 },  -- Stoneform
+    [58984]  = { isActive = true, layoutIndex = 3 },  -- Shadowmeld
+    [20589]  = { isActive = true, layoutIndex = 4 },  -- Escape Artist
+    [28880]  = { isActive = true, layoutIndex = 5 },  -- Gift of the Naaru
+    [68992]  = { isActive = true, layoutIndex = 6 },  -- Darkflight
+    [20572]  = { isActive = true, layoutIndex = 7 },  -- Blood Fury
+    [7744]   = { isActive = true, layoutIndex = 8 },  -- Will of the Forsaken
+    [20549]  = { isActive = true, layoutIndex = 9 }, -- War Stomp
+    [26297]  = { isActive = true, layoutIndex = 10 }, -- Berserking
+    [202719] = { isActive = true, layoutIndex = 11 }, -- Arcane Torrent
+    [69070]  = { isActive = true, layoutIndex = 12 }, -- Rocket Jump
+    [69041]  = { isActive = true, layoutIndex = 13 }, -- Rocket Barrage
+    [256948] = { isActive = true, layoutIndex = 14 }, -- Spatial Rift
+    [255647] = { isActive = true, layoutIndex = 15 }, -- Light's Judgment
+    [287712] = { isActive = true, layoutIndex = 16 }, -- Haymaker
+    [265221] = { isActive = true, layoutIndex = 17 }, -- Fireblood
+    [291944] = { isActive = true, layoutIndex = 18 }, -- Regeneratin'
+    [312411] = { isActive = true, layoutIndex = 19 }, -- Bag of Tricks
+    [312924] = { isActive = true, layoutIndex = 20 }, -- Hyper Organic Light Originator
+    [107079] = { isActive = true, layoutIndex = 21 }, -- Quaking Palm
+    [368970] = { isActive = true, layoutIndex = 22 }, -- Tail Swipe
+    [357214] = { isActive = true, layoutIndex = 23 }, -- Wing Buffet
+    [436344] = { isActive = true, layoutIndex = 24 }, -- Azerite Surge
+    [1237885] = { isActive = true, layoutIndex = 25 }, -- Thorn Bloom
 }
 
 function BCDM:AddRecommendedItems()
@@ -248,15 +275,56 @@ function BCDM:AddRecommendedItems()
     if not CooldownManagerDB then return end
 
     local CustomDB = CooldownManagerDB.CooldownManager.Item
-    if not BCDM.ITEMS or type(BCDM.ITEMS) ~= "table" then return end
+    if not ITEMS or type(ITEMS) ~= "table" then return end
     if not CustomDB then CustomDB = {} CooldownManagerDB.CooldownManager.Item = CustomDB end
     if not CustomDB.Items then CustomDB.Items = {} end
 
-    for itemId, data in pairs(BCDM.ITEMS) do
+    for itemId, data in pairs(ITEMS) do
         if itemId and data and not CustomDB.Items[itemId] then
             CustomDB.Items[itemId] = data
         end
     end
+end
+
+function BCDM:FetchData(options)
+    options = options or {}
+    local includeSpells = options.includeSpells
+    local includeItems = options.includeItems
+    local dataList = {}
+
+    local _, playerClass = UnitClass("player")
+    local playerSpecialization = select(2, GetSpecializationInfo(GetSpecialization())):gsub(" ", ""):upper()
+
+    if includeSpells and DEFENSIVE_SPELLS[playerClass] and DEFENSIVE_SPELLS[playerClass][playerSpecialization] then
+        for spellId, data in pairs(DEFENSIVE_SPELLS[playerClass][playerSpecialization]) do
+            dataList[#dataList + 1] = { id = spellId, data = data, entryType = "spell", groupOrder = 1 }
+        end
+        for racialId, data in pairs(RACIALS) do
+            dataList[#dataList + 1] = { id = racialId, data = data, entryType = "spell", groupOrder = 2 }
+        end
+    end
+
+    if includeItems and ITEMS then
+        for itemId, data in pairs(ITEMS) do
+            dataList[#dataList + 1] = { id = itemId, data = data, entryType = "item", groupOrder = 3 }
+        end
+    end
+
+    table.sort(dataList, function(a, b)
+        local aOrder = a.groupOrder or 99
+        local bOrder = b.groupOrder or 99
+        if aOrder ~= bOrder then
+            return aOrder < bOrder
+        end
+        local aIndex = a.data and a.data.layoutIndex or math.huge
+        local bIndex = b.data and b.data.layoutIndex or math.huge
+        if aIndex == bIndex then
+            return a.id < b.id
+        end
+        return aIndex < bIndex
+    end)
+
+    return dataList
 end
 
 function BCDM:AddRecommendedSpells(customDB)
@@ -264,8 +332,8 @@ function BCDM:AddRecommendedSpells(customDB)
     local CustomDB = CooldownManagerDB.CooldownManager[customDB]
     local _, playerClass = UnitClass("player")
     local playerSpecialization = select(2, GetSpecializationInfo(GetSpecialization())):gsub(" ", ""):upper()
-    if BCDM.DEFENSIVE_SPELLS[playerClass] and BCDM.DEFENSIVE_SPELLS[playerClass][playerSpecialization] then
-        for spellId, data in pairs(BCDM.DEFENSIVE_SPELLS[playerClass][playerSpecialization]) do
+    if DEFENSIVE_SPELLS[playerClass] and DEFENSIVE_SPELLS[playerClass][playerSpecialization] then
+        for spellId, data in pairs(DEFENSIVE_SPELLS[playerClass][playerSpecialization]) do
             if not CustomDB.Spells[playerClass] then CustomDB.Spells[playerClass] = {} end
             if not CustomDB.Spells[playerClass][playerSpecialization] then CustomDB.Spells[playerClass][playerSpecialization] = {} end
             if not CustomDB.Spells[playerClass][playerSpecialization][spellId] then
@@ -311,5 +379,3 @@ function BCDM:FetchEquippedTrinkets()
 
     BCDM:UpdateCooldownViewer("Trinket")
 end
-
-

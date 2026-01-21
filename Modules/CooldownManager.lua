@@ -173,11 +173,13 @@ local function Position()
         local viewerFrame = _G[viewerName]
         if viewerFrame and (viewerName == "UtilityCooldownViewer" or viewerName == "BuffIconCooldownViewer") then
             viewerFrame:ClearAllPoints()
-            viewerFrame:SetPoint(viewerSettings.Layout[1], _G[viewerSettings.Layout[2]], viewerSettings.Layout[3], viewerSettings.Layout[4], viewerSettings.Layout[5])
+            local anchorParent = viewerSettings.Layout[2] == "NONE" and UIParent or _G[viewerSettings.Layout[2]]
+            viewerFrame:SetPoint(viewerSettings.Layout[1], anchorParent, viewerSettings.Layout[3], viewerSettings.Layout[4], viewerSettings.Layout[5])
             viewerFrame:SetFrameStrata("LOW")
         elseif viewerFrame then
             viewerFrame:ClearAllPoints()
-            viewerFrame:SetPoint(viewerSettings.Layout[1], _G[viewerSettings.Layout[2]], viewerSettings.Layout[3], viewerSettings.Layout[4], viewerSettings.Layout[5])
+            local anchorParent = viewerSettings.Layout[2] == "NONE" and UIParent or _G[viewerSettings.Layout[2]]
+            viewerFrame:SetPoint(viewerSettings.Layout[1], anchorParent, viewerSettings.Layout[3], viewerSettings.Layout[4], viewerSettings.Layout[5])
             viewerFrame:SetFrameStrata("LOW")
         end
         NudgeViewer(viewerName, -0.1, 0)
@@ -222,7 +224,7 @@ end
 local function SetHooks()
     hooksecurefunc(EditModeManagerFrame, "EnterEditMode", function() if InCombatLockdown() then return end Position() end)
     hooksecurefunc(EditModeManagerFrame, "ExitEditMode", function() if InCombatLockdown() then return end Position() end)
-    hooksecurefunc(CooldownViewerSettings, "RefreshLayout", function() if InCombatLockdown() then return end BCDM:UpdateCooldownViewer("Buffs") BCDM:UpdateBCDM() end)
+    hooksecurefunc(CooldownViewerSettings, "RefreshLayout", function() if InCombatLockdown() then return end BCDM:UpdateBCDM() end)
 end
 
 local function StyleChargeCount()
@@ -329,6 +331,7 @@ function BCDM:UpdateCooldownViewer(viewerType)
     if viewerType == "AdditionalCustom" then BCDM:UpdateAdditionalCustomCooldownViewer() return end
     if viewerType == "Item" then BCDM:UpdateCustomItemBar() return end
     if viewerType == "Trinket" then BCDM:UpdateTrinketBar() return end
+    if viewerType == "ItemSpell" then BCDM:UpdateCustomItemsSpellsBar() return end
     if viewerType == "Buffs" then SetupCenterBuffs() end
     for _, childFrame in ipairs({cooldownViewerFrame:GetChildren()}) do
         if childFrame then
@@ -372,6 +375,9 @@ function BCDM:UpdateCooldownViewers()
     BCDM:UpdateCustomCooldownViewer()
     BCDM:UpdateAdditionalCustomCooldownViewer()
     BCDM:UpdateCustomItemBar()
-    BCDM:UpdateCastBar()
+    BCDM:UpdateCustomItemsSpellsBar()
     BCDM:UpdateTrinketBar()
+    BCDM:UpdatePowerBar()
+    BCDM:UpdateSecondaryPowerBar()
+    BCDM:UpdateCastBar()
 end

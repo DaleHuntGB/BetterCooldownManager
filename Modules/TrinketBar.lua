@@ -73,9 +73,12 @@ local function CreateCustomIcon(itemId)
         customIcon:SetBackdropBorderColor(0, 0, 0, 1)
     end
     customIcon:SetSize(CustomDB.IconWidth, CustomDB.IconHeight)
-    customIcon:SetPoint(CustomDB.Layout[1], _G[CustomDB.Layout[2]], CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
+    local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]]
+    customIcon:SetPoint(CustomDB.Layout[1], anchorParent, CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
     customIcon:RegisterEvent("SPELL_UPDATE_COOLDOWN")
     customIcon:RegisterEvent("PLAYER_ENTERING_WORLD")
+    customIcon:EnableMouse(false)
+    customIcon:SetFrameStrata(CustomDB.FrameStrata or "LOW")
 
     local HighLevelContainer = CreateFrame("Frame", nil, customIcon)
     HighLevelContainer:SetAllPoints(customIcon)
@@ -156,11 +159,12 @@ local function LayoutTrinketBar()
     if not BCDM.TrinketBarContainer then
         BCDM.TrinketBarContainer = CreateFrame("Frame", "BCDM_TrinketBar", UIParent, "BackdropTemplate")
         BCDM.TrinketBarContainer:SetSize(1, 1)
-        BCDM.TrinketBarContainer:SetFrameStrata("LOW")
     end
 
     BCDM.TrinketBarContainer:ClearAllPoints()
-    BCDM.TrinketBarContainer:SetPoint(containerAnchorFrom, _G[CustomDB.Layout[2]], CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
+    BCDM.TrinketBarContainer:SetFrameStrata(CustomDB.FrameStrata or "LOW")
+    local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]]
+    BCDM.TrinketBarContainer:SetPoint(containerAnchorFrom, anchorParent, CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
 
     for _, child in ipairs({BCDM.TrinketBarContainer:GetChildren()}) do child:UnregisterAllEvents() child:Hide() child:SetParent(nil) end
 
@@ -255,7 +259,8 @@ function BCDM:UpdateTrinketBar()
     local isEnabled = CustomDB.Enabled
     if BCDM.TrinketBarContainer and isEnabled then
         BCDM.TrinketBarContainer:ClearAllPoints()
-        BCDM.TrinketBarContainer:SetPoint(CustomDB.Layout[1], _G[CustomDB.Layout[2]], CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
+        local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]]
+        BCDM.TrinketBarContainer:SetPoint(CustomDB.Layout[1], anchorParent, CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
         LayoutTrinketBar()
     else
         if BCDM.TrinketBarContainer then

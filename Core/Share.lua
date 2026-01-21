@@ -71,7 +71,7 @@ function BCDMG:ExportBCDM(profileKey)
 end
 
 function BCDMG:ImportBCDM(importString, profileKey)
-    local DecodedInfo = Compress:DecodeForPrint(importString:sub(6))
+    local DecodedInfo = Compress:DecodeForPrint(importString:sub(7))
     local DecompressedInfo = Compress:DecompressDeflate(DecodedInfo)
     local success, profileData = Serialize:Deserialize(DecompressedInfo)
 

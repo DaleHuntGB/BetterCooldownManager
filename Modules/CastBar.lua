@@ -146,7 +146,7 @@ function BCDM:CreateCastBar()
     CastBar:SetBackdropColor(CastBarDB.BackgroundColour[1], CastBarDB.BackgroundColour[2], CastBarDB.BackgroundColour[3], CastBarDB.BackgroundColour[4])
     CastBar:SetSize(CastBarDB.Width, CastBarDB.Height)
     CastBar:SetPoint(CastBarDB.Layout[1], _G[CastBarDB.Layout[2]], CastBarDB.Layout[3], CastBarDB.Layout[4], CastBarDB.Layout[5])
-    CastBar:SetFrameStrata("LOW")
+    CastBar:SetFrameStrata(CastBarDB.FrameStrata or "LOW")
 
     if CastBarDB.MatchWidthOfAnchor then
         local anchorFrame = _G[CastBarDB.Layout[2]]
@@ -246,6 +246,7 @@ function BCDM:UpdateCastBar()
     BCDM.CastBar:SetSize(CastBarDB.Width, CastBarDB.Height)
     BCDM.CastBar:ClearAllPoints()
     BCDM.CastBar:SetPoint(CastBarDB.Layout[1], _G[CastBarDB.Layout[2]], CastBarDB.Layout[3], CastBarDB.Layout[4], CastBarDB.Layout[5])
+    BCDM.CastBar:SetFrameStrata(CastBarDB.FrameStrata or "LOW")
     CastBar:SetBackdrop(BCDM.BACKDROP)
     if borderSize > 0 then
         CastBar:SetBackdropBorderColor(0, 0, 0, 1)
@@ -341,6 +342,7 @@ function BCDM:CreateTestCastBar()
     local borderSize = BCDM.db.profile.CooldownManager.General.BorderSize
     if not BCDM.CastBar then return end
     if BCDM.CAST_BAR_TEST_MODE then
+        BCDM.CastBar:SetFrameStrata(CastBarDB.FrameStrata or "LOW")
         BCDM.CastBar.SpellNameText:SetText(string.sub("Ethereal Portal", 1, BCDM.db.profile.CastBar.Text.SpellName.MaxCharacters))
         BCDM.CastBar.Icon:SetTexture("Interface\\Icons\\ability_mage_netherwindpresence")
         BCDM.CastBar.Status:SetMinMaxValues(0, 10)

@@ -108,7 +108,7 @@ function BCDM:CreatePowerBar()
     local hasSecondary = DetectSecondaryPower()
     PowerBar:SetSize(PowerBarDB.Width, hasSecondary and PowerBarDB.Height or PowerBarDB.HeightWithoutSecondary)
     PowerBar:SetPoint(PowerBarDB.Layout[1], _G[PowerBarDB.Layout[2]], PowerBarDB.Layout[3], PowerBarDB.Layout[4], PowerBarDB.Layout[5])
-    PowerBar:SetFrameStrata("LOW")
+    PowerBar:SetFrameStrata(PowerBarDB.FrameStrata or "LOW")
 
     if PowerBarDB.MatchWidthOfAnchor then
         local anchorFrame = _G[PowerBarDB.Layout[2]]
@@ -173,6 +173,7 @@ function BCDM:UpdatePowerBar()
             PowerBar.Status:SetPoint("BOTTOMRIGHT", PowerBar, "BOTTOMRIGHT", -borderSize, borderSize)
             PowerBar:ClearAllPoints()
             PowerBar:SetPoint(PowerBarDB.Layout[1], _G[PowerBarDB.Layout[2]], PowerBarDB.Layout[3], PowerBarDB.Layout[4], PowerBarDB.Layout[5])
+            PowerBar:SetFrameStrata(PowerBarDB.FrameStrata or "LOW")
             if PowerBarDB.MatchWidthOfAnchor then
                 local anchorFrame = _G[PowerBarDB.Layout[2]]
                 if anchorFrame then
