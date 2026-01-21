@@ -167,8 +167,7 @@ local function Position()
             viewerFrame:SetFrameStrata("LOW")
         elseif viewerFrame then
             viewerFrame:ClearAllPoints()
-            local anchorParent = viewerSettings.Layout[2] == "NONE" and UIParent or _G[viewerSettings.Layout[2]]
-            viewerFrame:SetPoint(viewerSettings.Layout[1], anchorParent, viewerSettings.Layout[3], viewerSettings.Layout[4], viewerSettings.Layout[5])
+            viewerFrame:SetPoint(viewerSettings.Layout[1], UIParent, viewerSettings.Layout[3], viewerSettings.Layout[4], viewerSettings.Layout[5])
             viewerFrame:SetFrameStrata("LOW")
         end
         NudgeViewer(viewerName, -0.1, 0)
