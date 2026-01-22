@@ -61,6 +61,7 @@ local function UpdatePowerValues()
     local powerCurrent = UnitPower("player")
     local powerType = UnitPowerType("player")
     local PowerBar = BCDM.PowerBar
+    local GeneralDB = BCDM.db.profile.General
     if PowerBar and PowerBar.Status and powerType then
         if powerType == 0 then
             PowerBar.Text:SetText(string.format("%.0f%%", UnitPowerPercent("player", 0, false, CurveConstants.ScaleTo100)))
@@ -69,7 +70,12 @@ local function UpdatePowerValues()
         end
         PowerBar.Status:SetStatusBarColor(FetchPowerBarColour())
         PowerBar.Status:SetMinMaxValues(0, UnitPowerMax("player"))
-        PowerBar.Status:SetValue(powerCurrent)
+        local smoothBars = GeneralDB.Animation and GeneralDB.Animation.SmoothBars
+        if smoothBars and Enum and Enum.StatusBarInterpolation then
+            PowerBar.Status:SetValue(powerCurrent, Enum.StatusBarInterpolation.ExponentialEaseOut)
+        else
+            PowerBar.Status:SetValue(powerCurrent)
+        end
     end
 end
 

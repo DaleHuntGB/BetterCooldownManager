@@ -7,6 +7,16 @@ local resizeTimer = nil
 
 local isDestruction;
 
+local function SetBarValue(bar, value)
+    local GeneralDB = BCDM.db.profile.General
+    local smoothBars = GeneralDB.Animation and GeneralDB.Animation.SmoothBars
+    if smoothBars and Enum and Enum.StatusBarInterpolation then
+        bar:SetValue(value, Enum.StatusBarInterpolation.ExponentialEaseOut)
+    else
+        bar:SetValue(value)
+    end
+end
+
 local function DetectSecondaryPower()
     local class = select(2, UnitClass("player"))
     local spec = C_SpecializationInfo.GetSpecialization()
@@ -441,7 +451,7 @@ local function UpdatePowerValues()
         local powerMax = UnitHealthMax("player") or 0
         local staggerPercentage = (powerCurrent / powerMax) * 100
         secondaryPowerBar.Status:SetMinMaxValues(0, powerMax)
-        secondaryPowerBar.Status:SetValue(powerCurrent)
+        SetBarValue(secondaryPowerBar.Status, powerCurrent)
         if BCDM.IS_MONK and GetSpecializationInfo(GetSpecialization()) == 268 and BCDM.db.profile.SecondaryPowerBar.ColourByState then
             local staggerPercentageColour = BCDM.db.profile.General.Colours.SecondaryPower["STAGGER_COLOURS"]
             if staggerPercentage < 30 then
@@ -486,13 +496,13 @@ local function UpdatePowerValues()
         if isDestruction then
             powerCurrent = UnitPower("player", Enum.PowerType.SoulShards, true)
             secondaryPowerBar.Status:SetMinMaxValues(0, 50)
-            secondaryPowerBar.Status:SetValue(powerCurrent)
+            SetBarValue(secondaryPowerBar.Status, powerCurrent)
             secondaryPowerBar.Text:SetText(string.format("%.1f", powerCurrent / 10))
         else
             powerCurrent = UnitPower("player", Enum.PowerType.SoulShards, false)
             local powerMax = UnitPowerMax("player", Enum.PowerType.SoulShards) or 0
             secondaryPowerBar.Status:SetMinMaxValues(0, powerMax)
-            secondaryPowerBar.Status:SetValue(powerCurrent)
+            SetBarValue(secondaryPowerBar.Status, powerCurrent)
             secondaryPowerBar.Text:SetText(tostring(powerCurrent))
         end
         secondaryPowerBar.Status:Show()

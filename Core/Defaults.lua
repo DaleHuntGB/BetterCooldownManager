@@ -21,6 +21,9 @@ local Defaults = {
                 Foreground = "Better Blizzard",
                 Background = "Better Blizzard",
             },
+            Animation = {
+                SmoothBars = false,
+            },
             Colours = {
                 PrimaryPower = {
                     [0] = {0, 0, 1},                                            -- Mana

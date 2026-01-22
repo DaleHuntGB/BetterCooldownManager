@@ -24,6 +24,7 @@
 - [LibDeflate](https://github.com/SafeteeWoW/LibDeflate.git): Handles importing/exporting of profiles.
 - [LibDualSpec](https://github.com/AdiAddons/LibDualSpec-1.0.git): Handles specialization profiles.
 - [LibSharedMedia](https://www.curseforge.com/wow/addons/libsharedmedia-3-0): Handles all additional media for the AddOn.
+- [LibEditModeOverride](https://github.com/plusmouse/LibEditModeOverride): Helps manage EditMode securely.
 
 All of these libraries contribute to the success of BetterCooldownManager & are highly appreciated by myself.
 

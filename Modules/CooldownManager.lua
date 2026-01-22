@@ -1,4 +1,12 @@
 local _, BCDM = ...
+local LEMO = LibStub("LibEditModeOverride-1.0")
+
+local function ShouldSkin()
+    if not BCDM.db.profile.CooldownManager.Enable then return false end
+    if C_AddOns.IsAddOnLoaded("ElvUI") then return false end
+    if C_AddOns.IsAddOnLoaded("Masque") then return false end
+    return true
+end
 
 local function NudgeViewer(viewerName, xOffset, yOffset)
     local viewerFrame = _G[viewerName]
@@ -191,6 +199,7 @@ end
 -- end
 
 local function StyleIcons()
+    if not ShouldSkin() then return end
     local cooldownManagerSettings = BCDM.db.profile.CooldownManager
     for _, viewerName in ipairs(BCDM.CooldownManagerViewers) do
         for _, childFrame in ipairs({_G[viewerName]:GetChildren()}) do
@@ -317,7 +326,6 @@ local function SetupCenterBuffs()
 end
 
 function BCDM:SkinCooldownManager()
-    if not BCDM.db.profile.CooldownManager.Enable then return end
     C_CVar.SetCVar("cooldownViewerEnabled", 1)
     StyleIcons()
     StyleChargeCount()
@@ -331,7 +339,6 @@ function BCDM:SkinCooldownManager()
 end
 
 function BCDM:UpdateCooldownViewer(viewerType)
-    if not BCDM.db.profile.CooldownManager.Enable then return end
     -- if viewerType == "BuffBar" then BCDM:UpdateBuffBarStyle() return end
     local cooldownManagerSettings = BCDM.db.profile.CooldownManager
     local cooldownViewerFrame = _G[BCDM.DBViewerToCooldownManagerViewer[viewerType]]
@@ -341,9 +348,12 @@ function BCDM:UpdateCooldownViewer(viewerType)
     if viewerType == "Trinket" then BCDM:UpdateTrinketBar() return end
     if viewerType == "ItemSpell" then BCDM:UpdateCustomItemsSpellsBar() return end
     if viewerType == "Buffs" then SetupCenterBuffs() end
+
+    LEMO:LoadLayouts()
+
     for _, childFrame in ipairs({cooldownViewerFrame:GetChildren()}) do
         if childFrame then
-            if childFrame.Icon then
+            if childFrame.Icon and ShouldSkin() then
                 BCDM:StripTextures(childFrame.Icon)
                 local zoom = cooldownManagerSettings.General.IconZoom
                 childFrame.Icon:SetTexCoord(BCDM:CalculateTexCoords(zoom, cooldownManagerSettings[viewerType].IconWidth, cooldownManagerSettings[viewerType].IconHeight))
@@ -360,8 +370,9 @@ function BCDM:UpdateCooldownViewer(viewerType)
             if childFrame.CooldownFlash then childFrame.CooldownFlash:SetAlpha(0) end
             childFrame:SetSize(cooldownManagerSettings[viewerType].IconWidth, cooldownManagerSettings[viewerType].IconHeight)
         end
-        if cooldownViewerFrame then cooldownViewerFrame:Hide() C_Timer.After(0.001, function() cooldownViewerFrame:Show() end) end
     end
+
+    LEMO:ApplyChanges()
 
     StyleIcons()
 

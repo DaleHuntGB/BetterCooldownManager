@@ -775,6 +775,23 @@ local function CreateGlobalSettings(parentContainer)
     BackgroundTextureDropdown:SetCallback("OnValueChanged", function(widget, _, value) widget:SetValue(value) BCDM.db.profile.General.Textures.Background = value BCDM:ResolveLSM() BCDM:UpdateBCDM() end)
     TextureContainer:AddChild(BackgroundTextureDropdown)
 
+    local AnimationContainer = AG:Create("InlineGroup")
+    AnimationContainer:SetTitle("Animation Settings")
+    AnimationContainer:SetFullWidth(true)
+    AnimationContainer:SetLayout("Flow")
+    globalSettingsContainer:AddChild(AnimationContainer)
+
+    local smoothBarsCheckbox = AG:Create("CheckBox")
+    smoothBarsCheckbox:SetLabel("Smooth Bar Animation - Applies to |cFF8080FFCast Bar|r, |cFF8080FFPower Bar|r and |cFF8080FFSecondary Power Bar|r.")
+    smoothBarsCheckbox:SetValue(GeneralDB.Animation and GeneralDB.Animation.SmoothBars or false)
+    smoothBarsCheckbox:SetCallback("OnValueChanged", function(self, _, value)
+        if not GeneralDB.Animation then GeneralDB.Animation = {} end
+        GeneralDB.Animation.SmoothBars = value
+        BCDM:UpdateBCDM()
+    end)
+    smoothBarsCheckbox:SetFullWidth(true)
+    AnimationContainer:AddChild(smoothBarsCheckbox)
+
     CreateCooldownTextSettings(globalSettingsContainer)
 
     ScrollFrame:DoLayout()
@@ -2056,7 +2073,7 @@ local function CreateCastBarTextSettings(parentContainer)
     local spellName_MaxCharactersSlider = AG:Create("Slider")
     spellName_MaxCharactersSlider:SetLabel("Max Characters")
     spellName_MaxCharactersSlider:SetValue(BCDM.db.profile.CastBar.Text.SpellName.MaxCharacters)
-    spellName_MaxCharactersSlider:SetSliderValues(0, 24, 1)
+    spellName_MaxCharactersSlider:SetSliderValues(0, 32, 1)
     spellName_MaxCharactersSlider:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.CastBar.Text.SpellName.MaxCharacters = value BCDM:UpdateCastBar() end)
     spellName_MaxCharactersSlider:SetRelativeWidth(0.25)
     spellNameContainer:AddChild(spellName_MaxCharactersSlider)
@@ -2587,7 +2604,7 @@ function BCDM:CreateGUI()
         elseif MainTab == "Profiles" then
             CreateProfileSettings(Wrapper)
         end
-        if MainTab == "Buffs" then CooldownViewerSettings:Show() else CooldownViewerSettings:Hide() end
+        if MainTab == "Essential" or MainTab == "Utility" or MainTab == "Buffs" then CooldownViewerSettings:Show() else CooldownViewerSettings:Hide() end
         if MainTab == "CastBar" then BCDM.CAST_BAR_TEST_MODE = true BCDM:CreateTestCastBar() else BCDM.CAST_BAR_TEST_MODE = false BCDM:CreateTestCastBar() end
         if MainTab == "Essential" then  BCDM.EssentialCooldownViewerOverlay:Show() else BCDM.EssentialCooldownViewerOverlay:Hide() end
         if MainTab == "Utility" then  BCDM.UtilityCooldownViewerOverlay:Show() else BCDM.UtilityCooldownViewerOverlay:Hide() end

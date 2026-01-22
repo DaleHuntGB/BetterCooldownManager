@@ -1,0 +1,9 @@
+## Interface: 110205, 120000
+## Title: LibEditModeOverride
+## Version: 10
+## Author: plusmouse
+## OptionalDeps: LibStub
+
+LibStub\LibStub.lua
+
+LibEditModeOverride.xml

@@ -26,6 +26,9 @@ externals:
     Libraries/LibDualSpec-1.0:
         url: https://github.com/AdiAddons/LibDualSpec-1.0.git
         branch: master
+    Libraries/LibEditModeOverride:
+        url: https://github.com/plusmouse/LibEditModeOverride.git
+        branch: main
 
 ignore:
     - README.md

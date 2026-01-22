@@ -1,5 +1,15 @@
 local _, BCDM = ...
 
+local function SetBarValue(bar, value)
+    local GeneralDB = BCDM.db.profile.General
+    local smoothBars = GeneralDB.Animation and GeneralDB.Animation.SmoothBars
+    if smoothBars and Enum and Enum.StatusBarInterpolation then
+        bar:SetValue(value, Enum.StatusBarInterpolation.ExponentialEaseOut)
+    else
+        bar:SetValue(value)
+    end
+end
+
 local function FetchCastBarColour()
     local CastBarDB = BCDM.db.profile.CastBar
     if CastBarDB.ColourByClass then
@@ -72,7 +82,7 @@ local function UpdateCastBarValues(self, event, unit)
             else
                 BCDM.CastBar.CastTimeText:SetText(string.format("%.0f", remainingDuration))
             end
-            BCDM.CastBar.Status:SetValue(remainingDuration)
+            SetBarValue(BCDM.CastBar.Status, remainingDuration)
         end)
         BCDM.CastBar:Show()
     elseif EMPOWERED_CAST_START[event] then
@@ -91,7 +101,7 @@ local function UpdateCastBarValues(self, event, unit)
                 else
                     BCDM.CastBar.CastTimeText:SetText(string.format("%.0f", remainingDuration))
                 end
-                BCDM.CastBar.Status:SetValue(remainingDuration)
+                SetBarValue(BCDM.CastBar.Status, remainingDuration)
             end)
             BCDM.CastBar:Show()
         end
@@ -104,13 +114,12 @@ local function UpdateCastBarValues(self, event, unit)
         BCDM.CastBar.Icon:SetTexture(select(3, UnitChannelInfo("player")) or nil)
         BCDM.CastBar:SetScript("OnUpdate", function()
             local remainingDuration = channelDuration:GetRemainingDuration()
-            BCDM.CastBar.Status:SetValue(remainingDuration)
+            SetBarValue(BCDM.CastBar.Status, remainingDuration)
             if remainingDuration < 5 then
                 BCDM.CastBar.CastTimeText:SetText(string.format("%.1f", remainingDuration))
             else
                 BCDM.CastBar.CastTimeText:SetText(string.format("%.0f", remainingDuration))
             end
-            BCDM.CastBar.Status:SetValue(remainingDuration)
         end)
         BCDM.CastBar:Show()
     elseif CAST_STOP[event] then
