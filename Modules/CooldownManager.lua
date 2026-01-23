@@ -325,6 +325,8 @@ function BCDM:SkinCooldownManager()
     SetupCenterBuffs()
     for _, viewerName in ipairs(BCDM.CooldownManagerViewers) do C_Timer.After(0.1, function() ApplyCooldownText(viewerName) end) end
     C_Timer.After(1, function() LEMO:ApplyChanges() end)
+    -- Apply Masque skinning
+    C_Timer.After(0.2, function() if BCDM.SkinAllViewersWithMasque then BCDM:SkinAllViewersWithMasque() end end)
 end
 
 function BCDM:UpdateCooldownViewer(viewerType)
@@ -370,6 +372,11 @@ function BCDM:UpdateCooldownViewer(viewerType)
     BCDM:UpdatePowerBarWidth()
     BCDM:UpdateSecondaryPowerBarWidth()
     BCDM:UpdateCastBarWidth()
+    
+    -- Update Masque skinning for this viewer
+    if BCDM.SkinViewerWithMasque then
+        BCDM:SkinViewerWithMasque(BCDM.DBViewerToCooldownManagerViewer[viewerType])
+    end
 end
 
 function BCDM:UpdateCooldownViewers()

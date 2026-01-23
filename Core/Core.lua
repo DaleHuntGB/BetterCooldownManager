@@ -27,4 +27,8 @@ function BetterCooldownManager:OnEnable()
     BCDM:SetupCustomItemsSpellsBar()
     BCDM:CreateCooldownViewerOverlays()
     BCDM:SetupEditModeManager()
+    
+    -- Setup Masque support (if available)
+    BCDM:SetupMasque()
+    C_Timer.After(0.5, function() BCDM:SkinAllViewersWithMasque() end)
 end

@@ -157,6 +157,10 @@ function BCDM:UpdateBCDM()
     BCDM:UpdateCustomItemBar()
     BCDM:UpdateCustomItemsSpellsBar()
     BCDM:UpdateTrinketBar()
+    -- Reskin Masque after updates
+    if BCDM.SkinAllViewersWithMasque then
+        C_Timer.After(0.1, function() BCDM:SkinAllViewersWithMasque() end)
+    end
 end
 
 function BCDM:CreateCooldownViewerOverlays()

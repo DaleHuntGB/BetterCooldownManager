@@ -10,4 +10,5 @@
 	<Script file="PowerBar.lua"/>
 	<Script file="SecondaryPowerBar.lua"/>
 	<Script file="EditMode.lua"/>
+	<Script file="Masque.lua"/>
 </Ui>

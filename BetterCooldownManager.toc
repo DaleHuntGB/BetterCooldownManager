@@ -4,6 +4,7 @@
 ## Author: |cFF8080FFUnhalted|r
 ## Notes: |cFF8080FFBetter|rCooldownManager is an all-in-one AddOn that provides additional customization to the Cooldown Manager, developed by |cFF8080FFUnhalted|r
 ## SavedVariables: BCDMDB
+## OptionalDeps: Masque
 ## Category-enUS: |cFF8080FFUnhalted|r Development
 ## IconTexture: Interface\AddOns\BetterCooldownManager\Media\Logo.png
 ## X-Curse-Project-ID: 1435851
