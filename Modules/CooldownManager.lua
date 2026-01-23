@@ -220,8 +220,18 @@ end
 
 local function SetHooks()
     hooksecurefunc(EditModeManagerFrame, "EnterEditMode", function() if InCombatLockdown() then return end Position() end)
-    hooksecurefunc(EditModeManagerFrame, "ExitEditMode", function() if InCombatLockdown() then return end Position() end)
-    hooksecurefunc(CooldownViewerSettings, "RefreshLayout", function() if InCombatLockdown() then return end BCDM:UpdateBCDM() end)
+    hooksecurefunc(EditModeManagerFrame, "ExitEditMode", function() 
+        if InCombatLockdown() then return end 
+        Position()
+        -- Refresh LEMO cache so column changes take effect
+        LEMO:LoadLayouts()
+    end)
+    hooksecurefunc(CooldownViewerSettings, "RefreshLayout", function() 
+        if InCombatLockdown() then return end 
+        BCDM:UpdateBCDM()
+        -- Refresh LEMO cache so column changes take effect immediately
+        LEMO:LoadLayouts()
+    end)
 end
 
 local function StyleChargeCount()
@@ -263,6 +273,143 @@ local function StyleChargeCount()
             end
         end
     end
+end
+
+local function CenterViewerIcons(viewerFrame)
+    if not viewerFrame then return end
+    
+    local visibleIcons = {}
+    for _, childFrame in ipairs({ viewerFrame:GetChildren() }) do
+        if childFrame and childFrame:IsShown() and childFrame.layoutIndex then
+            table.insert(visibleIcons, childFrame)
+        end
+    end
+
+    table.sort(visibleIcons, function(a, b)
+        return (a.layoutIndex or 0) < (b.layoutIndex or 0)
+    end)
+
+    local visibleCount = #visibleIcons
+    if visibleCount == 0 then return end
+
+    local iconWidth = visibleIcons[1]:GetWidth()
+    local iconHeight = visibleIcons[1]:GetHeight()
+    local iconSpacing = viewerFrame.childXPadding or 1
+    local ySpacing = viewerFrame.childYPadding or 1
+    
+    -- Get columns from Blizzard's Edit Mode
+    local numColumns = nil
+    local inEditMode = EditModeManagerFrame and EditModeManagerFrame:IsShown()
+    
+    if inEditMode then
+        -- During Edit Mode: calculate from frame width (updates live with slider)
+        local frameWidth = viewerFrame:GetWidth()
+        if frameWidth and frameWidth > 0 and iconWidth > 0 then
+            numColumns = math.floor((frameWidth + iconSpacing) / (iconWidth + iconSpacing))
+        end
+    else
+        -- Outside Edit Mode: use LEMO for accurate saved value
+        if LEMO and LEMO.GetFrameSetting then
+            local ok, val = pcall(LEMO.GetFrameSetting, LEMO, viewerFrame, 1)
+            if ok and val and val > 0 then
+                numColumns = val
+            end
+        end
+        -- Fallback to width calculation
+        if not numColumns or numColumns < 1 then
+            local frameWidth = viewerFrame:GetWidth()
+            if frameWidth and frameWidth > 0 and iconWidth > 0 then
+                numColumns = math.floor((frameWidth + iconSpacing) / (iconWidth + iconSpacing))
+            end
+        end
+    end
+    
+    numColumns = numColumns or 8
+    if numColumns < 1 then numColumns = 8 end
+    
+    -- Calculate how many complete rows and leftover icons
+    local numFullRows = math.floor(visibleCount / numColumns)
+    local lastRowCount = visibleCount % numColumns
+    if lastRowCount == 0 and visibleCount > 0 then
+        numFullRows = numFullRows - 1
+        lastRowCount = numColumns
+    end
+    
+    -- Calculate total rows
+    local totalRows = math.ceil(visibleCount / numColumns)
+    
+    -- Calculate the full row width (for centering reference)
+    local fullRowWidth = (numColumns * iconWidth) + ((numColumns - 1) * iconSpacing)
+    
+    for index, iconFrame in ipairs(visibleIcons) do
+        local row = math.floor((index - 1) / numColumns)
+        local col = (index - 1) % numColumns
+        
+        local xOffset, yOffset
+        -- Y offset from TOP of frame (negative because Y goes down)
+        yOffset = -row * (iconHeight + ySpacing)
+        
+        -- Check if this icon is in the last (incomplete) row
+        local iconsInThisRow = (row == totalRows - 1) and lastRowCount or numColumns
+        
+        if iconsInThisRow < numColumns then
+            -- Center this row horizontally
+            local rowWidth = (iconsInThisRow * iconWidth) + ((iconsInThisRow - 1) * iconSpacing)
+            local rowStartX = -rowWidth / 2 + iconWidth / 2
+            xOffset = rowStartX + col * (iconWidth + iconSpacing)
+        else
+            -- Full row: position normally (centered as a full row)
+            local rowStartX = -fullRowWidth / 2 + iconWidth / 2
+            xOffset = rowStartX + col * (iconWidth + iconSpacing)
+        end
+        
+        iconFrame:ClearAllPoints()
+        -- Anchor from TOP center of frame, offset down by row
+        iconFrame:SetPoint("TOP", viewerFrame, "TOP", xOffset, yOffset)
+    end
+end
+
+-- OnUpdate polling for CenterIcons (same pattern as CenterBuffs)
+local centerIconsUpdateThrottle = 0.25  -- 4x per second (like TweaksUI)
+local nextCenterIconsUpdate = 0
+local centerIconsEventFrame = CreateFrame("Frame")
+
+local function CenterIconsOnUpdate()
+    local currentTime = GetTime()
+    if currentTime < nextCenterIconsUpdate then return end
+    nextCenterIconsUpdate = currentTime + centerIconsUpdateThrottle
+    
+    -- Refresh LEMO cache while in Edit Mode so column changes show live
+    if EditModeManagerFrame and EditModeManagerFrame:IsShown() then
+        pcall(LEMO.LoadLayouts, LEMO)
+    end
+    
+    local essentialSettings = BCDM.db.profile.CooldownManager.Essential
+    local utilitySettings = BCDM.db.profile.CooldownManager.Utility
+    
+    if essentialSettings.CenterIcons and EssentialCooldownViewer then
+        CenterViewerIcons(EssentialCooldownViewer)
+    end
+    
+    if utilitySettings.CenterIcons and UtilityCooldownViewer then
+        CenterViewerIcons(UtilityCooldownViewer)
+    end
+end
+
+local function SetupCenterIcons()
+    local essentialSettings = BCDM.db.profile.CooldownManager.Essential
+    local utilitySettings = BCDM.db.profile.CooldownManager.Utility
+    
+    if essentialSettings.CenterIcons or utilitySettings.CenterIcons then
+        centerIconsEventFrame:SetScript("OnUpdate", CenterIconsOnUpdate)
+    else
+        centerIconsEventFrame:SetScript("OnUpdate", nil)
+    end
+end
+
+-- Legacy function for compatibility (called from hooks)
+local function ApplyCenterIcons()
+    SetupCenterIcons()
 end
 
 local centerBuffsUpdateThrottle = 0.05
@@ -323,8 +470,9 @@ function BCDM:SkinCooldownManager()
     -- C_Timer.After(1, function() StyleBuffsBars() end)
     SetHooks()
     SetupCenterBuffs()
+    ApplyCenterIcons()
     for _, viewerName in ipairs(BCDM.CooldownManagerViewers) do C_Timer.After(0.1, function() ApplyCooldownText(viewerName) end) end
-    C_Timer.After(1, function() LEMO:ApplyChanges() end)
+    C_Timer.After(1, function() if not InCombatLockdown() then pcall(LEMO.ApplyChanges, LEMO) end end)
 end
 
 function BCDM:UpdateCooldownViewer(viewerType)
@@ -337,6 +485,7 @@ function BCDM:UpdateCooldownViewer(viewerType)
     if viewerType == "Trinket" then BCDM:UpdateTrinketBar() return end
     if viewerType == "ItemSpell" then BCDM:UpdateCustomItemsSpellsBar() return end
     if viewerType == "Buffs" then SetupCenterBuffs() end
+    if viewerType == "Essential" or viewerType == "Utility" then ApplyCenterIcons() end
 
 
     for _, childFrame in ipairs({cooldownViewerFrame:GetChildren()}) do

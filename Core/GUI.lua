@@ -1412,6 +1412,15 @@ local function CreateCooldownViewerSettings(parentContainer, viewerType)
     iconSizeSlider:SetRelativeWidth(isCustomViewer and 0.25 or 0.33)
     layoutContainer:AddChild(iconSizeSlider)
 
+    if viewerType == "Essential" or viewerType == "Utility" then
+        local centerIconsCheckbox = AG:Create("CheckBox")
+        centerIconsCheckbox:SetLabel("Center Icons")
+        centerIconsCheckbox:SetValue(BCDM.db.profile.CooldownManager[viewerType].CenterIcons or false)
+        centerIconsCheckbox:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.CooldownManager[viewerType].CenterIcons = value BCDM:UpdateCooldownViewer(viewerType) end)
+        centerIconsCheckbox:SetRelativeWidth(0.33)
+        layoutContainer:AddChild(centerIconsCheckbox)
+    end
+
     if viewerType == "Essential" or viewerType == "Utility" or viewerType == "Buffs" then
         local infoTag = CreateInformationTag(layoutContainer, "Updates To Sizes will be applied on closing the |cFF8080FFBetter|rCooldownManager Configuration Window.")
         infoTag:SetRelativeWidth(0.7)
