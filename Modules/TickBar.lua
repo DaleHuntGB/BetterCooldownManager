@@ -127,8 +127,70 @@ function ClearTickBar()
     tickBar:UnregisterAllEvents()
 end
 
+function BCDM:UpdateTickBar()
+    local tickBarDB = BCDM.db.profile.CooldownManager.TickBar
+
+    local playerClass, playerSpecialization = GetPlayerClassAndSpec()
+    if tickBarDB.Spells[playerClass] == nil or
+        tickBarDB.Spells[playerClass][playerSpecialization]  == nil or
+        next(tickBarDB.Spells[playerClass][playerSpecialization]) == nil then
+        local _, spellConfig = next(tickBarDB.Spells[playerClass][playerSpecialization])
+        if spellConfig ~= nil and spellConfig.isActive ~= nil and spellConfig.isActive == true then
+            ClearTickBar()
+        end
+        return
+    end
+
+    local cooldownManagerDB = BCDM.db.profile
+    local generalDB = cooldownManagerDB.General
+
+    local tickBar = BCDM.TickBar
+    if not tickBar then return end
+
+    local borderSize = BCDM.db.profile.CooldownManager.General.BorderSize
+    tickBar:SetBackdrop(BCDM.BACKDROP)
+    if borderSize > 0 then
+        tickBar:SetBackdropBorderColor(0, 0, 0, 1)
+    else
+        tickBar:SetBackdropBorderColor(0, 0, 0, 0)
+    end
+    tickBar:SetBackdropColor(tickBarDB.BackgroundColour[1], tickBarDB.BackgroundColour[2], tickBarDB.BackgroundColour[3], tickBarDB.BackgroundColour[4])
+    tickBar:SetSize(tickBarDB.Width, tickBarDB.Height)
+
+    tickBar:ClearAllPoints()
+    tickBar:SetPoint(tickBarDB.Layout[1], _G[tickBarDB.Layout[2]], tickBarDB.Layout[3], tickBarDB.Layout[4], tickBarDB.Layout[5])
+    tickBar:SetFrameStrata(tickBarDB.FrameStrata)
+    tickBar.Status:SetPoint("TOPLEFT", tickBar, "TOPLEFT", borderSize, -borderSize)
+    tickBar.Status:SetPoint("BOTTOMRIGHT", tickBar, "BOTTOMRIGHT", -borderSize, borderSize)
+    tickBar.Status:SetStatusBarTexture(BCDM.Media.Foreground)
+
+    tickBar.Text:SetFont(BCDM.Media.Font, tickBarDB.Text.FontSize, generalDB.Fonts.FontFlag)
+    tickBar.Text:SetTextColor(tickBarDB.Text.Colour[1], tickBarDB.Text.Colour[2], tickBarDB.Text.Colour[3], 1)
+    tickBar.Text:ClearAllPoints()
+    tickBar.Text:SetPoint(tickBarDB.Text.Layout[1], tickBar, tickBarDB.Text.Layout[2], tickBarDB.Text.Layout[3], tickBarDB.Text.Layout[4])
+    if generalDB.Fonts.Shadow.Enabled then
+        tickBar.Text:SetShadowColor(generalDB.Fonts.Shadow.Colour[1], generalDB.Fonts.Shadow.Colour[2], generalDB.Fonts.Shadow.Colour[3], generalDB.Fonts.Shadow.Colour[4])
+        tickBar.Text:SetShadowOffset(generalDB.Fonts.Shadow.OffsetX, generalDB.Fonts.Shadow.OffsetY)
+    else
+        tickBar.Text:SetShadowColor(0, 0, 0, 0)
+        tickBar.Text:SetShadowOffset(0, 0)
+    end
+    tickBar.Text:SetText("")
+
+    tickBar:RegisterEvent("SPELL_UPDATE_CHARGES")
+    if tickBarDB.Enabled then
+        ConfigureTickBarStatus(tickBar, tickBarDB, playerClass, playerSpecialization)
+        tickBar.Text:Show()
+        --NudgeSecondaryPowerBar("BCDM_TickBar", -0.1, 0)
+        tickBar:Show()
+    else
+        ClearTickBar()
+    end
+    UpdateTickBarWidth()
+end
+
 function UpdateTickBarWidth()
-    local tickBarDB = BCDM.db.profile.TickBar
+    local tickBarDB = BCDM.db.profile.CooldownManager.TickBar
     local tickBar = BCDM.TickBar
 
     if not tickBar or not tickBarDB.MatchWidthOfAnchor then return end
@@ -145,4 +207,8 @@ function UpdateTickBarWidth()
         tickBar:SetWidth(anchorWidth)
         resizeTimer = nil
     end)
+end
+
+function BCDM:UpdateTickBarWidth()
+    UpdateTickBarWidth()
 end

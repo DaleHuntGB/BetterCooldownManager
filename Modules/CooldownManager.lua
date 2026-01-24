@@ -333,6 +333,7 @@ function BCDM:UpdateCooldownViewer(viewerType)
     local cooldownViewerFrame = _G[BCDM.DBViewerToCooldownManagerViewer[viewerType]]
     if viewerType == "Custom" then BCDM:UpdateCustomCooldownViewer() return end
     if viewerType == "AdditionalCustom" then BCDM:UpdateAdditionalCustomCooldownViewer() return end
+    if viewerType == "TickBar" then BCDM:UpdateTickBar() return end
     if viewerType == "Item" then BCDM:UpdateCustomItemBar() return end
     if viewerType == "Trinket" then BCDM:UpdateTrinketBar() return end
     if viewerType == "ItemSpell" then BCDM:UpdateCustomItemsSpellsBar() return end
@@ -369,6 +370,7 @@ function BCDM:UpdateCooldownViewer(viewerType)
 
     BCDM:UpdatePowerBarWidth()
     BCDM:UpdateSecondaryPowerBarWidth()
+    BCDM:UpdateTickBarWidth()
     BCDM:UpdateCastBarWidth()
 end
 
@@ -383,5 +385,6 @@ function BCDM:UpdateCooldownViewers()
     BCDM:UpdateTrinketBar()
     BCDM:UpdatePowerBar()
     BCDM:UpdateSecondaryPowerBar()
+    BCDM:UpdateTickBar()
     BCDM:UpdateCastBar()
 end

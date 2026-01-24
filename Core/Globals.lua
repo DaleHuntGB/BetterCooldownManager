@@ -151,6 +151,7 @@ function BCDM:UpdateBCDM()
     BCDM:UpdateCooldownViewer("Buffs")
     BCDM:UpdatePowerBar()
     BCDM:UpdateSecondaryPowerBar()
+    BCDM:UpdateTickBar()
     BCDM:UpdateCastBar()
     BCDM:UpdateCustomCooldownViewer()
     BCDM:UpdateAdditionalCustomCooldownViewer()
@@ -307,6 +308,7 @@ function BCDM:AdjustSpellLayoutIndex(direction, spellId, customDB)
         BCDM:UpdateCustomCooldownViewer()
     else
         BCDM:UpdateAdditionalCustomCooldownViewer()
+        BCDM:UpdateTickBar()
     end
 end
 
@@ -366,8 +368,8 @@ function BCDM:AdjustSpellList(spellId, adjustingHow, customDB)
 
     BCDM:NormalizeSpellLayoutIndices(customDB, playerClass, playerSpecialization)
     BCDM:UpdateAdditionalCustomCooldownViewer()
+    BCDM:UpdateTickBar()
 end
-
 
 function BCDM:RepositionSecondaryBar()
     local SpecsNeedingAltPower = {
