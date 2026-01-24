@@ -677,12 +677,12 @@ function BCDM:CreateSecondaryPowerBar()
         BCDM.PowerBar:Hide()
         secondaryPowerBar:ClearAllPoints()
         secondaryPowerBar:SetPoint(powerBarDB.Layout[1], _G[powerBarDB.Layout[2]], powerBarDB.Layout[3], powerBarDB.Layout[4], powerBarDB.Layout[5])
-        secondaryPowerBar:SetHeight(powerBarDB.HeightWithoutSecondary)
+        secondaryPowerBar:SetHeight(secondaryPowerBarDB.HeightWithoutPrimary)
     else
         secondaryPowerBar:ClearAllPoints()
         secondaryPowerBar:SetPoint(secondaryPowerBarDB.Layout[1], _G[secondaryPowerBarDB.Layout[2]], secondaryPowerBarDB.Layout[3], secondaryPowerBarDB.Layout[4], secondaryPowerBarDB.Layout[5])
         secondaryPowerBar:SetHeight(secondaryPowerBarDB.Height)
-        BCDM.PowerBar:Show()
+        if powerBarDB.Enabled then BCDM.PowerBar:Show() end
     end
 
     secondaryPowerBar:SetFrameStrata(secondaryPowerBarDB.FrameStrata)
@@ -787,12 +787,12 @@ function BCDM:UpdateSecondaryPowerBar()
         BCDM.PowerBar:Hide()
         secondaryPowerBar:ClearAllPoints()
         secondaryPowerBar:SetPoint(powerBarDB.Layout[1], _G[powerBarDB.Layout[2]], powerBarDB.Layout[3], powerBarDB.Layout[4], powerBarDB.Layout[5])
-        secondaryPowerBar:SetHeight(powerBarDB.HeightWithoutSecondary)
+        secondaryPowerBar:SetHeight(secondaryPowerBarDB.HeightWithoutPrimary)
     else
         secondaryPowerBar:ClearAllPoints()
         secondaryPowerBar:SetPoint(secondaryPowerBarDB.Layout[1], _G[secondaryPowerBarDB.Layout[2]], secondaryPowerBarDB.Layout[3], secondaryPowerBarDB.Layout[4], secondaryPowerBarDB.Layout[5])
         secondaryPowerBar:SetHeight(secondaryPowerBarDB.Height)
-        BCDM.PowerBar:Show()
+        if powerBarDB.Enabled then BCDM.PowerBar:Show() end
     end
     secondaryPowerBar:SetFrameStrata(secondaryPowerBarDB.FrameStrata)
     secondaryPowerBar.Status:SetPoint("TOPLEFT", secondaryPowerBar, "TOPLEFT", borderSize, -borderSize)

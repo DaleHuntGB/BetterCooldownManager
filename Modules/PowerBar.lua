@@ -213,7 +213,7 @@ function BCDM:UpdatePowerBar()
             UpdatePowerValues()
             if PowerBarDB.Text.Enabled then PowerBar.Text:Show() else PowerBar.Text:Hide() end
             NudgePowerBar("BCDM_PowerBar", -0.1, 0)
-            PowerBar:Show()
+            if PowerBarDB.Enabled and not BCDM.db.profile.SecondaryPowerBar.SwapToPowerBarPosition then PowerBar:Show() end
         else
             PowerBar:Hide()
             PowerBar:SetScript("OnEvent", nil)

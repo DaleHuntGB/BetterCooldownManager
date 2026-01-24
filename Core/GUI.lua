@@ -244,9 +244,9 @@ end
 
 local function GenerateSupportText(parentFrame)
     local SupportOptions = {
-        "Support Me on |TInterface\\AddOns\\UnhaltedUnitFrames\\Media\\Support\\Ko-Fi.png:13:18|t |cFF8080FFKo-Fi|r!",
-        "Support Me on |TInterface\\AddOns\\UnhaltedUnitFrames\\Media\\Support\\Patreon.png:14:14|t |cFF8080FFPatreon|r!",
-        "|TInterface\\AddOns\\UnhaltedUnitFrames\\Media\\Support\\PayPal.png:20:18|t |cFF8080FFPayPal Donations|r are appreciated!",
+        -- "Support Me on |TInterface\\AddOns\\UnhaltedUnitFrames\\Media\\Support\\Ko-Fi.png:13:18|t |cFF8080FFKo-Fi|r!",
+        -- "Support Me on |TInterface\\AddOns\\UnhaltedUnitFrames\\Media\\Support\\Patreon.png:14:14|t |cFF8080FFPatreon|r!",
+        -- "|TInterface\\AddOns\\UnhaltedUnitFrames\\Media\\Support\\PayPal.png:20:18|t |cFF8080FFPayPal Donations|r are appreciated!",
         "Join the |TInterface\\AddOns\\UnhaltedUnitFrames\\Media\\Support\\Discord.png:18:18|t |cFF8080FFDiscord|r Community!",
         "Report Issues / Feedback on |TInterface\\AddOns\\UnhaltedUnitFrames\\Media\\Support\\GitHub.png:18:18|t |cFF8080FFGitHub|r!",
         "Follow Me on |TInterface\\AddOns\\UnhaltedUnitFrames\\Media\\Support\\Twitch.png:18:14|t |cFF8080FFTwitch|r!",
@@ -566,25 +566,25 @@ local function CreateGeneralSettings(parentContainer)
     SupportMeContainer:SetFullWidth(true)
     ScrollFrame:AddChild(SupportMeContainer)
 
-    local KoFiInteractive = AG:Create("InteractiveLabel")
-    KoFiInteractive:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\Ko-Fi.png:16:21|t |cFF8080FFKo-Fi|r")
-    KoFiInteractive:SetFont("Fonts\\FRIZQT__.TTF", 13, "OUTLINE")
-    KoFiInteractive:SetJustifyV("MIDDLE")
-    KoFiInteractive:SetRelativeWidth(0.33)
-    KoFiInteractive:SetCallback("OnClick", function() BCDM:OpenURL("Support Me on Ko-Fi", "https://ko-fi.com/unhalted") end)
-    KoFiInteractive:SetCallback("OnEnter", function() KoFiInteractive:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\Ko-Fi.png:16:21|t |cFFFFFFFFKo-Fi|r") end)
-    KoFiInteractive:SetCallback("OnLeave", function() KoFiInteractive:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\Ko-Fi.png:16:21|t |cFF8080FFKo-Fi|r") end)
-    SupportMeContainer:AddChild(KoFiInteractive)
+    -- local KoFiInteractive = AG:Create("InteractiveLabel")
+    -- KoFiInteractive:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\Ko-Fi.png:16:21|t |cFF8080FFKo-Fi|r")
+    -- KoFiInteractive:SetFont("Fonts\\FRIZQT__.TTF", 13, "OUTLINE")
+    -- KoFiInteractive:SetJustifyV("MIDDLE")
+    -- KoFiInteractive:SetRelativeWidth(0.33)
+    -- KoFiInteractive:SetCallback("OnClick", function() BCDM:OpenURL("Support Me on Ko-Fi", "https://ko-fi.com/unhalted") end)
+    -- KoFiInteractive:SetCallback("OnEnter", function() KoFiInteractive:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\Ko-Fi.png:16:21|t |cFFFFFFFFKo-Fi|r") end)
+    -- KoFiInteractive:SetCallback("OnLeave", function() KoFiInteractive:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\Ko-Fi.png:16:21|t |cFF8080FFKo-Fi|r") end)
+    -- SupportMeContainer:AddChild(KoFiInteractive)
 
-    local PayPalInteractive = AG:Create("InteractiveLabel")
-    PayPalInteractive:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\PayPal.png:23:21|t |cFF8080FFPayPal|r")
-    PayPalInteractive:SetFont("Fonts\\FRIZQT__.TTF", 13, "OUTLINE")
-    PayPalInteractive:SetJustifyV("MIDDLE")
-    PayPalInteractive:SetRelativeWidth(0.33)
-    PayPalInteractive:SetCallback("OnClick", function() BCDM:OpenURL("Support Me on PayPal", "https://www.paypal.com/paypalme/dhunt1911") end)
-    PayPalInteractive:SetCallback("OnEnter", function() PayPalInteractive:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\PayPal.png:23:21|t |cFFFFFFFFPayPal|r") end)
-    PayPalInteractive:SetCallback("OnLeave", function() PayPalInteractive:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\PayPal.png:23:21|t |cFF8080FFPayPal|r") end)
-    SupportMeContainer:AddChild(PayPalInteractive)
+    -- local PayPalInteractive = AG:Create("InteractiveLabel")
+    -- PayPalInteractive:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\PayPal.png:23:21|t |cFF8080FFPayPal|r")
+    -- PayPalInteractive:SetFont("Fonts\\FRIZQT__.TTF", 13, "OUTLINE")
+    -- PayPalInteractive:SetJustifyV("MIDDLE")
+    -- PayPalInteractive:SetRelativeWidth(0.33)
+    -- PayPalInteractive:SetCallback("OnClick", function() BCDM:OpenURL("Support Me on PayPal", "https://www.paypal.com/paypalme/dhunt1911") end)
+    -- PayPalInteractive:SetCallback("OnEnter", function() PayPalInteractive:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\PayPal.png:23:21|t |cFFFFFFFFPayPal|r") end)
+    -- PayPalInteractive:SetCallback("OnLeave", function() PayPalInteractive:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\PayPal.png:23:21|t |cFF8080FFPayPal|r") end)
+    -- SupportMeContainer:AddChild(PayPalInteractive)
 
     local TwitchInteractive = AG:Create("InteractiveLabel")
     TwitchInteractive:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\Twitch.png:25:21|t |cFF8080FFTwitch|r")
@@ -606,15 +606,15 @@ local function CreateGeneralSettings(parentContainer)
     DiscordInteractive:SetCallback("OnLeave", function() DiscordInteractive:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\Discord.png:21:21|t |cFF8080FFDiscord|r") end)
     SupportMeContainer:AddChild(DiscordInteractive)
 
-    local PatreonInteractive = AG:Create("InteractiveLabel")
-    PatreonInteractive:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\Patreon.png:21:21|t |cFF8080FFPatreon|r")
-    PatreonInteractive:SetFont("Fonts\\FRIZQT__.TTF", 13, "OUTLINE")
-    PatreonInteractive:SetJustifyV("MIDDLE")
-    PatreonInteractive:SetRelativeWidth(0.33)
-    PatreonInteractive:SetCallback("OnClick", function() BCDM:OpenURL("Support Me on Patreon", "https://www.patreon.com/unhalted") end)
-    PatreonInteractive:SetCallback("OnEnter", function() PatreonInteractive:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\Patreon.png:21:21|t |cFFFFFFFFPatreon|r") end)
-    PatreonInteractive:SetCallback("OnLeave", function() PatreonInteractive:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\Patreon.png:21:21|t |cFF8080FFPatreon|r") end)
-    SupportMeContainer:AddChild(PatreonInteractive)
+    -- local PatreonInteractive = AG:Create("InteractiveLabel")
+    -- PatreonInteractive:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\Patreon.png:21:21|t |cFF8080FFPatreon|r")
+    -- PatreonInteractive:SetFont("Fonts\\FRIZQT__.TTF", 13, "OUTLINE")
+    -- PatreonInteractive:SetJustifyV("MIDDLE")
+    -- PatreonInteractive:SetRelativeWidth(0.33)
+    -- PatreonInteractive:SetCallback("OnClick", function() BCDM:OpenURL("Support Me on Patreon", "https://www.patreon.com/unhalted") end)
+    -- PatreonInteractive:SetCallback("OnEnter", function() PatreonInteractive:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\Patreon.png:21:21|t |cFFFFFFFFPatreon|r") end)
+    -- PatreonInteractive:SetCallback("OnLeave", function() PatreonInteractive:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\Patreon.png:21:21|t |cFF8080FFPatreon|r") end)
+    -- SupportMeContainer:AddChild(PatreonInteractive)
 
     local GithubInteractive = AG:Create("InteractiveLabel")
     GithubInteractive:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\Github.png:21:21|t |cFF8080FFGithub|r")
@@ -1883,8 +1883,8 @@ local function CreateSecondaryPowerBarSettings(parentContainer)
     swapToPowerBarPositionCheckBox:SetLabel("Swap To Power Bar Position")
     swapToPowerBarPositionCheckBox:SetDescription("|cFF33937FDevastation|r, |cFF33937FAugmentation|r, |cFFF48CBAProtection|r, |cFFF48CBARetribution|r, |cFF8788EEAffliction|r, |cFF8788EEDemonology|r, |cFF8788EEDestruction|r & |cFF0070DDEnhancement|r Support Only.")
     swapToPowerBarPositionCheckBox:SetValue(BCDM.db.profile.SecondaryPowerBar.SwapToPowerBarPosition)
-    swapToPowerBarPositionCheckBox:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.SecondaryPowerBar.SwapToPowerBarPosition = value BCDM:UpdateSecondaryPowerBar() end)
-    swapToPowerBarPositionCheckBox:SetCallback("OnEnter", function(self) GameTooltip:SetOwner(self.frame, "ANCHOR_CURSOR") GameTooltip:AddLine("If |cFF40FF40enabled|r, this will automatically decide when the |cFF8080FFSecondary|r Power Bar should be used in place of the |cFF8080FFPower|r Bar.", 1, 1, 1) GameTooltip:Show() end)
+    swapToPowerBarPositionCheckBox:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.SecondaryPowerBar.SwapToPowerBarPosition = value BCDM:UpdateSecondaryPowerBar() RefreshSecondaryPowerBarGUISettings() end)
+    swapToPowerBarPositionCheckBox:SetCallback("OnEnter", function(self) GameTooltip:SetOwner(self.frame, "ANCHOR_CURSOR") GameTooltip:AddLine("If |cFF40FF40enabled|r, this will automatically decide when the |cFF8080FFSecondary|r Power Bar should be used in place of the |cFF8080FFPower|r Bar.\nHeight is defined by |cFF8080FFHeight (No Primary Bar)|r within this module.", 1, 1, 1) GameTooltip:Show() end)
     swapToPowerBarPositionCheckBox:SetCallback("OnLeave", function() GameTooltip:Hide() end)
     swapToPowerBarPositionCheckBox:SetRelativeWidth(1)
     toggleContainer:AddChild(swapToPowerBarPositionCheckBox)
@@ -1948,8 +1948,16 @@ local function CreateSecondaryPowerBarSettings(parentContainer)
     heightSlider:SetValue(BCDM.db.profile.SecondaryPowerBar.Height)
     heightSlider:SetSliderValues(5, 500, 0.1)
     heightSlider:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.SecondaryPowerBar.Height = value BCDM:UpdateSecondaryPowerBar() end)
-    heightSlider:SetRelativeWidth(0.5)
+    heightSlider:SetRelativeWidth(0.25)
     layoutContainer:AddChild(heightSlider)
+
+    local heightWithoutPrimarySlider = AG:Create("Slider")
+    heightWithoutPrimarySlider:SetLabel("Height (No Primary Bar)")
+    heightWithoutPrimarySlider:SetValue(BCDM.db.profile.SecondaryPowerBar.HeightWithoutPrimary)
+    heightWithoutPrimarySlider:SetSliderValues(5, 500, 0.1)
+    heightWithoutPrimarySlider:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.SecondaryPowerBar.HeightWithoutPrimary = value BCDM:UpdateSecondaryPowerBar() end)
+    heightWithoutPrimarySlider:SetRelativeWidth(0.25)
+    layoutContainer:AddChild(heightWithoutPrimarySlider)
 
     local xOffsetSlider = AG:Create("Slider")
     xOffsetSlider:SetLabel("X Offset")
@@ -1997,6 +2005,7 @@ local function CreateSecondaryPowerBarSettings(parentContainer)
                 end
             end
             swapToPowerBarPositionCheckBox:SetDisabled(true)
+            heightWithoutPrimarySlider:SetDisabled(true)
         else
             for _, child in ipairs(toggleContainer.children) do
                 if child.SetDisabled then
@@ -2024,6 +2033,7 @@ local function CreateSecondaryPowerBarSettings(parentContainer)
                 widthSlider:SetDisabled(false)
             end
             swapToPowerBarPositionCheckBox:SetDisabled(not BCDM:RepositionSecondaryBar())
+            heightWithoutPrimarySlider:SetDisabled(not BCDM.db.profile.SecondaryPowerBar.SwapToPowerBarPosition)
         end
         RefreshSecondaryPowerBarTextGUISettings()
     end
