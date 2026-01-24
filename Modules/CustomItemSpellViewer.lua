@@ -239,7 +239,12 @@ local function CreateCustomIcons(iconTable)
         table.sort(items, function(a, b) return a.index < b.index end)
 
         for _, item in ipairs(items) do
-            local customItem = item.entryType == "spell" and CreateCustomSpellIcon(item.id) or CreateCustomItemIcon(item.id)
+            local customItem = nil
+            if item.entryType == "spell" then
+                customItem = CreateCustomSpellIcon(item.id)
+            else
+                customItem = CreateCustomItemIcon(item.id)
+            end
             if customItem then
                 table.insert(iconTable, customItem)
             end
