@@ -195,28 +195,28 @@ function BCDM:CreateCooldownViewerOverlays()
     end
 end
 
-function BCDM:ClearTicks()
-    for _, tick in ipairs(BCDM.SecondaryPowerBar.Ticks) do
+function BCDM:ClearTicks(bar)
+    for _, tick in ipairs(bar.Ticks) do
         tick:Hide()
     end
 end
 
-function BCDM:CreateTicks(count)
-    BCDM:ClearTicks()
+function BCDM:CreateTicks(bar, count)
+    BCDM:ClearTicks(bar)
     if not count or count <= 1 then return end
     if count > 10 then count = 10 end
-    local width = BCDM.SecondaryPowerBar.Status:GetWidth()
+    local width = bar.Status:GetWidth()
     for i = 1, count - 1 do
-        local tick = BCDM.SecondaryPowerBar.Ticks[i]
+        local tick = bar.Ticks[i]
         if not tick then
-            tick = BCDM.SecondaryPowerBar.Status:CreateTexture(nil, "OVERLAY")
+            tick = bar.Status:CreateTexture(nil, "OVERLAY")
             tick:SetColorTexture(0, 0, 0, 1)
-            BCDM.SecondaryPowerBar.Ticks[i] = tick
+            bar.Ticks[i] = tick
         end
         local tickPosition = (i / count) * width
         tick:ClearAllPoints()
-        tick:SetSize(1, BCDM.SecondaryPowerBar:GetHeight() - 2)
-        tick:SetPoint("LEFT", BCDM.SecondaryPowerBar.Status, "LEFT", tickPosition - 0.1, 0)
+        tick:SetSize(1, bar:GetHeight() - 2)
+        tick:SetPoint("LEFT", bar.Status, "LEFT", tickPosition - 0.1, 0)
         tick:SetDrawLayer("OVERLAY", 7)
         tick:Show()
     end
