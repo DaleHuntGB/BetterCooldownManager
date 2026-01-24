@@ -7,6 +7,7 @@
 	<Script file="CustomItemViewer.lua"/>
 	<Script file="CustomItemSpellViewer.lua"/>
 	<Script file="TrinketBar.lua"/>
+	<Script file="TickBar.lua"/>
 	<Script file="PowerBar.lua"/>
 	<Script file="SecondaryPowerBar.lua"/>
 	<Script file="EditMode.lua"/>
