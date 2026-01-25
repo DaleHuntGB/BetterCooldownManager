@@ -440,7 +440,7 @@ local function CreateKeybindSettings(containerParent)
     local enableKeybindCheckbox = AG:Create("CheckBox")
     enableKeybindCheckbox:SetLabel("Enable Keybinds")
     enableKeybindCheckbox:SetValue(KeybindDB.Enabled)
-    enableKeybindCheckbox:SetCallback("OnValueChanged", function(_, _, value) 
+    enableKeybindCheckbox:SetCallback("OnValueChanged", function(_, _, value)
         KeybindDB.Enabled = value
         BCDM.Keybinds:OnSettingChanged()
         RefreshKeybindSettings()
@@ -697,7 +697,7 @@ local function CreateGlobalSettings(parentContainer)
             button1 = "Reload Now",
             button2 = "Later",
             showAlert = true,
-            OnAccept = function() BCDM.db.profile.CooldownManager.Enable = value ReloadUI() end,
+            OnAccept = function() BCDM.db.profile.CooldownManager.Enable = value C_UI.Reload() end,
             OnCancel = function() enableCDMSkinningCheckbox:SetValue(BCDM.db.profile.CooldownManager.Enable) globalSettingsContainer:DoLayout() end,
             timeout = 0,
             whileDead = true,
@@ -1317,7 +1317,7 @@ local function CreateCooldownViewerSettings(parentContainer, viewerType)
                 button1 = "Reload Now",
                 button2 = "Later",
                 showAlert = true,
-                OnAccept = function() BCDM.db.profile.CooldownManager.Buffs.CenterBuffs = value ReloadUI() end,
+                OnAccept = function() BCDM.db.profile.CooldownManager.Buffs.CenterBuffs = value C_UI.Reload() end,
                 OnCancel = function() centerBuffsCheckbox:SetValue(BCDM.db.profile.CooldownManager.Buffs.CenterBuffs) toggleContainer:DoLayout() end,
                 timeout = 0,
                 whileDead = true,
