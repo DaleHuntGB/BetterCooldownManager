@@ -361,6 +361,10 @@ local function LayoutCustomItemsSpellsBar()
     end
 
     BCDM.CustomItemSpellBarContainer:Show()
+    -- Center rows if enabled in settings
+    if BCDM.db and BCDM.db.profile and BCDM.db.profile.CooldownManager and BCDM.db.profile.CooldownManager.ItemSpell and BCDM.db.profile.CooldownManager.ItemSpell.CenterItemSpell then
+        BCDM:CenterChildrenRows(BCDM.CustomItemSpellBarContainer)
+    end
 end
 
 function BCDM:SetupCustomItemsSpellsBar()

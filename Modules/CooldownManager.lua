@@ -268,49 +268,142 @@ end
 local centerBuffsUpdateThrottle = 0.05
 local nextcenterBuffsUpdate = 0
 
-local function CenterBuffs()
-    local currentTime = GetTime()
-    if currentTime < nextcenterBuffsUpdate then return end
-    nextcenterBuffsUpdate = currentTime + centerBuffsUpdateThrottle
-    local visibleBuffIcons = {}
+local centerUpdateThrottle = 0.05
+local nextCenterUpdate = {}
 
-    for _, childFrame in ipairs({ BuffIconCooldownViewer:GetChildren() }) do
+local function CenterViewer(frameName)
+    local key = frameName
+    if not nextCenterUpdate[key] then nextCenterUpdate[key] = 0 end
+    local currentTime = GetTime()
+    if currentTime < nextCenterUpdate[key] then return end
+    nextCenterUpdate[key] = currentTime + centerUpdateThrottle
+    local frame = _G[frameName]
+    if not frame then return 0 end
+    local visibleCount = 0
+    for _, childFrame in ipairs({ frame:GetChildren() }) do
         if childFrame and childFrame.Icon and childFrame:IsShown() then
-            table.insert(visibleBuffIcons, childFrame)
+            visibleCount = visibleCount + 1
         end
     end
-
-    table.sort(visibleBuffIcons, function(a, b)
-        return (a.layoutIndex or 0) < (b.layoutIndex or 0)
-    end)
-
-    local visibleCount = #visibleBuffIcons
-    if visibleCount == 0 then return 0 end
-
-    local iconWidth = visibleBuffIcons[1]:GetWidth()
-    local iconSpacing = BuffIconCooldownViewer.childXPadding or 0
-    local totalWidth = (visibleCount * iconWidth) + ((visibleCount - 1) * iconSpacing)
-    local startX = -totalWidth / 2 + iconWidth / 2
-
-    for index, iconFrame in ipairs(visibleBuffIcons) do
-        iconFrame:ClearAllPoints()
-        iconFrame:SetPoint("CENTER", BuffIconCooldownViewer, "CENTER", startX + (index - 1) * (iconWidth + iconSpacing), 0)
+    if visibleCount > 0 then
+        BCDM:CenterChildrenRows(frame)
     end
-
     return visibleCount
 end
 
+local function CenterBuffs()
+    return CenterViewer("BuffIconCooldownViewer")
+end
 
+local function CenterUtility()
+    return CenterViewer("UtilityCooldownViewer")
+end
+
+local function CenterEssential()
+    return CenterViewer("EssentialCooldownViewer")
+end
+
+local centerEssentialEventFrame = CreateFrame("Frame")
 local centerBuffsEventFrame = CreateFrame("Frame")
+local centerUtilityEventFrame = CreateFrame("Frame")
+
+local eventFrames = {
+    Buffs = centerBuffsEventFrame,
+    Utility = centerUtilityEventFrame,
+    Essential = centerEssentialEventFrame,
+}
+
+local function SetupCenterViewer(viewerType, centerKey)
+    local settings = BCDM.db.profile.CooldownManager[viewerType]
+    if settings and settings[centerKey] then
+        eventFrames[viewerType]:SetScript("OnUpdate", function() CenterViewer(viewerType == "Buffs" and "BuffIconCooldownViewer" or viewerType .. "CooldownViewer") end)
+    else
+        eventFrames[viewerType]:SetScript("OnUpdate", nil)
+        eventFrames[viewerType]:Hide()
+    end
+end
+
+local function SetupCenterEssential()
+    SetupCenterViewer("Essential", "CenterEssential")
+end
 
 local function SetupCenterBuffs()
-    local buffsSettings = BCDM.db.profile.CooldownManager.Buffs
+    SetupCenterViewer("Buffs", "CenterBuffs")
+end
 
-    if buffsSettings.CenterBuffs then
-        centerBuffsEventFrame:SetScript("OnUpdate", CenterBuffs)
-    else
-        centerBuffsEventFrame:SetScript("OnUpdate", nil)
-        centerBuffsEventFrame:Hide()
+local function SetupCenterUtility()
+    SetupCenterViewer("Utility", "CenterUtility")
+end
+
+-- Generic helper to center rows for any container frame that already
+-- has its children positioned (groups by vertical offset and centers each row).
+function BCDM:CenterChildrenRows(container)
+    if not container then return end
+    local children = { container:GetChildren() }
+    if #children == 0 then return end
+
+    local visibleIcons = {}
+    for _, child in ipairs(children) do
+        if child and child:IsShown() then
+            table.insert(visibleIcons, child)
+        end
+    end
+    if #visibleIcons == 0 then return end
+
+    local cX, cY = container:GetCenter()
+    if not cX or not cY then return end
+
+    local rows = {}
+    for _, icon in ipairs(visibleIcons) do
+        local ix, iy = icon:GetCenter()
+        if ix and iy then
+            local rowOffset = iy - cY
+            local key = tostring(math.floor(rowOffset * 100 + 0.5))
+            rows[key] = rows[key] or { offset = rowOffset, icons = {} }
+            table.insert(rows[key].icons, icon)
+        else
+            rows["0"] = rows["0"] or { offset = 0, icons = {} }
+            table.insert(rows["0"].icons, icon)
+        end
+    end
+
+    for _, row in pairs(rows) do
+        local rowIcons = row.icons
+        local count = #rowIcons
+        if count > 0 then
+            -- ensure icons are ordered left-to-right by their X coordinate before repositioning
+            table.sort(rowIcons, function(a, b)
+                local ax, _ = a:GetCenter()
+                local bx, _ = b:GetCenter()
+                ax = ax or 0
+                bx = bx or 0
+                return ax < bx
+            end)
+
+            local iconWidth = rowIcons[1]:GetWidth()
+            -- determine spacing: prefer container.childXPadding, else infer from first two icons if possible
+            local spacing = container.childXPadding
+            if not spacing or spacing == 0 then
+                if count > 1 then
+                    local x1, _ = rowIcons[1]:GetCenter()
+                    local x2, _ = rowIcons[2]:GetCenter()
+                    if x1 and x2 then
+                        spacing = (x2 - x1) - iconWidth
+                    else
+                        spacing = 0
+                    end
+                else
+                    spacing = 0
+                end
+            end
+
+            local totalWidth = (count * iconWidth) + ((count - 1) * spacing)
+            local startX = -totalWidth / 2 + iconWidth / 2
+            for idx, iconFrame in ipairs(rowIcons) do
+                iconFrame:ClearAllPoints()
+                iconFrame:SetPoint("CENTER", container, "CENTER", startX + (idx - 1) * (iconWidth + spacing), row.offset)
+            end
+        end
     end
 end
 
@@ -323,6 +416,8 @@ function BCDM:SkinCooldownManager()
     -- C_Timer.After(1, function() StyleBuffsBars() end)
     SetHooks()
     SetupCenterBuffs()
+    SetupCenterUtility()
+    SetupCenterEssential()
     for _, viewerName in ipairs(BCDM.CooldownManagerViewers) do C_Timer.After(0.1, function() ApplyCooldownText(viewerName) end) end
     C_Timer.After(1, function() LEMO:ApplyChanges() end)
 end
@@ -336,7 +431,9 @@ function BCDM:UpdateCooldownViewer(viewerType)
     if viewerType == "Item" then BCDM:UpdateCustomItemBar() return end
     if viewerType == "Trinket" then BCDM:UpdateTrinketBar() return end
     if viewerType == "ItemSpell" then BCDM:UpdateCustomItemsSpellsBar() return end
+    if viewerType == "Utility" then SetupCenterUtility() end
     if viewerType == "Buffs" then SetupCenterBuffs() end
+    if viewerType == "Essential" then SetupCenterEssential() end
 
 
     for _, childFrame in ipairs({cooldownViewerFrame:GetChildren()}) do

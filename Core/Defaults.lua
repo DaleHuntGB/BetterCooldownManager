@@ -112,9 +112,11 @@ local Defaults = {
                     Colour = {1, 1, 1},
                     Layout = {"BOTTOMRIGHT", "BOTTOMRIGHT", 0, 3}
                 },
+                CenterEssential = false,
             },
             Utility = {
                 IconSize = 36,
+                CenterUtility = false,
                 Layout = {"TOP", "EssentialCooldownViewer", "BOTTOM", 0, -1.1},
                 Text = {
                     FontSize = 15,
@@ -253,6 +255,7 @@ local Defaults = {
                         ["SUBTLETY"] = {},
                     }
                 },
+                CenterCustom = false,
             },
             AdditionalCustom = {
                 IconSize = 38,
@@ -346,6 +349,7 @@ local Defaults = {
                         ["SUBTLETY"] = {},
                     }
                 },
+                CenterAdditionalCustom = false,
             },
             Item = {
                 IconSize = 38,
@@ -360,6 +364,7 @@ local Defaults = {
                     Layout = {"BOTTOMRIGHT", "BOTTOMRIGHT", 0, 2}
                 },
                 Items = {},
+                CenterItem = false,
             },
             Trinket = {
                 Enabled = true,
@@ -375,6 +380,7 @@ local Defaults = {
                     Layout = {"BOTTOMRIGHT", "BOTTOMRIGHT", 0, 2}
                 },
                 Trinkets = {},
+                CenterTrinket = false,
             },
             ItemSpell = {
                 IconSize = 38,
@@ -389,6 +395,7 @@ local Defaults = {
                     Layout = {"BOTTOMRIGHT", "BOTTOMRIGHT", 0, 2}
                 },
                 ItemsSpells = {},
+                CenterItemSpell = false,
             },
         },
         PowerBar = {

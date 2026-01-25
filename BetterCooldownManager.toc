@@ -1,6 +1,6 @@
 ## Title: |cFF8080FFBetter|rCooldownManager
 ## Interface: 120000, 120001
-## Version: V12.0.13
+## Version: @project-version@
 ## Author: |cFF8080FFUnhalted|r
 ## Notes: |cFF8080FFBetter|rCooldownManager is an all-in-one AddOn that provides additional customization to the Cooldown Manager, developed by |cFF8080FFUnhalted|r
 ## SavedVariables: BCDMDB

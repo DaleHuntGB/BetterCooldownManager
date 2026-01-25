@@ -244,9 +244,9 @@ end
 
 local function GenerateSupportText(parentFrame)
     local SupportOptions = {
-        "Support Me on |TInterface\\AddOns\\UnhaltedUnitFrames\\Media\\Support\\Ko-Fi.png:13:18|t |cFF8080FFKo-Fi|r!",
-        "Support Me on |TInterface\\AddOns\\UnhaltedUnitFrames\\Media\\Support\\Patreon.png:14:14|t |cFF8080FFPatreon|r!",
-        "|TInterface\\AddOns\\UnhaltedUnitFrames\\Media\\Support\\PayPal.png:20:18|t |cFF8080FFPayPal Donations|r are appreciated!",
+       -- "Support Me on |TInterface\\AddOns\\UnhaltedUnitFrames\\Media\\Support\\Ko-Fi.png:13:18|t |cFF8080FFKo-Fi|r!",
+        -- "Support Me on |TInterface\\AddOns\\UnhaltedUnitFrames\\Media\\Support\\Patreon.png:14:14|t |cFF8080FFPatreon|r!",
+        -- "|TInterface\\AddOns\\UnhaltedUnitFrames\\Media\\Support\\PayPal.png:20:18|t |cFF8080FFPayPal Donations|r are appreciated!",
         "Join the |TInterface\\AddOns\\UnhaltedUnitFrames\\Media\\Support\\Discord.png:18:18|t |cFF8080FFDiscord|r Community!",
         "Report Issues / Feedback on |TInterface\\AddOns\\UnhaltedUnitFrames\\Media\\Support\\GitHub.png:18:18|t |cFF8080FFGitHub|r!",
         "Follow Me on |TInterface\\AddOns\\UnhaltedUnitFrames\\Media\\Support\\Twitch.png:18:14|t |cFF8080FFTwitch|r!",
@@ -566,25 +566,25 @@ local function CreateGeneralSettings(parentContainer)
     SupportMeContainer:SetFullWidth(true)
     ScrollFrame:AddChild(SupportMeContainer)
 
-    local KoFiInteractive = AG:Create("InteractiveLabel")
-    KoFiInteractive:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\Ko-Fi.png:16:21|t |cFF8080FFKo-Fi|r")
-    KoFiInteractive:SetFont("Fonts\\FRIZQT__.TTF", 13, "OUTLINE")
-    KoFiInteractive:SetJustifyV("MIDDLE")
-    KoFiInteractive:SetRelativeWidth(0.33)
-    KoFiInteractive:SetCallback("OnClick", function() BCDM:OpenURL("Support Me on Ko-Fi", "https://ko-fi.com/unhalted") end)
-    KoFiInteractive:SetCallback("OnEnter", function() KoFiInteractive:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\Ko-Fi.png:16:21|t |cFFFFFFFFKo-Fi|r") end)
-    KoFiInteractive:SetCallback("OnLeave", function() KoFiInteractive:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\Ko-Fi.png:16:21|t |cFF8080FFKo-Fi|r") end)
-    SupportMeContainer:AddChild(KoFiInteractive)
+    -- local KoFiInteractive = AG:Create("InteractiveLabel")
+    -- KoFiInteractive:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\Ko-Fi.png:16:21|t |cFF8080FFKo-Fi|r")
+    -- KoFiInteractive:SetFont("Fonts\\FRIZQT__.TTF", 13, "OUTLINE")
+    -- KoFiInteractive:SetJustifyV("MIDDLE")
+    -- KoFiInteractive:SetRelativeWidth(0.33)
+    -- KoFiInteractive:SetCallback("OnClick", function() BCDM:OpenURL("Support Me on Ko-Fi", "https://ko-fi.com/unhalted") end)
+    -- KoFiInteractive:SetCallback("OnEnter", function() KoFiInteractive:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\Ko-Fi.png:16:21|t |cFFFFFFFFKo-Fi|r") end)
+    -- KoFiInteractive:SetCallback("OnLeave", function() KoFiInteractive:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\Ko-Fi.png:16:21|t |cFF8080FFKo-Fi|r") end)
+    -- SupportMeContainer:AddChild(KoFiInteractive)
 
-    local PayPalInteractive = AG:Create("InteractiveLabel")
-    PayPalInteractive:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\PayPal.png:23:21|t |cFF8080FFPayPal|r")
-    PayPalInteractive:SetFont("Fonts\\FRIZQT__.TTF", 13, "OUTLINE")
-    PayPalInteractive:SetJustifyV("MIDDLE")
-    PayPalInteractive:SetRelativeWidth(0.33)
-    PayPalInteractive:SetCallback("OnClick", function() BCDM:OpenURL("Support Me on PayPal", "https://www.paypal.com/paypalme/dhunt1911") end)
-    PayPalInteractive:SetCallback("OnEnter", function() PayPalInteractive:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\PayPal.png:23:21|t |cFFFFFFFFPayPal|r") end)
-    PayPalInteractive:SetCallback("OnLeave", function() PayPalInteractive:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\PayPal.png:23:21|t |cFF8080FFPayPal|r") end)
-    SupportMeContainer:AddChild(PayPalInteractive)
+    -- local PayPalInteractive = AG:Create("InteractiveLabel")
+    -- PayPalInteractive:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\PayPal.png:23:21|t |cFF8080FFPayPal|r")
+    -- PayPalInteractive:SetFont("Fonts\\FRIZQT__.TTF", 13, "OUTLINE")
+    -- PayPalInteractive:SetJustifyV("MIDDLE")
+    -- PayPalInteractive:SetRelativeWidth(0.33)
+    -- PayPalInteractive:SetCallback("OnClick", function() BCDM:OpenURL("Support Me on PayPal", "https://www.paypal.com/paypalme/dhunt1911") end)
+    -- PayPalInteractive:SetCallback("OnEnter", function() PayPalInteractive:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\PayPal.png:23:21|t |cFFFFFFFFPayPal|r") end)
+    -- PayPalInteractive:SetCallback("OnLeave", function() PayPalInteractive:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\PayPal.png:23:21|t |cFF8080FFPayPal|r") end)
+    -- SupportMeContainer:AddChild(PayPalInteractive)
 
     local TwitchInteractive = AG:Create("InteractiveLabel")
     TwitchInteractive:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\Twitch.png:25:21|t |cFF8080FFTwitch|r")
@@ -606,15 +606,15 @@ local function CreateGeneralSettings(parentContainer)
     DiscordInteractive:SetCallback("OnLeave", function() DiscordInteractive:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\Discord.png:21:21|t |cFF8080FFDiscord|r") end)
     SupportMeContainer:AddChild(DiscordInteractive)
 
-    local PatreonInteractive = AG:Create("InteractiveLabel")
-    PatreonInteractive:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\Patreon.png:21:21|t |cFF8080FFPatreon|r")
-    PatreonInteractive:SetFont("Fonts\\FRIZQT__.TTF", 13, "OUTLINE")
-    PatreonInteractive:SetJustifyV("MIDDLE")
-    PatreonInteractive:SetRelativeWidth(0.33)
-    PatreonInteractive:SetCallback("OnClick", function() BCDM:OpenURL("Support Me on Patreon", "https://www.patreon.com/unhalted") end)
-    PatreonInteractive:SetCallback("OnEnter", function() PatreonInteractive:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\Patreon.png:21:21|t |cFFFFFFFFPatreon|r") end)
-    PatreonInteractive:SetCallback("OnLeave", function() PatreonInteractive:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\Patreon.png:21:21|t |cFF8080FFPatreon|r") end)
-    SupportMeContainer:AddChild(PatreonInteractive)
+    -- local PatreonInteractive = AG:Create("InteractiveLabel")
+    -- PatreonInteractive:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\Patreon.png:21:21|t |cFF8080FFPatreon|r")
+    -- PatreonInteractive:SetFont("Fonts\\FRIZQT__.TTF", 13, "OUTLINE")
+    -- PatreonInteractive:SetJustifyV("MIDDLE")
+    -- PatreonInteractive:SetRelativeWidth(0.33)
+    -- PatreonInteractive:SetCallback("OnClick", function() BCDM:OpenURL("Support Me on Patreon", "https://www.patreon.com/unhalted") end)
+    -- PatreonInteractive:SetCallback("OnEnter", function() PatreonInteractive:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\Patreon.png:21:21|t |cFFFFFFFFPatreon|r") end)
+    -- PatreonInteractive:SetCallback("OnLeave", function() PatreonInteractive:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\Patreon.png:21:21|t |cFF8080FFPatreon|r") end)
+    -- SupportMeContainer:AddChild(PatreonInteractive)
 
     local GithubInteractive = AG:Create("InteractiveLabel")
     GithubInteractive:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\Github.png:21:21|t |cFF8080FFGithub|r")
@@ -1256,32 +1256,65 @@ local function CreateCooldownViewerSettings(parentContainer, viewerType)
     ScrollFrame:SetFullHeight(true)
     parentContainer:AddChild(ScrollFrame)
 
-    if viewerType == "Buffs" then
+    local function CreateCenterCheckbox(scrollFrame, viewerType, displayName, labelText)
         local toggleContainer = AG:Create("InlineGroup")
-        toggleContainer:SetTitle("Buff Viewer Settings")
+        toggleContainer:SetTitle(displayName .. " Viewer Settings")
         toggleContainer:SetFullWidth(true)
         toggleContainer:SetLayout("Flow")
-        ScrollFrame:AddChild(toggleContainer)
+        scrollFrame:AddChild(toggleContainer)
 
-        local centerBuffsCheckbox = AG:Create("CheckBox")
-        centerBuffsCheckbox:SetLabel("Center Buffs (Horizontally) - |cFFFF4040Reload|r Required.")
-        centerBuffsCheckbox:SetValue(BCDM.db.profile.CooldownManager.Buffs.CenterBuffs)
-        centerBuffsCheckbox:SetCallback("OnValueChanged", function(_, _, value)
+        local centerKey = "Center" .. viewerType
+        local checkbox = AG:Create("CheckBox")
+        checkbox:SetLabel("Center " .. labelText .. " (Horizontally) - |cFFFF4040Reload|r Required.")
+        checkbox:SetValue(BCDM.db.profile.CooldownManager[viewerType][centerKey])
+        checkbox:SetCallback("OnValueChanged", function(_, _, value)
             StaticPopupDialogs["BCDM_RELOAD_UI"] = {
                 text = "You must reload to apply this change, do you want to reload now?",
                 button1 = "Reload Now",
                 button2 = "Later",
                 showAlert = true,
-                OnAccept = function() BCDM.db.profile.CooldownManager.Buffs.CenterBuffs = value ReloadUI() end,
-                OnCancel = function() centerBuffsCheckbox:SetValue(BCDM.db.profile.CooldownManager.Buffs.CenterBuffs) toggleContainer:DoLayout() end,
+                OnAccept = function() BCDM.db.profile.CooldownManager[viewerType][centerKey] = value ReloadUI() end,
+                OnCancel = function() checkbox:SetValue(BCDM.db.profile.CooldownManager[viewerType][centerKey]) toggleContainer:DoLayout() end,
                 timeout = 0,
                 whileDead = true,
                 hideOnEscape = true,
             }
             StaticPopup_Show("BCDM_RELOAD_UI")
         end)
-        centerBuffsCheckbox:SetRelativeWidth(1)
-        toggleContainer:AddChild(centerBuffsCheckbox)
+        checkbox:SetRelativeWidth(1)
+        toggleContainer:AddChild(checkbox)
+    end
+
+    if viewerType == "Utility" then
+        CreateCenterCheckbox(ScrollFrame, "Utility", "Utility", "Utility")
+    end
+
+    if viewerType == "Essential" then
+        CreateCenterCheckbox(ScrollFrame, "Essential", "Essential", "Essential")
+    end
+
+    if viewerType == "Buffs" then
+        CreateCenterCheckbox(ScrollFrame, "Buffs", "Buff", "Buffs")
+    end
+
+    if viewerType == "Custom" then
+        CreateCenterCheckbox(ScrollFrame, "Custom", "Custom", "Custom")
+    end
+
+    if viewerType == "AdditionalCustom" then
+        CreateCenterCheckbox(ScrollFrame, "AdditionalCustom", "Additional Custom", "Additional Custom")
+    end
+
+    if viewerType == "Item" then
+        CreateCenterCheckbox(ScrollFrame, "Item", "Item", "Items")
+    end
+
+    if viewerType == "Trinket" then
+        CreateCenterCheckbox(ScrollFrame, "Trinket", "Trinket", "Trinket")
+    end
+
+    if viewerType == "ItemSpell" then
+        CreateCenterCheckbox(ScrollFrame, "ItemSpell", "Item & Spell", "Items & Spells")
     end
 
     -- local foregroundColourPicker;
