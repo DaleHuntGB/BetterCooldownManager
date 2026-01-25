@@ -116,13 +116,13 @@ local Defaults = {
             },
             Utility = {
                 IconSize = 36,
-                CenterUtility = false,
                 Layout = {"TOP", "EssentialCooldownViewer", "BOTTOM", 0, -1.1},
                 Text = {
                     FontSize = 15,
                     Colour = {1, 1, 1},
                     Layout = {"BOTTOMRIGHT", "BOTTOMRIGHT", 0, 3}
                 },
+                CenterUtility = false,
             },
             Buffs = {
                 IconSize = 32,
