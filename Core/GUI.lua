@@ -117,6 +117,19 @@ local AnchorParents = {
         },
         { "EssentialCooldownViewer", "UtilityCooldownViewer", "NONE", "PlayerFrame", "TargetFrame", "BCDM_PowerBar", "BCDM_SecondaryPowerBar" },
     },
+    ["TickBar"] = {
+        {
+            ["EssentialCooldownViewer"] = "|cFF00AEF7Blizzard|r: Essential Cooldown Viewer",
+            ["UtilityCooldownViewer"] = "|cFF00AEF7Blizzard|r: Utility Cooldown Viewer",
+            ["NONE"] = "|cFF00AEF7Blizzard|r: UIParent",
+            ["PlayerFrame"] = "|cFF00AEF7Blizzard|r: Player Frame",
+            ["TargetFrame"] = "|cFF00AEF7Blizzard|r: Target Frame",
+            ["BCDM_PowerBar"] = "|cFF8080FFBetter|rCooldownManager: Power Bar",
+            ["BCDM_SecondaryPowerBar"] = "|cFF8080FFBetter|rCooldownManager: Secondary Power Bar",
+            ["BCDM_TickBar"] = "|cFF8080FFBetter|rCooldownManager: Tick Bar",
+        },
+        { "EssentialCooldownViewer", "UtilityCooldownViewer", "NONE", "PlayerFrame", "TargetFrame", "BCDM_PowerBar", "BCDM_SecondaryPowerBar", "BCDM_TickBar" },
+    },
     ["Item"] = {
         {
             ["EssentialCooldownViewer"] = "|cFF00AEF7Blizzard|r: Essential Cooldown Viewer",
@@ -1248,7 +1261,7 @@ end
 
 local function CreateCooldownViewerSettings(parentContainer, viewerType)
     local hasAnchorParent = viewerType == "Utility" or viewerType == "Buffs" or viewerType == "Custom" or viewerType == "AdditionalCustom" or viewerType == "Item" or viewerType == "Trinket" or viewerType == "ItemSpell"
-    local isCustomViewer = viewerType == "Custom" or viewerType == "AdditionalCustom" or viewerType == "Item" or viewerType == "Trinket" or viewerType == "ItemSpell"
+    local isCustomViewer = viewerType == "Custom" or viewerType == "AdditionalCustom" or viewerType == "TickBar" or viewerType == "Item" or viewerType == "Trinket" or viewerType == "ItemSpell"
 
     local ScrollFrame = AG:Create("ScrollFrame")
     ScrollFrame:SetLayout("Flow")
@@ -1792,6 +1805,262 @@ local function CreateSecondaryPowerBarTextSettings(parentContainer)
     RefreshSecondaryPowerBarTextGUISettings()
 
     return textContainer
+end
+
+local function CreateTickBarTextSettings(parentContainer)
+    local textContainer = AG:Create("InlineGroup")
+    textContainer:SetTitle("Text Settings")
+    textContainer:SetFullWidth(true)
+    textContainer:SetLayout("Flow")
+    parentContainer:AddChild(textContainer)
+
+    local enabledCheckbox = AG:Create("CheckBox")
+    enabledCheckbox:SetLabel("Enable Text")
+    enabledCheckbox:SetValue(BCDM.db.profile.CooldownManager.TickBar.Text.Enabled)
+    enabledCheckbox:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.CooldownManager.TickBar.Text.Enabled = value BCDM:UpdateTickBar() RefreshTickBarTextGUISettings() end)
+    enabledCheckbox:SetRelativeWidth(1)
+    textContainer:AddChild(enabledCheckbox)
+
+    local anchorFromDropdown = AG:Create("Dropdown")
+    anchorFromDropdown:SetLabel("Anchor From")
+    anchorFromDropdown:SetList(AnchorPoints[1], AnchorPoints[2])
+    anchorFromDropdown:SetValue(BCDM.db.profile.CooldownManager.TickBar.Text.Layout[1])
+    anchorFromDropdown:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.CooldownManager.TickBar.Text.Layout[1] = value BCDM:UpdateTickBar() end)
+    anchorFromDropdown:SetRelativeWidth(0.5)
+    textContainer:AddChild(anchorFromDropdown)
+
+    local anchorToDropdown = AG:Create("Dropdown")
+    anchorToDropdown:SetLabel("Anchor To")
+    anchorToDropdown:SetList(AnchorPoints[1], AnchorPoints[2])
+    anchorToDropdown:SetValue(BCDM.db.profile.CooldownManager.TickBar.Text.Layout[2])
+    anchorToDropdown:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.CooldownManager.TickBar.Text.Layout[2] = value BCDM:UpdateTickBar() end)
+    anchorToDropdown:SetRelativeWidth(0.5)
+    textContainer:AddChild(anchorToDropdown)
+
+    local xOffsetSlider = AG:Create("Slider")
+    xOffsetSlider:SetLabel("X Offset")
+    xOffsetSlider:SetValue(BCDM.db.profile.CooldownManager.TickBar.Text.Layout[3])
+    xOffsetSlider:SetSliderValues(-500, 500, 0.1)
+    xOffsetSlider:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.CooldownManager.TickBar.Text.Layout[3] = value BCDM:UpdateTickBar() end)
+    xOffsetSlider:SetRelativeWidth(0.33)
+    textContainer:AddChild(xOffsetSlider)
+
+    local yOffsetSlider = AG:Create("Slider")
+    yOffsetSlider:SetLabel("Y Offset")
+    yOffsetSlider:SetValue(BCDM.db.profile.CooldownManager.TickBar.Text.Layout[4])
+    yOffsetSlider:SetSliderValues(-500, 500, 0.1)
+    yOffsetSlider:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.CooldownManager.TickBar.Text.Layout[4] = value BCDM:UpdateTickBar() end)
+    yOffsetSlider:SetRelativeWidth(0.33)
+    textContainer:AddChild(yOffsetSlider)
+
+    local fontSizeSlider = AG:Create("Slider")
+    fontSizeSlider:SetLabel("Font Size")
+    fontSizeSlider:SetValue(BCDM.db.profile.CooldownManager.TickBar.Text.FontSize)
+    fontSizeSlider:SetSliderValues(6, 72, 1)
+    fontSizeSlider:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.CooldownManager.TickBar.Text.FontSize = value BCDM:UpdateTickBar() end)
+    fontSizeSlider:SetRelativeWidth(0.33)
+    textContainer:AddChild(fontSizeSlider)
+
+    function RefreshTickBarTextGUISettings()
+        local enabled = BCDM.db.profile.CooldownManager.TickBar.Text.Enabled
+        anchorFromDropdown:SetDisabled(not enabled)
+        anchorToDropdown:SetDisabled(not enabled)
+        xOffsetSlider:SetDisabled(not enabled)
+        yOffsetSlider:SetDisabled(not enabled)
+        fontSizeSlider:SetDisabled(not enabled)
+    end
+
+    RefreshTickBarTextGUISettings()
+
+    return textContainer
+end
+
+
+local function CreateTickBarSettings(parentContainer)
+    local ScrollFrame = AG:Create("ScrollFrame")
+    ScrollFrame:SetLayout("Flow")
+    ScrollFrame:SetFullWidth(true)
+    ScrollFrame:SetFullHeight(true)
+    parentContainer:AddChild(ScrollFrame)
+
+    local toggleContainer = AG:Create("InlineGroup")
+    toggleContainer:SetTitle("Toggles & Colours")
+    toggleContainer:SetFullWidth(true)
+    toggleContainer:SetLayout("Flow")
+    ScrollFrame:AddChild(toggleContainer)
+
+    local enabledCheckbox = AG:Create("CheckBox")
+    enabledCheckbox:SetLabel("Enable Tick Bar")
+    enabledCheckbox:SetValue(BCDM.db.profile.CooldownManager.TickBar.Enabled)
+    enabledCheckbox:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.CooldownManager.TickBar.Enabled = value BCDM:UpdateTickBar() RefreshTickBarGUISettings() end)
+    enabledCheckbox:SetRelativeWidth(1)
+    toggleContainer:AddChild(enabledCheckbox)
+
+    local colourByClassCheckbox = AG:Create("CheckBox")
+    colourByClassCheckbox:SetLabel("Colour By Class")
+    colourByClassCheckbox:SetValue(BCDM.db.profile.CooldownManager.TickBar.ColourByClass)
+    colourByClassCheckbox:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.CooldownManager.TickBar.ColourByClass = value BCDM:UpdateTickBar() RefreshTickBarGUISettings() end)
+    colourByClassCheckbox:SetRelativeWidth(1)
+    toggleContainer:AddChild(colourByClassCheckbox)
+
+    local matchAnchorWidthCheckbox = AG:Create("CheckBox")
+    matchAnchorWidthCheckbox:SetLabel("Match Width Of Anchor")
+    matchAnchorWidthCheckbox:SetValue(BCDM.db.profile.CooldownManager.TickBar.MatchWidthOfAnchor)
+    matchAnchorWidthCheckbox:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.CooldownManager.TickBar.MatchWidthOfAnchor = value BCDM:UpdateTickBar() RefreshTickBarGUISettings() end)
+    matchAnchorWidthCheckbox:SetRelativeWidth(1)
+    toggleContainer:AddChild(matchAnchorWidthCheckbox)
+
+    local foregroundColourPicker = AG:Create("ColorPicker")
+    foregroundColourPicker:SetLabel("Foreground Colour")
+    foregroundColourPicker:SetColor(BCDM.db.profile.CooldownManager.TickBar.ForegroundColour[1], BCDM.db.profile.CooldownManager.TickBar.ForegroundColour[2], BCDM.db.profile.CooldownManager.TickBar.ForegroundColour[3], BCDM.db.profile.CooldownManager.TickBar.ForegroundColour[4])
+    foregroundColourPicker:SetCallback("OnValueChanged", function(self, _, r, g, b, a) BCDM.db.profile.CooldownManager.TickBar.ForegroundColour = {r, g, b, a} BCDM:UpdateTickBar() end)
+    foregroundColourPicker:SetRelativeWidth(0.5)
+    foregroundColourPicker:SetHasAlpha(true)
+    toggleContainer:AddChild(foregroundColourPicker)
+
+    local backgroundColourPicker = AG:Create("ColorPicker")
+    backgroundColourPicker:SetLabel("Background Colour")
+    backgroundColourPicker:SetColor(BCDM.db.profile.CooldownManager.TickBar.BackgroundColour[1], BCDM.db.profile.CooldownManager.TickBar.BackgroundColour[2], BCDM.db.profile.CooldownManager.TickBar.BackgroundColour[3], BCDM.db.profile.CooldownManager.TickBar.BackgroundColour[4])
+    backgroundColourPicker:SetCallback("OnValueChanged", function(self, _, r, g, b, a) BCDM.db.profile.CooldownManager.TickBar.BackgroundColour = {r, g, b, a} BCDM:UpdateTickBar() end)
+    backgroundColourPicker:SetRelativeWidth(0.5)
+    backgroundColourPicker:SetHasAlpha(true)
+    toggleContainer:AddChild(backgroundColourPicker)
+
+    local layoutContainer = AG:Create("InlineGroup")
+    layoutContainer:SetTitle("Layout & Positioning")
+    layoutContainer:SetFullWidth(true)
+    layoutContainer:SetLayout("Flow")
+    ScrollFrame:AddChild(layoutContainer)
+
+    local anchorFromDropdown = AG:Create("Dropdown")
+    anchorFromDropdown:SetLabel("Anchor From")
+    anchorFromDropdown:SetList(AnchorPoints[1], AnchorPoints[2])
+    anchorFromDropdown:SetValue(BCDM.db.profile.CooldownManager.TickBar.Layout[1])
+    anchorFromDropdown:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.CooldownManager.TickBar.Layout[1] = value BCDM:UpdateTickBar() end)
+    anchorFromDropdown:SetRelativeWidth(0.33)
+    layoutContainer:AddChild(anchorFromDropdown)
+
+    local anchorParentDropdown = AG:Create("Dropdown")
+    anchorParentDropdown:SetLabel("Anchor Parent")
+    anchorParentDropdown:SetList(AnchorParents["TickBar"][1], AnchorParents["TickBar"][2])
+    anchorParentDropdown:SetValue(BCDM.db.profile.CooldownManager.TickBar.Layout[2])
+    anchorParentDropdown:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.CooldownManager.TickBar.Layout[2] = value BCDM:UpdateTickBar() end)
+    anchorParentDropdown:SetRelativeWidth(0.33)
+    layoutContainer:AddChild(anchorParentDropdown)
+
+    local anchorToDropdown = AG:Create("Dropdown")
+    anchorToDropdown:SetLabel("Anchor To")
+    anchorToDropdown:SetList(AnchorPoints[1], AnchorPoints[2])
+    anchorToDropdown:SetValue(BCDM.db.profile.CooldownManager.TickBar.Layout[3])
+    anchorToDropdown:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.CooldownManager.TickBar.Layout[3] = value BCDM:UpdateTickBar() end)
+    anchorToDropdown:SetRelativeWidth(0.33)
+    layoutContainer:AddChild(anchorToDropdown)
+
+    local widthSlider = AG:Create("Slider")
+    widthSlider:SetLabel("Width")
+    widthSlider:SetValue(BCDM.db.profile.CooldownManager.TickBar.Width)
+    widthSlider:SetSliderValues(50, 1000, 0.1)
+    widthSlider:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.CooldownManager.TickBar.Width = value BCDM:UpdateTickBar() end)
+    widthSlider:SetRelativeWidth(0.5)
+    layoutContainer:AddChild(widthSlider)
+
+    local heightSlider = AG:Create("Slider")
+    heightSlider:SetLabel("Height")
+    heightSlider:SetValue(BCDM.db.profile.CooldownManager.TickBar.Height)
+    heightSlider:SetSliderValues(5, 500, 0.1)
+    heightSlider:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.CooldownManager.TickBar.Height = value BCDM:UpdateTickBar() end)
+    heightSlider:SetRelativeWidth(0.5)
+    layoutContainer:AddChild(heightSlider)
+
+    local xOffsetSlider = AG:Create("Slider")
+    xOffsetSlider:SetLabel("X Offset")
+    xOffsetSlider:SetValue(BCDM.db.profile.CooldownManager.TickBar.Layout[4])
+    xOffsetSlider:SetSliderValues(-1000, 1000, 0.1)
+    xOffsetSlider:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.CooldownManager.TickBar.Layout[4] = value BCDM:UpdateTickBar() end)
+    xOffsetSlider:SetRelativeWidth(0.33)
+    layoutContainer:AddChild(xOffsetSlider)
+
+    local yOffsetSlider = AG:Create("Slider")
+    yOffsetSlider:SetLabel("Y Offset")
+    yOffsetSlider:SetValue(BCDM.db.profile.CooldownManager.TickBar.Layout[5])
+    yOffsetSlider:SetSliderValues(-1000, 1000, 0.1)
+    yOffsetSlider:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.CooldownManager.TickBar.Layout[5] = value BCDM:UpdateTickBar() end)
+    yOffsetSlider:SetRelativeWidth(0.33)
+    layoutContainer:AddChild(yOffsetSlider)
+
+    local frameStrataDropdown = AG:Create("Dropdown")
+    frameStrataDropdown:SetLabel("Frame Strata")
+    frameStrataDropdown:SetList({["BACKGROUND"] = "Background", ["LOW"] = "Low", ["MEDIUM"] = "Medium", ["HIGH"] = "High", ["DIALOG"] = "Dialog", ["FULLSCREEN"] = "Fullscreen", ["FULLSCREEN_DIALOG"] = "Fullscreen Dialog", ["TOOLTIP"] = "Tooltip"}, {"BACKGROUND", "LOW", "MEDIUM", "HIGH", "DIALOG", "FULLSCREEN", "FULLSCREEN_DIALOG", "TOOLTIP"})
+    frameStrataDropdown:SetValue(BCDM.db.profile.CooldownManager.TickBar.FrameStrata)
+    frameStrataDropdown:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.CooldownManager.TickBar.FrameStrata = value BCDM:UpdateTickBar() end)
+    frameStrataDropdown:SetRelativeWidth(0.33)
+    layoutContainer:AddChild(frameStrataDropdown)
+
+    local spellContainer = AG:Create("InlineGroup")
+    spellContainer:SetTitle("Custom Spells")
+    spellContainer:SetFullWidth(true)
+    spellContainer:SetLayout("Flow")
+    ScrollFrame:AddChild(spellContainer)
+
+    CreateCooldownViewerSpellSettings(spellContainer, "TickBar", ScrollFrame)
+
+    local textContainer = CreateTickBarTextSettings(ScrollFrame)
+
+    function RefreshTickBarGUISettings()
+        if not BCDM.db.profile.CooldownManager.TickBar.Enabled then
+            for _, child in ipairs(toggleContainer.children) do
+                if child ~= enabledCheckbox then
+                    if child.SetDisabled then
+                        child:SetDisabled(true)
+                    end
+                end
+            end
+            for _, child in ipairs(layoutContainer.children) do
+                if child.SetDisabled then
+                    child:SetDisabled(true)
+                end
+            end
+            for _, child in ipairs(textContainer.children) do
+                if child.SetDisabled then
+                    child:SetDisabled(true)
+                end
+            end
+        else
+            for _, child in ipairs(toggleContainer.children) do
+                if child.SetDisabled then
+                    child:SetDisabled(false)
+                end
+            end
+            for _, child in ipairs(layoutContainer.children) do
+                if child.SetDisabled then
+                    child:SetDisabled(false)
+                end
+            end
+            for _, child in ipairs(textContainer.children) do
+                if child.SetDisabled then
+                    child:SetDisabled(false)
+                end
+            end
+            if BCDM.db.profile.CooldownManager.TickBar.ColourByType or BCDM.db.profile.CooldownManager.TickBar.ColourByClass then
+                foregroundColourPicker:SetDisabled(true)
+            else
+                foregroundColourPicker:SetDisabled(false)
+            end
+            if BCDM.db.profile.CooldownManager.TickBar.MatchWidthOfAnchor then
+                widthSlider:SetDisabled(true)
+            else
+                widthSlider:SetDisabled(false)
+            end
+        end
+        RefreshTickBarTextGUISettings()
+    end
+
+    RefreshTickBarGUISettings()
+
+    parentContainer:DoLayout()
+    ScrollFrame:DoLayout()
+
+    return ScrollFrame
 end
 
 local function CreateSecondaryPowerBarSettings(parentContainer)
@@ -2610,6 +2879,8 @@ function BCDM:CreateGUI()
             CreateCooldownViewerSettings(Wrapper, "Custom")
         elseif MainTab == "AdditionalCustom" then
             CreateCooldownViewerSettings(Wrapper, "AdditionalCustom")
+        elseif MainTab == "TickBar" then
+            CreateTickBarSettings(Wrapper)
         elseif MainTab == "Item" then
             CreateCooldownViewerSettings(Wrapper, "Item")
         elseif MainTab == "Trinket" then
@@ -2645,6 +2916,7 @@ function BCDM:CreateGUI()
         { text = "Buffs", value = "Buffs"},
         { text = "Custom", value = "Custom"},
         { text = "Additional Custom", value = "AdditionalCustom"},
+        { text = "Tick Bar", value = "TickBar"},
         { text = "Item", value = "Item"},
         { text = "Trinkets", value = "Trinket"},
         { text = "Items & Spells", value = "ItemSpell"},
