@@ -134,6 +134,21 @@ local function RebuildBindingCache()
         end
     end
 
+    if Bartender4 ~= nil and Bartender4.Bar ~= nil then
+        for bar_index,bar in Bartender4.Bar:GetAll() do
+            if type(bar) == "table" then
+                if bar.bindingmapping then
+                    -- actionbar
+                    if bar.buttonConfig.hideElements.hotkey then
+                        for buttonNum = 1, 12 do
+                            bindingKeyCache[bar.bindingmapping:format(buttonNum)] = ""
+                        end
+                    end
+                end
+            end
+        end
+    end
+
     bindingCacheValid = true
 end
 
