@@ -442,7 +442,7 @@ local function CreateKeybindSettings(containerParent)
     local enableKeybindCheckbox = AG:Create("CheckBox")
     enableKeybindCheckbox:SetLabel("Enable Keybinds")
     enableKeybindCheckbox:SetValue(KeybindDB.Enabled)
-    enableKeybindCheckbox:SetCallback("OnValueChanged", function(_, _, value) 
+    enableKeybindCheckbox:SetCallback("OnValueChanged", function(_, _, value)
         KeybindDB.Enabled = value
         BCDM.Keybinds:OnSettingChanged()
         RefreshKeybindSettings()
@@ -728,7 +728,7 @@ local function CreateGlobalSettings(parentContainer)
             button1 = "Reload Now",
             button2 = "Later",
             showAlert = true,
-            OnAccept = function() BCDM.db.profile.CooldownManager.Enable = value ReloadUI() end,
+            OnAccept = function() BCDM.db.profile.CooldownManager.Enable = value C_UI.Reload() end,
             OnCancel = function() enableCDMSkinningCheckbox:SetValue(BCDM.db.profile.CooldownManager.Enable) globalSettingsContainer:DoLayout() end,
             timeout = 0,
             whileDead = true,
@@ -1348,7 +1348,7 @@ local function CreateCooldownViewerSettings(parentContainer, viewerType)
                 button1 = "Reload Now",
                 button2 = "Later",
                 showAlert = true,
-                OnAccept = function() BCDM.db.profile.CooldownManager.Buffs.CenterBuffs = value ReloadUI() end,
+                OnAccept = function() BCDM.db.profile.CooldownManager.Buffs.CenterBuffs = value C_UI.Reload() end,
                 OnCancel = function() centerBuffsCheckbox:SetValue(BCDM.db.profile.CooldownManager.Buffs.CenterBuffs) toggleContainer:DoLayout() end,
                 timeout = 0,
                 whileDead = true,
@@ -1429,6 +1429,7 @@ local function CreateCooldownViewerSettings(parentContainer, viewerType)
 
     if hasAnchorParent then
         AddAnchors("MidnightSimpleUnitFrames", {"Utility", "Buffs", "Custom", "AdditionalCustom", "Item", "Trinket", "ItemSpell"}, { ["MSUF_player"] = "|cFFFFD700Midnight|rSimpleUnitFrames: Player Frame", ["MSUF_target"] = "|cFFFFD700Midnight|rSimpleUnitFrames: Target Frame", })
+        AddAnchors("ElvUI", {"Utility", "Custom", "AdditionalCustom", "Item", "ItemSpell", "Trinket"}, { ["ElvUF_Player"] = "|cff1784d1ElvUI|r: Player Frame", ["ElvUF_Target"] = "|cff1784d1ElvUI|r: Target Frame", })
         local anchorToParentDropdown = AG:Create("Dropdown")
         anchorToParentDropdown:SetLabel("Anchor To Parent")
         anchorToParentDropdown:SetList(AnchorParents[viewerType][1], AnchorParents[viewerType][2])
