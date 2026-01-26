@@ -4,7 +4,8 @@ local AG = BCDM.AG
 local isGUIOpen = false
 local isUnitDeathKnight = BCDM.IS_DEATHKNIGHT
 local isUnitMonk = BCDM.IS_MONK
-local LEMO = LibStub("LibEditModeOverride-1.0")
+local LEMO = BCDM.LEMO
+local AnchorParents = BCDM.AnchorParents
 BCDMGUI = {}
 
 local AnchorPoints = { { ["TOPLEFT"] = "Top Left", ["TOP"] = "Top", ["TOPRIGHT"] = "Top Right", ["LEFT"] = "Left", ["CENTER"] = "Center", ["RIGHT"] = "Right", ["BOTTOMLEFT"] = "Bottom Left", ["BOTTOM"] = "Bottom", ["BOTTOMRIGHT"] = "Bottom Right" }, { "TOPLEFT", "TOP", "TOPRIGHT", "LEFT", "CENTER", "RIGHT", "BOTTOMLEFT", "BOTTOM", "BOTTOMRIGHT", } }
@@ -60,147 +61,6 @@ local ClassToPrettyClass = {
     ["DEMONHUNTER"] = "|cFFA330C9Demon Hunter|r",
     ["EVOKER"]      = "|cFF33937FEvoker|r",
 }
-
-local AnchorParents = {
-    ["Utility"] = {
-        {
-            ["EssentialCooldownViewer"] = "|cFF00AEF7Blizzard|r: Essential Cooldown Viewer",
-            ["BCDM_PowerBar"] = "|cFF8080FFBetter|rCooldownManager: Power Bar",
-            ["BCDM_SecondaryPowerBar"] = "|cFF8080FFBetter|rCooldownManager: Secondary Power Bar",
-            ["NONE"] = "|cFF00AEF7Blizzard|r: UIParent",
-        },
-        { "EssentialCooldownViewer", "NONE", "BCDM_PowerBar", "BCDM_SecondaryPowerBar"},
-    },
-    ["Buffs"] = {
-        {
-            ["EssentialCooldownViewer"] = "|cFF00AEF7Blizzard|r: Essential Cooldown Viewer",
-            ["UtilityCooldownViewer"] = "|cFF00AEF7Blizzard|r: Utility Cooldown Viewer",
-            ["NONE"] = "|cFF00AEF7Blizzard|r: UIParent",
-            ["BCDM_PowerBar"] = "|cFF8080FFBetter|rCooldownManager: Power Bar",
-            ["BCDM_SecondaryPowerBar"] = "|cFF8080FFBetter|rCooldownManager: Secondary Power Bar",
-            ["BCDM_CastBar"] = "|cFF8080FFBetter|rCooldownManager: Cast Bar",
-        },
-        { "EssentialCooldownViewer", "UtilityCooldownViewer", "NONE", "BCDM_PowerBar", "BCDM_SecondaryPowerBar", "BCDM_CastBar" },
-    },
-    ["BuffBar"] = {
-    {
-        ["EssentialCooldownViewer"] = "|cFF00AEF7Blizzard|r: Essential Cooldown Viewer",
-        ["UtilityCooldownViewer"] = "|cFF00AEF7Blizzard|r: Utility Cooldown Viewer",
-        ["NONE"] = "|cFF00AEF7Blizzard|r: UIParent",
-        ["BCDM_PowerBar"] = "|cFF8080FFBetter|rCooldownManager: Power Bar",
-        ["BCDM_SecondaryPowerBar"] = "|cFF8080FFBetter|rCooldownManager: Secondary Power Bar",
-        ["BCDM_CastBar"] = "|cFF8080FFBetter|rCooldownManager: Cast Bar",
-    },
-    { "EssentialCooldownViewer", "UtilityCooldownViewer", "NONE", "BCDM_PowerBar", "BCDM_SecondaryPowerBar", "BCDM_CastBar" },
-    },
-    ["Custom"] = {
-        {
-            ["EssentialCooldownViewer"] = "|cFF00AEF7Blizzard|r: Essential Cooldown Viewer",
-            ["UtilityCooldownViewer"] = "|cFF00AEF7Blizzard|r: Utility Cooldown Viewer",
-            ["NONE"] = "|cFF00AEF7Blizzard|r: UIParent",
-            ["PlayerFrame"] = "|cFF00AEF7Blizzard|r: Player Frame",
-            ["TargetFrame"] = "|cFF00AEF7Blizzard|r: Target Frame",
-            ["BCDM_PowerBar"] = "|cFF8080FFBetter|rCooldownManager: Power Bar",
-            ["BCDM_SecondaryPowerBar"] = "|cFF8080FFBetter|rCooldownManager: Secondary Power Bar",
-        },
-        { "EssentialCooldownViewer", "UtilityCooldownViewer", "NONE", "PlayerFrame", "TargetFrame", "BCDM_PowerBar", "BCDM_SecondaryPowerBar" },
-    },
-    ["AdditionalCustom"] = {
-        {
-            ["EssentialCooldownViewer"] = "|cFF00AEF7Blizzard|r: Essential Cooldown Viewer",
-            ["UtilityCooldownViewer"] = "|cFF00AEF7Blizzard|r: Utility Cooldown Viewer",
-            ["NONE"] = "|cFF00AEF7Blizzard|r: UIParent",
-            ["PlayerFrame"] = "|cFF00AEF7Blizzard|r: Player Frame",
-            ["TargetFrame"] = "|cFF00AEF7Blizzard|r: Target Frame",
-            ["BCDM_PowerBar"] = "|cFF8080FFBetter|rCooldownManager: Power Bar",
-            ["BCDM_SecondaryPowerBar"] = "|cFF8080FFBetter|rCooldownManager: Secondary Power Bar",
-        },
-        { "EssentialCooldownViewer", "UtilityCooldownViewer", "NONE", "PlayerFrame", "TargetFrame", "BCDM_PowerBar", "BCDM_SecondaryPowerBar" },
-    },
-    ["Item"] = {
-        {
-            ["EssentialCooldownViewer"] = "|cFF00AEF7Blizzard|r: Essential Cooldown Viewer",
-            ["UtilityCooldownViewer"] = "|cFF00AEF7Blizzard|r: Utility Cooldown Viewer",
-            ["NONE"] = "|cFF00AEF7Blizzard|r: UIParent",
-            ["PlayerFrame"] = "|cFF00AEF7Blizzard|r: Player Frame",
-            ["TargetFrame"] = "|cFF00AEF7Blizzard|r: Target Frame",
-            ["BCDM_PowerBar"] = "|cFF8080FFBetter|rCooldownManager: Power Bar",
-            ["BCDM_SecondaryPowerBar"] = "|cFF8080FFBetter|rCooldownManager: Secondary Power Bar",
-        },
-        { "EssentialCooldownViewer", "UtilityCooldownViewer", "NONE", "PlayerFrame", "TargetFrame", "BCDM_PowerBar", "BCDM_SecondaryPowerBar" },
-    },
-    ["Trinket"] = {
-        {
-            ["EssentialCooldownViewer"] = "|cFF00AEF7Blizzard|r: Essential Cooldown Viewer",
-            ["UtilityCooldownViewer"] = "|cFF00AEF7Blizzard|r: Utility Cooldown Viewer",
-            ["NONE"] = "|cFF00AEF7Blizzard|r: UIParent",
-            ["PlayerFrame"] = "|cFF00AEF7Blizzard|r: Player Frame",
-            ["TargetFrame"] = "|cFF00AEF7Blizzard|r: Target Frame",
-            ["BCDM_PowerBar"] = "|cFF8080FFBetter|rCooldownManager: Power Bar",
-            ["BCDM_SecondaryPowerBar"] = "|cFF8080FFBetter|rCooldownManager: Secondary Power Bar",
-        },
-        { "EssentialCooldownViewer", "UtilityCooldownViewer", "NONE", "PlayerFrame", "TargetFrame", "BCDM_PowerBar", "BCDM_SecondaryPowerBar" },
-    },
-    ["ItemSpell"] = {
-        {
-            ["EssentialCooldownViewer"] = "|cFF00AEF7Blizzard|r: Essential Cooldown Viewer",
-            ["UtilityCooldownViewer"] = "|cFF00AEF7Blizzard|r: Utility Cooldown Viewer",
-            ["NONE"] = "|cFF00AEF7Blizzard|r: UIParent",
-            ["PlayerFrame"] = "|cFF00AEF7Blizzard|r: Player Frame",
-            ["TargetFrame"] = "|cFF00AEF7Blizzard|r: Target Frame",
-            ["BCDM_PowerBar"] = "|cFF8080FFBetter|rCooldownManager: Power Bar",
-            ["BCDM_SecondaryPowerBar"] = "|cFF8080FFBetter|rCooldownManager: Secondary Power Bar",
-        },
-        { "EssentialCooldownViewer", "UtilityCooldownViewer", "NONE", "PlayerFrame", "TargetFrame", "BCDM_PowerBar", "BCDM_SecondaryPowerBar" },
-    },
-    ["Power"] = {
-        {
-            ["EssentialCooldownViewer"] = "|cFF00AEF7Blizzard|r: Essential Cooldown Viewer",
-            ["UtilityCooldownViewer"] = "|cFF00AEF7Blizzard|r: Utility Cooldown Viewer",
-            ["BCDM_SecondaryPowerBar"] = "|cFF8080FFBetter|rCooldownManager: Secondary Power Bar",
-        },
-        { "EssentialCooldownViewer", "UtilityCooldownViewer", "BCDM_SecondaryPowerBar" },
-    },
-    ["SecondaryPower"] = {
-        {
-            ["EssentialCooldownViewer"] = "|cFF00AEF7Blizzard|r: Essential Cooldown Viewer",
-            ["UtilityCooldownViewer"] = "|cFF00AEF7Blizzard|r: Utility Cooldown Viewer",
-            ["BCDM_PowerBar"] = "|cFF8080FFBetter|rCooldownManager: Power Bar",
-        },
-        { "EssentialCooldownViewer", "UtilityCooldownViewer", "BCDM_PowerBar"},
-    },
-    ["CastBar"] =
-    {
-        {
-            ["EssentialCooldownViewer"] = "|cFF00AEF7Blizzard|r: Essential Cooldown Viewer",
-            ["UtilityCooldownViewer"] = "|cFF00AEF7Blizzard|r: Utility Cooldown Viewer",
-            ["BCDM_PowerBar"] = "|cFF8080FFBetter|rCooldownManager: Power Bar",
-            ["BCDM_SecondaryPowerBar"] = "|cFF8080FFBetter|rCooldownManager: Secondary Power Bar",
-        },
-        { "EssentialCooldownViewer", "UtilityCooldownViewer", "BCDM_PowerBar", "BCDM_SecondaryPowerBar" },
-    }
-}
-
--- AddOn Developers can you use this to add their own anchors.
--- Merely call BCDMG.AddAnchors("AddOnName", {"ViewerType1", "ViewerType2"}, { ["AnchorKey"] = "Display Name", ... })
-function AddAnchors(addOnName, addToTypes, anchorTable)
-    if not C_AddOns.IsAddOnLoaded(addOnName) then return end
-    if type(addToTypes) ~= "table" or type(anchorTable) ~= "table" then return end
-    for _, typeName in ipairs(addToTypes) do
-        if AnchorParents[typeName] then
-            local displayNames = AnchorParents[typeName][1]
-            local keyList = AnchorParents[typeName][2]
-            for anchorKey, displayName in pairs(anchorTable) do
-                if not displayNames[anchorKey] then
-                    displayNames[anchorKey] = displayName
-                    table.insert(keyList, anchorKey)
-                end
-            end
-        end
-    end
-end
-
-BCDMG.AddAnchors = AddAnchors
 
 local function DeepDisable(widget, disabled, skipWidget)
     if widget == skipWidget then return end
@@ -1428,8 +1288,7 @@ local function CreateCooldownViewerSettings(parentContainer, viewerType)
     layoutContainer:AddChild(anchorFromDropdown)
 
     if hasAnchorParent then
-        AddAnchors("MidnightSimpleUnitFrames", {"Utility", "Buffs", "Custom", "AdditionalCustom", "Item", "Trinket", "ItemSpell"}, { ["MSUF_player"] = "|cFFFFD700Midnight|rSimpleUnitFrames: Player Frame", ["MSUF_target"] = "|cFFFFD700Midnight|rSimpleUnitFrames: Target Frame", })
-        AddAnchors("ElvUI", {"Utility", "Custom", "AdditionalCustom", "Item", "ItemSpell", "Trinket"}, { ["ElvUF_Player"] = "|cff1784d1ElvUI|r: Player Frame", ["ElvUF_Target"] = "|cff1784d1ElvUI|r: Target Frame", })
+        BCDMG:AddAnchors("ElvUI", {"Utility", "Custom", "AdditionalCustom", "Item", "ItemSpell", "Trinket"}, { ["ElvUF_Player"] = "|cff1784d1ElvUI|r: Player Frame", ["ElvUF_Target"] = "|cff1784d1ElvUI|r: Target Frame", })
         local anchorToParentDropdown = AG:Create("Dropdown")
         anchorToParentDropdown:SetLabel("Anchor To Parent")
         anchorToParentDropdown:SetList(AnchorParents[viewerType][1], AnchorParents[viewerType][2])

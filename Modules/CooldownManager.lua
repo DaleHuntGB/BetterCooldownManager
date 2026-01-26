@@ -1,5 +1,4 @@
 local _, BCDM = ...
-local LEMO = LibStub("LibEditModeOverride-1.0")
 
 local function ShouldSkin()
     if not BCDM.db.profile.CooldownManager.Enable then return false end
@@ -187,6 +186,20 @@ end
 --     StyleBuffsBars()
 -- end
 
+--[[
+local cooldownFrameTbl = {}
+
+for _, child in ipairs({ viewer:GetChildren() }) do
+    cooldownFrameTbl[child:GetCooldownFrame()] = true
+end
+
+hooksecurefunc("CooldownFrame_Set", function(cooldownFrame)
+    if cooldownFrameTbl[cooldownFrame] and cooldownFrame:GetUseAuraDisplayTime() then
+        CooldownFrame_Clear(cooldownFrame)
+    end
+end)
+]]
+
 local function StyleIcons()
     if not ShouldSkin() then return end
     local cooldownManagerSettings = BCDM.db.profile.CooldownManager
@@ -220,7 +233,7 @@ end
 
 local function SetHooks()
     hooksecurefunc(EditModeManagerFrame, "EnterEditMode", function() if InCombatLockdown() then return end Position() end)
-    hooksecurefunc(EditModeManagerFrame, "ExitEditMode", function() if InCombatLockdown() then return end Position() end)
+    hooksecurefunc(EditModeManagerFrame, "ExitEditMode", function() if InCombatLockdown() then return end BCDM.LEMO:LoadLayouts() Position() end)
     hooksecurefunc(CooldownViewerSettings, "RefreshLayout", function() if InCombatLockdown() then return end BCDM:UpdateBCDM() end)
 end
 
@@ -315,6 +328,7 @@ local function SetupCenterBuffs()
 end
 
 function BCDM:SkinCooldownManager()
+    local LEMO = BCDM.LEMO
     LEMO:LoadLayouts()
     C_CVar.SetCVar("cooldownViewerEnabled", 1)
     StyleIcons()
@@ -373,7 +387,6 @@ function BCDM:UpdateCooldownViewer(viewerType)
 
     ApplyCooldownText(BCDM.DBViewerToCooldownManagerViewer[viewerType])
 
-    -- Update keybinds for the viewer
     BCDM.Keybinds:UpdateViewerKeybinds(BCDM.DBViewerToCooldownManagerViewer[viewerType])
 
     BCDM:UpdatePowerBarWidth()
