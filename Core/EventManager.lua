@@ -31,7 +31,11 @@ function BCDM:SetupEventManager()
     BCDMEventManager:RegisterEvent("TRAIT_CONFIG_UPDATED")
     BCDMEventManager:RegisterEvent("PLAYER_REGEN_ENABLED")
     BCDMEventManager:SetScript("OnEvent", function(_, event, ...)
-        if event == "PLAYER_REGEN_ENABLED" then ApplyPendingChanges() return end
+        if event == "PLAYER_REGEN_ENABLED" then
+            if throttleTimer then throttleTimer:Cancel() end
+            throttleTimer = C_Timer.After(0.2, ApplyPendingChanges)
+            return
+        end
         if event == "PLAYER_SPECIALIZATION_CHANGED" then
             local unit = ...
             if unit ~= "player" then return end
