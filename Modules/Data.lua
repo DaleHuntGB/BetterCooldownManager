@@ -3,50 +3,50 @@ local _, BCDM = ...
 local DEFENSIVE_SPELLS = {
     -- Monk
     ["MONK"] = {
-        ["BREWMASTER"] = {
+        [268] = { -- BREWMASTER
             [115203] = { isActive = true, layoutIndex = 1 },        -- Fortifying Brew
             [1241059] = { isActive = true, layoutIndex = 2 },       -- Celestial Infusion
             [322507] = { isActive = true, layoutIndex = 3 },        -- Celestial Brew
         },
-        ["WINDWALKER"] = {
+        [269] = { -- WINDWALKER
             [115203] = { isActive = true, layoutIndex = 1 },        -- Fortifying Brew
             [122470] = { isActive = true, layoutIndex = 2 },        -- Touch of Karma
         },
-        ["MISTWEAVER"] = {
+        [270] = { -- MISTWEAVER
             [115203] = { isActive = true, layoutIndex = 1 },        -- Fortifying Brew
         },
     },
     -- Demon Hunter
     ["DEMONHUNTER"] = {
-        ["HAVOC"] = {
+        [577] = { --HAVOC
             [196718] = { isActive = true, layoutIndex = 1 },        -- Darkness
             [198589] = { isActive = true, layoutIndex = 2 },        -- Blur
         },
-        ["VENGEANCE"] = {
+        [581] = { -- VENGEANCE
             [196718] = { isActive = true, layoutIndex = 1 },        -- Darkness
             [203720] = { isActive = true, layoutIndex = 2 },        -- Demon Spikes
         },
-        ["DEVOURER"] = {
+        [1480] = { -- DEVOURER
             [196718] = { isActive = true, layoutIndex = 1 },        -- Darkness
             [198589] = { isActive = true, layoutIndex = 2 },        -- Blur
         },
     },
     -- Death Knight
     ["DEATHKNIGHT"] = {
-        ["BLOOD"] = {
+        [250] = { -- BLOOD
             [55233] = { isActive = true, layoutIndex = 1 },         -- Vampiric Blood
             [48707] = { isActive = true, layoutIndex = 2 },         -- Anti-Magic Shell
             [51052] = { isActive = true, layoutIndex = 3 },         -- Anti-Magic Zone
             [49039] = { isActive = true, layoutIndex = 4 },         -- Lichborne
             [48792] = { isActive = true, layoutIndex = 5 },         -- Icebound Fortitude
         },
-        ["UNHOLY"] = {
+        [252] = { -- UNHOLY
             [48707] = { isActive = true, layoutIndex = 1 },         -- Anti-Magic Shell
             [51052] = { isActive = true, layoutIndex = 2 },         -- Anti-Magic Zone
             [49039] = { isActive = true, layoutIndex = 3 },         -- Lichborne
             [48792] = { isActive = true, layoutIndex = 4 },         -- Icebound Fortitude
         },
-        ["FROST"] = {
+        [251] = { -- FROST
             [48707] = { isActive = true, layoutIndex = 1 },         -- Anti-Magic Shell
             [51052] = { isActive = true, layoutIndex = 2 },         -- Anti-Magic Zone
             [49039] = { isActive = true, layoutIndex = 3 },         -- Lichborne
@@ -55,17 +55,17 @@ local DEFENSIVE_SPELLS = {
     },
     -- Mage
     ["MAGE"] = {
-        ["FROST"] = {
+        [64] = { -- FROST
             [342245] = { isActive = true, layoutIndex = 1 },        -- Alter Time
             [11426] = { isActive = true, layoutIndex = 2 },         -- Ice Barrier
             [45438] = { isActive = true, layoutIndex = 3 },         -- Ice Block
         },
-        ["FIRE"] = {
+        [63] = { -- FIRE
             [342245] = { isActive = true, layoutIndex = 1 },        -- Alter Time
             [235313] = { isActive = true, layoutIndex = 2 },        -- Blazing Barrier
             [45438] = { isActive = true, layoutIndex = 3 },         -- Ice Block
         },
-        ["ARCANE"] = {
+        [62] = { -- ARCANE
             [342245] = { isActive = true, layoutIndex = 1 },        -- Alter Time
             [235450] = { isActive = true, layoutIndex = 2 },        -- Prismatic Barrier
             [45438] = { isActive = true, layoutIndex = 3 },         -- Ice Block
@@ -73,21 +73,21 @@ local DEFENSIVE_SPELLS = {
     },
     -- Paladin
     ["PALADIN"] = {
-        ["RETRIBUTION"] = {
+        [70] = { -- RETRIBUTION
             [1022] = { isActive = true, layoutIndex = 1 },          -- Blessing of Protection
             [642] = { isActive = true, layoutIndex = 2 },           -- Divine Shield
             [403876] = { isActive = true, layoutIndex = 3 },        -- Divine Protection
             [6940] = { isActive = true, layoutIndex = 4 },          -- Blessing of Sacrifice
             [633] = { isActive = true, layoutIndex = 5 },           -- Lay on Hands
         },
-        ["HOLY"] = {
+        [65] = { -- HOLY
             [1022] = { isActive = true, layoutIndex = 1 },          -- Blessing of Protection
             [642] = { isActive = true, layoutIndex = 2 },           -- Divine Shield
             [403876] = { isActive = true, layoutIndex = 3 },        -- Divine Protection
             [6940] = { isActive = true, layoutIndex = 4 },          -- Blessing of Sacrifice
             [633] = { isActive = true, layoutIndex = 5 },           -- Lay on Hands
         },
-        ["PROTECTION"] = {
+        [66] = { -- PROTECTION
             [1022] = { isActive = true, layoutIndex = 1 },          -- Blessing of Protection
             [642] = { isActive = true, layoutIndex = 2 },           -- Divine Shield
             [6940] = { isActive = true, layoutIndex = 3 },          -- Blessing of Sacrifice
@@ -99,61 +99,64 @@ local DEFENSIVE_SPELLS = {
     },
     -- Shaman
     ["SHAMAN"] = {
-        ["ELEMENTAL"] = {
+        [262] = { -- ELEMENTAL
             [108271] = { isActive = true, layoutIndex = 1 },        -- Astral Shift
         },
-        ["ENHANCEMENT"] = {
+        [263] = { -- ENHANCEMENT
             [108271] = { isActive = true, layoutIndex = 1 },        -- Astral Shift
         },
-        ["RESTORATION"] = {
+        [264] = { -- RESTORATION
             [108271] = { isActive = true, layoutIndex = 1 },        -- Astral Shift
         }
     },
     -- Druid
     ["DRUID"] = {
-        ["GUARDIAN"] = {
+        [104] = { -- GUARDIAN
             [22812] = { isActive = true, layoutIndex = 1 },         -- Barkskin
             [61336] = { isActive = true, layoutIndex = 2 },         -- Survival Instincts
         },
-        ["FERAL"] = {
+        [103] = { -- FERAL
             [22812] = { isActive = true, layoutIndex = 1 },         -- Barkskin
             [61336] = { isActive = true, layoutIndex = 2 },         -- Survival Instincts
         },
-        ["RESTORATION"] = {
+        [105] = { -- RESTORATION
             [22812] = { isActive = true, layoutIndex = 1 },         -- Barkskin
         },
-        ["BALANCE"] = {
+        [102] = { -- BALANCE
             [22812] = { isActive = true, layoutIndex = 1 },         -- Barkskin
         },
     },
     -- Evoker
     ["EVOKER"] = {
-        ["DEVASTATION"] = {
+        [1467] = { -- DEVASTATION
             [363916] = { isActive = true, layoutIndex = 1 },        -- Obsidian Scales
             [374227] = { isActive = true, layoutIndex = 2 },        -- Zephyr
         },
-        ["AUGMENTATION"] = {
+        [1473] = { -- AUGMENTATION
             [363916] = { isActive = true, layoutIndex = 1 },        -- Obsidian Scales
             [374227] = { isActive = true, layoutIndex = 2 },        -- Zephyr
         },
-        ["PRESERVATION"] = {
+        [1468] = { -- PRESERVATION
             [363916] = { isActive = true, layoutIndex = 1 },        -- Obsidian Scales
             [374227] = { isActive = true, layoutIndex = 2 },        -- Zephyr
         }
     },
     -- Warrior
     ["WARRIOR"] = {
-        ["ARMS"] = {
+        [71] = { -- ARMS
             [23920] = { isActive = true, layoutIndex = 1 },         -- Spell Reflection
             [97462] = { isActive = true, layoutIndex = 2 },         -- Rallying Cry
             [118038] = { isActive = true, layoutIndex = 3 },        -- Die by the Sword
         },
-        ["FURY"] = {
+        [72] = { -- FURY
+            [23920] = { isActive = true, layoutIndex = 1 },         -- Spell Reflection
+            [97462] = { isActive = true, layoutIndex = 2 },         -- Rallying Cry
+            [184364] = { isActive = true, layoutIndex = 3 },        -- Enraged Regeneration
             [23920] = { isActive = true, layoutIndex = 1 },         -- Spell Reflection
             [97462] = { isActive = true, layoutIndex = 2 },         -- Rallying Cry
             [184364] = { isActive = true, layoutIndex = 3 },        -- Enraged Regeneration
         },
-        ["PROTECTION"] = {
+        [73] = { -- PROTECTION
             [23920] = { isActive = true, layoutIndex = 1 },         -- Spell Reflection
             [97462] = { isActive = true, layoutIndex = 2 },         -- Rallying Cry
             [871] = { isActive = true, layoutIndex = 3 },           -- Shield Wall
@@ -162,50 +165,50 @@ local DEFENSIVE_SPELLS = {
     },
     -- Priest
     ["PRIEST"] = {
-        ["SHADOW"] = {
+        [258] = { -- SHADOW
             [47585] = { isActive = true, layoutIndex = 1 },         -- Dispersion
             [19236] = { isActive = true, layoutIndex = 2 },         -- Desperate Prayer
             [586] = { isActive = true, layoutIndex = 3 },           -- Fade
         },
-        ["DISCIPLINE"] = {
+        [256] = { -- DISCIPLINE
             [19236] = { isActive = true, layoutIndex = 1 },         -- Desperate Prayer
             [586] = { isActive = true, layoutIndex = 2 },           -- Fade
         },
-        ["HOLY"] = {
+        [257] = { -- HOLY
             [19236] = { isActive = true, layoutIndex = 1 },         -- Desperate Prayer
             [586] = { isActive = true, layoutIndex = 2 },           -- Fade
         },
     },
     -- Warlock
     ["WARLOCK"] = {
-        ["DESTRUCTION"] = {
+        [267] = { -- DESTRUCTION
             [104773] = { isActive = true, layoutIndex = 1 },        -- Unending Resolve
             [108416] = { isActive = true, layoutIndex = 2 },        -- Dark Pact
         },
-        ["AFFLICTION"] = {
+        [265] = { -- AFFLICTION
             [104773] = { isActive = true, layoutIndex = 1 },        -- Unending Resolve
             [108416] = { isActive = true, layoutIndex = 2 },        -- Dark Pact
         },
-        ["DEMONOLOGY"] = {
+        [266] = { -- DEMONOLOGY   
             [104773] = { isActive = true, layoutIndex = 1 },        -- Unending Resolve
             [108416] = { isActive = true, layoutIndex = 2 },        -- Dark Pact
         },
     },
     -- Hunter
     ["HUNTER"] = {
-        ["SURVIVAL"] = {
+        [255] = { -- SURVIVAL
             [186265] = { isActive = true, layoutIndex = 1 },        -- Aspect of the Turtle
             [264735] = { isActive = true, layoutIndex = 2 },        -- Survival of the Fittest
             [109304] = { isActive = true, layoutIndex = 3 },        -- Exhilaration
             [272682] = { isActive = true, layoutIndex = 4 },        -- Command Pet: Master's Call
             [272678] = { isActive = true, layoutIndex = 5 },        -- Command Pet: Primal Rage
         },
-        ["MARKSMANSHIP"] = {
+        [254] = { -- MARKSMANSHIP
             [186265] = { isActive = true, layoutIndex = 1 },        -- Aspect of the Turtle
             [264735] = { isActive = true, layoutIndex = 2 },        -- Survival of the Fittest
             [109304] = { isActive = true, layoutIndex = 3 },        -- Exhilaration
         },
-        ["BEASTMASTERY"] = {
+        [253] = { -- BEAST MASTERY
             [186265] = { isActive = true, layoutIndex = 1 },        -- Aspect of the Turtle
             [264735] = { isActive = true, layoutIndex = 2 },        -- Survival of the Fittest
             [109304] = { isActive = true, layoutIndex = 3 },        -- Exhilaration
@@ -215,19 +218,19 @@ local DEFENSIVE_SPELLS = {
     },
     -- Rogue
     ["ROGUE"] = {
-        ["OUTLAW"] = {
+        [260] = { -- OUTLAW
             [31224] = { isActive = true, layoutIndex = 1 },         -- Cloak of Shadows
             [1966] = { isActive = true, layoutIndex = 2 },          -- Feint
             [5277] = { isActive = true, layoutIndex = 3 },          -- Evasion
             [185311] = { isActive = true, layoutIndex = 4 },        -- Crimson Vial
         },
-        ["ASSASSINATION"] = {
+        [259] = { -- ASSASSINATION
             [31224] = { isActive = true, layoutIndex = 1 },         -- Cloak of Shadows
             [1966] = { isActive = true, layoutIndex = 2 },          -- Feint
             [5277] = { isActive = true, layoutIndex = 3 },          -- Evasion
             [185311] = { isActive = true, layoutIndex = 4 },        -- Crimson Vial
         },
-        ["SUBTLETY"] = {
+        [261] = { -- SUBTLETY
             [31224] = { isActive = true, layoutIndex = 1 },         -- Cloak of Shadows
             [1966] = { isActive = true, layoutIndex = 2 },          -- Feint
             [5277] = { isActive = true, layoutIndex = 3 },          -- Evasion
@@ -293,7 +296,9 @@ function BCDM:FetchData(options)
     local dataList = {}
 
     local _, playerClass = UnitClass("player")
-    local playerSpecialization = select(2, GetSpecializationInfo(GetSpecialization())):gsub(" ", ""):upper()
+    local playerSpecializationId = GetSpecializationInfo(GetSpecialization())
+    print(playerSpecializationId)
+    local playerSpecialization = playerSpecializationId
 
     if includeSpells and DEFENSIVE_SPELLS[playerClass] and DEFENSIVE_SPELLS[playerClass][playerSpecialization] then
         for spellId, data in pairs(DEFENSIVE_SPELLS[playerClass][playerSpecialization]) do
@@ -331,7 +336,10 @@ function BCDM:AddRecommendedSpells(customDB)
     local CooldownManagerDB = BCDM.db.profile
     local CustomDB = CooldownManagerDB.CooldownManager[customDB]
     local _, playerClass = UnitClass("player")
-    local playerSpecialization = select(2, GetSpecializationInfo(GetSpecialization())):gsub(" ", ""):upper()
+
+    local playerSpecializationId = GetSpecializationInfo(GetSpecialization())
+    local playerSpecialization = playerSpecializationId
+
     if DEFENSIVE_SPELLS[playerClass] and DEFENSIVE_SPELLS[playerClass][playerSpecialization] then
         for spellId, data in pairs(DEFENSIVE_SPELLS[playerClass][playerSpecialization]) do
             if not CustomDB.Spells[playerClass] then CustomDB.Spells[playerClass] = {} end
