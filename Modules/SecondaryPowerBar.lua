@@ -446,7 +446,7 @@ local function UpdatePowerValues()
     if not secondaryPowerBar then return end
     local powerCurrent = 0
     if powerType == "STAGGER" then
-        BCDM:ClearTicks()
+        BCDM:ClearTicks(secondaryPowerBar)
         powerCurrent = UnitStagger("player") or 0
         local powerMax = UnitHealthMax("player") or 0
         local staggerPercentage = (powerCurrent / powerMax) * 100
@@ -551,7 +551,7 @@ local function UpdatePowerValues()
         secondaryPowerBar.Status:SetValue(powerCurrent)
         secondaryPowerBar.Text:SetText(tostring(powerCurrent))
         secondaryPowerBar.Status:Show()
-        BCDM:CreateTicks(powerMax)
+        BCDM:CreateTicks(secondaryPowerBar, powerMax)
     elseif powerType == Enum.PowerType.ArcaneCharges then
         powerCurrent = UnitPower("player", Enum.PowerType.ArcaneCharges) or 0
         local powerMax = UnitPowerMax("player", Enum.PowerType.ArcaneCharges) or 0
@@ -572,12 +572,12 @@ end
 
 local function CreateTicksBasedOnPowerType()
     local SecondaryPowerBarDB = BCDM.db.profile.SecondaryPowerBar
-    if SecondaryPowerBarDB.HideTicks then BCDM:ClearTicks() return end
+    if SecondaryPowerBarDB.HideTicks then BCDM:ClearTicks(BCDM.SecondaryPowerBar) return end
     local secondaryPowerResource = DetectSecondaryPower()
 
     if secondaryPowerResource == "SOUL" then
         local hasSoulGlutton = C_SpellBook.IsSpellKnown(1247534)
-        BCDM:CreateTicks(hasSoulGlutton and 7 or 10)
+        BCDM:CreateTicks(BCDM.SecondaryPowerBar, hasSoulGlutton and 7 or 10)
         return
     end
 
@@ -586,7 +586,7 @@ local function CreateTicksBasedOnPowerType()
     end
 
     if secondaryPowerResource == Enum.PowerType.Runes then
-        BCDM:ClearTicks()
+        BCDM:ClearTicks(BCDM.SecondaryPowerBar)
         CreateRuneBars()
         LayoutRuneBars()
         UpdateRuneDisplay()
@@ -598,23 +598,23 @@ local function CreateTicksBasedOnPowerType()
         CreateEssenceTicks(maxEssence)
         LayoutEssenceTicks()
         UpdateEssenceDisplay()
-        BCDM:CreateTicks(maxEssence)
+        BCDM:CreateTicks(BCDM.SecondaryPowerBar, maxEssence)
         return
     end
 
     if secondaryPowerResource == Enum.PowerType.SoulShards then
-        BCDM:CreateTicks(5)
+        BCDM:CreateTicks(BCDM.SecondaryPowerBar, 5)
         return
     end
 
     if secondaryPowerResource == Enum.PowerType.Maelstrom then
-        BCDM:CreateTicks(10)
+        BCDM:CreateTicks(BCDM.SecondaryPowerBar, 10)
         return
     end
 
     local maxPower = UnitPowerMax("player", secondaryPowerResource) or 0
     if maxPower > 0 then
-        BCDM:CreateTicks(maxPower)
+        BCDM:CreateTicks(BCDM.SecondaryPowerBar, maxPower)
     end
 end
 
