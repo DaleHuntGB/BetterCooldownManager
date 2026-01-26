@@ -336,10 +336,8 @@ function BCDM:AddRecommendedSpells(customDB)
     local CooldownManagerDB = BCDM.db.profile
     local CustomDB = CooldownManagerDB.CooldownManager[customDB]
     local _, playerClass = UnitClass("player")
-
     local playerSpecializationId = GetSpecializationInfo(GetSpecialization())
     local playerSpecialization = playerSpecializationId
-
     if DEFENSIVE_SPELLS[playerClass] and DEFENSIVE_SPELLS[playerClass][playerSpecialization] then
         for spellId, data in pairs(DEFENSIVE_SPELLS[playerClass][playerSpecialization]) do
             if not CustomDB.Spells[playerClass] then CustomDB.Spells[playerClass] = {} end
