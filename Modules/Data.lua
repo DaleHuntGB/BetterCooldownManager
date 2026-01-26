@@ -297,7 +297,6 @@ function BCDM:FetchData(options)
 
     local _, playerClass = UnitClass("player")
     local playerSpecializationId = GetSpecializationInfo(GetSpecialization())
-    print(playerSpecializationId)
     local playerSpecialization = playerSpecializationId
 
     if includeSpells and DEFENSIVE_SPELLS[playerClass] and DEFENSIVE_SPELLS[playerClass][playerSpecialization] then
