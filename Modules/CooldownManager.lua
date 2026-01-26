@@ -1,5 +1,4 @@
 local _, BCDM = ...
-local LEMO = LibStub("LibEditModeOverride-1.0")
 
 local function ShouldSkin()
     if not BCDM.db.profile.CooldownManager.Enable then return false end
@@ -187,6 +186,20 @@ end
 --     StyleBuffsBars()
 -- end
 
+--[[
+local cooldownFrameTbl = {}
+
+for _, child in ipairs({ viewer:GetChildren() }) do
+    cooldownFrameTbl[child:GetCooldownFrame()] = true
+end
+
+hooksecurefunc("CooldownFrame_Set", function(cooldownFrame)
+    if cooldownFrameTbl[cooldownFrame] and cooldownFrame:GetUseAuraDisplayTime() then
+        CooldownFrame_Clear(cooldownFrame)
+    end
+end)
+]]
+
 local function StyleIcons()
     if not ShouldSkin() then return end
     local cooldownManagerSettings = BCDM.db.profile.CooldownManager
@@ -220,7 +233,7 @@ end
 
 local function SetHooks()
     hooksecurefunc(EditModeManagerFrame, "EnterEditMode", function() if InCombatLockdown() then return end Position() end)
-    hooksecurefunc(EditModeManagerFrame, "ExitEditMode", function() if InCombatLockdown() then return end Position() end)
+    hooksecurefunc(EditModeManagerFrame, "ExitEditMode", function() if InCombatLockdown() then return end BCDM.LEMO:LoadLayouts() Position() end)
     hooksecurefunc(CooldownViewerSettings, "RefreshLayout", function() if InCombatLockdown() then return end BCDM:UpdateBCDM() end)
 end
 
@@ -408,18 +421,25 @@ function BCDM:CenterChildrenRows(container)
 end
 
 function BCDM:SkinCooldownManager()
+    local LEMO = BCDM.LEMO
     LEMO:LoadLayouts()
     C_CVar.SetCVar("cooldownViewerEnabled", 1)
     StyleIcons()
     StyleChargeCount()
     Position()
-    -- C_Timer.After(1, function() StyleBuffsBars() end)
     SetHooks()
     SetupCenterBuffs()
     SetupCenterUtility()
     SetupCenterEssential()
-    for _, viewerName in ipairs(BCDM.CooldownManagerViewers) do C_Timer.After(0.1, function() ApplyCooldownText(viewerName) end) end
-    C_Timer.After(1, function() LEMO:ApplyChanges() end)
+    for _, viewerName in ipairs(BCDM.CooldownManagerViewers) do
+        C_Timer.After(0.1, function() ApplyCooldownText(viewerName) end)
+    end
+
+    C_Timer.After(1, function()
+        if not InCombatLockdown() then
+            LEMO:ApplyChanges()
+        end
+    end)
 end
 
 function BCDM:UpdateCooldownViewer(viewerType)
@@ -463,6 +483,8 @@ function BCDM:UpdateCooldownViewer(viewerType)
     StyleChargeCount()
 
     ApplyCooldownText(BCDM.DBViewerToCooldownManagerViewer[viewerType])
+
+    BCDM.Keybinds:UpdateViewerKeybinds(BCDM.DBViewerToCooldownManagerViewer[viewerType])
 
     BCDM:UpdatePowerBarWidth()
     BCDM:UpdateSecondaryPowerBarWidth()
