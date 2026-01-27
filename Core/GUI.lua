@@ -1116,32 +1116,65 @@ local function CreateCooldownViewerSettings(parentContainer, viewerType)
     ScrollFrame:SetFullHeight(true)
     parentContainer:AddChild(ScrollFrame)
 
-    if viewerType == "Buffs" then
+    local function CreateCenterCheckbox(scrollFrame, viewerType, displayName, labelText)
         local toggleContainer = AG:Create("InlineGroup")
-        toggleContainer:SetTitle("Buff Viewer Settings")
+        toggleContainer:SetTitle(displayName .. " Viewer Settings")
         toggleContainer:SetFullWidth(true)
         toggleContainer:SetLayout("Flow")
-        ScrollFrame:AddChild(toggleContainer)
+        scrollFrame:AddChild(toggleContainer)
 
-        local centerBuffsCheckbox = AG:Create("CheckBox")
-        centerBuffsCheckbox:SetLabel("Center Buffs (Horizontally) - |cFFFF4040Reload|r Required.")
-        centerBuffsCheckbox:SetValue(BCDM.db.profile.CooldownManager.Buffs.CenterBuffs)
-        centerBuffsCheckbox:SetCallback("OnValueChanged", function(_, _, value)
+        local centerKey = "Center" .. viewerType
+        local checkbox = AG:Create("CheckBox")
+        checkbox:SetLabel("Center " .. labelText .. " (Horizontally) - |cFFFF4040Reload|r Required.")
+        checkbox:SetValue(BCDM.db.profile.CooldownManager[viewerType][centerKey])
+        checkbox:SetCallback("OnValueChanged", function(_, _, value)
             StaticPopupDialogs["BCDM_RELOAD_UI"] = {
                 text = "You must reload to apply this change, do you want to reload now?",
                 button1 = "Reload Now",
                 button2 = "Later",
                 showAlert = true,
-                OnAccept = function() BCDM.db.profile.CooldownManager.Buffs.CenterBuffs = value C_UI.Reload() end,
-                OnCancel = function() centerBuffsCheckbox:SetValue(BCDM.db.profile.CooldownManager.Buffs.CenterBuffs) toggleContainer:DoLayout() end,
+                OnAccept = function() BCDM.db.profile.CooldownManager[viewerType][centerKey] = value C_UI.ReloadUI() end,
+                OnCancel = function() checkbox:SetValue(BCDM.db.profile.CooldownManager[viewerType][centerKey]) toggleContainer:DoLayout() end,
                 timeout = 0,
                 whileDead = true,
                 hideOnEscape = true,
             }
             StaticPopup_Show("BCDM_RELOAD_UI")
         end)
-        centerBuffsCheckbox:SetRelativeWidth(1)
-        toggleContainer:AddChild(centerBuffsCheckbox)
+        checkbox:SetRelativeWidth(1)
+        toggleContainer:AddChild(checkbox)
+    end
+
+    if viewerType == "Utility" then
+        CreateCenterCheckbox(ScrollFrame, "Utility", "Utility", "Utility")
+    end
+
+    if viewerType == "Essential" then
+        CreateCenterCheckbox(ScrollFrame, "Essential", "Essential", "Essential")
+    end
+
+    if viewerType == "Buffs" then
+        CreateCenterCheckbox(ScrollFrame, "Buffs", "Buff", "Buffs")
+    end
+
+    if viewerType == "Custom" then
+        CreateCenterCheckbox(ScrollFrame, "Custom", "Custom", "Custom")
+    end
+
+    if viewerType == "AdditionalCustom" then
+        CreateCenterCheckbox(ScrollFrame, "AdditionalCustom", "Additional Custom", "Additional Custom")
+    end
+
+    if viewerType == "Item" then
+        CreateCenterCheckbox(ScrollFrame, "Item", "Item", "Items")
+    end
+
+    if viewerType == "Trinket" then
+        CreateCenterCheckbox(ScrollFrame, "Trinket", "Trinket", "Trinket")
+    end
+
+    if viewerType == "ItemSpell" then
+        CreateCenterCheckbox(ScrollFrame, "ItemSpell", "Item & Spell", "Items & Spells")
     end
 
     -- local foregroundColourPicker;

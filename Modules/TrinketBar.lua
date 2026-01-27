@@ -246,6 +246,10 @@ local function LayoutTrinketBar()
     end
 
     BCDM.TrinketBarContainer:Show()
+    -- Center rows if enabled in settings
+    if BCDM.db and BCDM.db.profile and BCDM.db.profile.CooldownManager and BCDM.db.profile.CooldownManager.Trinket and BCDM.db.profile.CooldownManager.Trinket.CenterTrinket then
+        BCDM:CenterChildrenRows(BCDM.TrinketBarContainer)
+    end
 end
 
 function BCDM:SetupTrinketBar()

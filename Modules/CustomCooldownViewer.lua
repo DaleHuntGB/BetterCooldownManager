@@ -259,6 +259,10 @@ local function LayoutCustomCooldownViewer()
     end
 
     BCDM.CustomCooldownViewerContainer:Show()
+    -- Center rows if enabled in settings
+    if BCDM.db and BCDM.db.profile and BCDM.db.profile.CooldownManager and BCDM.db.profile.CooldownManager.Custom and BCDM.db.profile.CooldownManager.Custom.CenterCustom then
+        BCDM:CenterChildrenRows(BCDM.CustomCooldownViewerContainer)
+    end
 end
 
 function BCDM:SetupCustomCooldownViewer()

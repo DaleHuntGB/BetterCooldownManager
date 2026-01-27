@@ -290,6 +290,10 @@ local function LayoutCustomItemBar()
     end
 
     BCDM.CustomItemBarContainer:Show()
+    -- Center rows if enabled in settings
+    if BCDM.db and BCDM.db.profile and BCDM.db.profile.CooldownManager and BCDM.db.profile.CooldownManager.Item and BCDM.db.profile.CooldownManager.Item.CenterItem then
+        BCDM:CenterChildrenRows(BCDM.CustomItemBarContainer)
+    end
 end
 
 function BCDM:SetupCustomItemBar()
