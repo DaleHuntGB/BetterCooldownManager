@@ -1,12 +1,12 @@
 local _, BCDM = ...
 
-local function FetchPowerBarColour()
+local function FetchPowerBarColour(customPowerType)
     local CooldownManagerDB = BCDM.db.profile
     local GeneralDB = CooldownManagerDB.General
     local PowerBarDB = CooldownManagerDB.PowerBar
     if PowerBarDB then
         if PowerBarDB.ColourByType then
-            local powerType = UnitPowerType("player")
+            local powerType = customPowerType or UnitPowerType("player")
             local powerColour = GeneralDB.Colours.PrimaryPower[powerType]
             if powerColour then return GeneralDB.Colours.PrimaryPower[powerType][1], GeneralDB.Colours.PrimaryPower[powerType][2], GeneralDB.Colours.PrimaryPower[powerType][3], GeneralDB.Colours.PrimaryPower[powerType][4] or 1 end
         elseif PowerBarDB.ColourByClass then
@@ -58,18 +58,29 @@ local function NudgePowerBar(powerBar, xOffset, yOffset)
 end
 
 local function UpdatePowerValues()
-    local powerCurrent = UnitPower("player")
-    local powerType = UnitPowerType("player")
     local PowerBar = BCDM.PowerBar
     local GeneralDB = BCDM.db.profile.General
+    local _, class = UnitClass("player")
+    local powerType = UnitPowerType("player")
+    if class == "DRUID" then
+        local spec = GetSpecialization()
+        local form = GetShapeshiftFormID() or 0 
+        local isHybridMoonkin = (spec == 2 or spec == 3 or spec == 4) and form == 31 or form == 32 or form == 33 or form == 34 or form == 35
+        local isBalanceHumanoid = (spec == 1 and form == 0)
+        if isHybridMoonkin or isBalanceHumanoid then
+            powerType = 0 
+        end
+    end
+    local powerCurrent = UnitPower("player", powerType)
+    local powerMax = UnitPowerMax("player", powerType)
     if PowerBar and PowerBar.Status and powerType then
         if powerType == 0 then
-            PowerBar.Text:SetText(string.format("%.0f%%", UnitPowerPercent("player", 0, false, CurveConstants.ScaleTo100)))
+           PowerBar.Text:SetText(string.format("%.0f%%", UnitPowerPercent("player", 0, false, CurveConstants.ScaleTo100)))
         else
             PowerBar.Text:SetText(tostring(powerCurrent))
         end
-        PowerBar.Status:SetStatusBarColor(FetchPowerBarColour())
-        PowerBar.Status:SetMinMaxValues(0, UnitPowerMax("player"))
+        PowerBar.Status:SetStatusBarColor(FetchPowerBarColour(powerType))
+        PowerBar.Status:SetMinMaxValues(0, powerMax)
         local smoothBars = GeneralDB.Animation and GeneralDB.Animation.SmoothBars
         if smoothBars and Enum and Enum.StatusBarInterpolation then
             PowerBar.Status:SetValue(powerCurrent, Enum.StatusBarInterpolation.ExponentialEaseOut)

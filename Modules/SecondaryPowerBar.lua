@@ -738,6 +738,7 @@ function BCDM:CreateSecondaryPowerBar()
         secondaryPowerBar:RegisterEvent("UPDATE_SHAPESHIFT_COOLDOWN")
         secondaryPowerBar:RegisterEvent("RUNE_POWER_UPDATE")
         secondaryPowerBar:RegisterEvent("RUNE_TYPE_UPDATE")
+        secondaryPowerBar:RegisterEvent("UNIT_AURA")
 
         secondaryPowerBar:SetScript("OnEvent", function(self, event, ...)
             if event == "RUNE_POWER_UPDATE" or event == "RUNE_TYPE_UPDATE" then
@@ -747,7 +748,8 @@ function BCDM:CreateSecondaryPowerBar()
                 return
             end
             if event == "UNIT_POWER_UPDATE" or event == "UNIT_MAXPOWER" or event == "UNIT_HEALTH"
-                or event == "UNIT_MAXHEALTH" or event == "UNIT_ABSORB_AMOUNT_CHANGED" then
+                or event == "UNIT_MAXHEALTH" or event == "UNIT_ABSORB_AMOUNT_CHANGED"
+                or event == "UNIT_AURA" then                
                 local unit = ...
                 if unit and unit ~= "player" then return end
             end
