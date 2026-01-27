@@ -38,6 +38,7 @@ local Defaults = {
                     [18] = {1, 0.61, 0}                                         -- Pain
                 },
                 SecondaryPower = {
+                    MANA                           = {0.00, 0.00, 1.00, 1.0 },
                     [Enum.PowerType.Chi]           = {0.71, 1.00, 0.92, 1.0 },
                     [Enum.PowerType.ComboPoints]   = {1.00, 0.96, 0.41, 1.0 },
                     [Enum.PowerType.HolyPower]     = {0.95, 0.90, 0.60, 1.0 },

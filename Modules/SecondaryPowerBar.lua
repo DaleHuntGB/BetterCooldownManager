@@ -45,6 +45,9 @@ local function DetectSecondaryPower()
         if specID == 1480 then return "SOUL" end
     elseif class == "SHAMAN" then
         if specID == 263 then return Enum.PowerType.Maelstrom end
+        if specID == 262 then return "MANA" end
+    elseif class == "PRIEST" then
+        if specID == 258 then return "MANA" end
     end
 
     return nil
@@ -471,6 +474,14 @@ local function UpdatePowerValues()
         end
         secondaryPowerBar.Text:SetText(textDisplay)
         secondaryPowerBar.Status:Show()
+    elseif powerType == "MANA" then
+        BCDM:ClearTicks()
+        powerCurrent = UnitPower("player", Enum.PowerType.Mana)
+        local powerMax = UnitPowerMax("player", Enum.PowerType.Mana)
+        secondaryPowerBar.Status:SetMinMaxValues(0, powerMax)
+        secondaryPowerBar.Status:SetValue(powerCurrent)
+        secondaryPowerBar.Text:SetText(tostring(powerCurrent))
+        secondaryPowerBar.Status:Show()
     elseif powerType == Enum.PowerType.Maelstrom then
         powerCurrent = GetAuraStacks(344179)
         secondaryPowerBar.Status:SetMinMaxValues(0, 10)
@@ -584,7 +595,9 @@ local function CreateTicksBasedOnPowerType()
     if secondaryPowerResource == "STAGGER" then
         return
     end
-
+    if secondaryPowerResource == "MANA" then
+        return
+    end
     if secondaryPowerResource == Enum.PowerType.Runes then
         BCDM:ClearTicks()
         CreateRuneBars()
