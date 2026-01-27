@@ -24,6 +24,17 @@ local function FetchCooldownTextRegion(cooldown)
     end
 end
 
+function BCDM:CalculateTexCoords(zoom, iconWidth, iconHeight)
+    if not zoom or not iconWidth or not iconHeight or iconWidth == 0 then
+        return 0, 1, 0, 1
+    end
+    
+    local aspectRatio = iconHeight / iconWidth
+    local horizontalCrop = math.max(0, (1 - (1 / aspectRatio)) / 2)
+    local verticalCrop = math.max(0, (1 - aspectRatio) / 2)
+    return zoom + horizontalCrop, 1 - zoom - horizontalCrop, zoom + verticalCrop, 1 - zoom - verticalCrop
+end
+
 -- local function FetchClassColour()
 --     local CooldownManagerDB = BCDM.db.profile
 --     local GeneralDB = CooldownManagerDB.General
@@ -208,8 +219,9 @@ local function StyleIcons()
             if childFrame then
                 if childFrame.Icon then
                     BCDM:StripTextures(childFrame.Icon)
-                    local iconZoomAmount = cooldownManagerSettings.General.IconZoom * 0.5
-                    childFrame.Icon:SetTexCoord(iconZoomAmount, 1 - iconZoomAmount, iconZoomAmount, 1 - iconZoomAmount)
+                    local zoom = cooldownManagerSettings.General.IconZoom
+                    local viewerSettings = cooldownManagerSettings[BCDM.CooldownManagerViewerToDBViewer[viewerName]]
+                    childFrame.Icon:SetTexCoord(BCDM:CalculateTexCoords(zoom, viewerSettings.IconWidth, viewerSettings.IconHeight))
                 end
                 if childFrame.Cooldown then
                     local borderSize = cooldownManagerSettings.General.BorderSize
@@ -223,7 +235,7 @@ local function StyleIcons()
                 end
                 if childFrame.CooldownFlash then childFrame.CooldownFlash:SetAlpha(0) end
                 if childFrame.DebuffBorder then childFrame.DebuffBorder:SetAlpha(0) end
-                childFrame:SetSize(cooldownManagerSettings[BCDM.CooldownManagerViewerToDBViewer[viewerName]].IconSize, cooldownManagerSettings[BCDM.CooldownManagerViewerToDBViewer[viewerName]].IconSize)
+                childFrame:SetSize(cooldownManagerSettings[BCDM.CooldownManagerViewerToDBViewer[viewerName]].IconWidth, cooldownManagerSettings[BCDM.CooldownManagerViewerToDBViewer[viewerName]].IconHeight)
                 BCDM:AddBorder(childFrame)
                 if not childFrame.layoutIndex then childFrame:SetShown(false) end
             end
@@ -363,7 +375,8 @@ function BCDM:UpdateCooldownViewer(viewerType)
         if childFrame then
             if childFrame.Icon and ShouldSkin() then
                 BCDM:StripTextures(childFrame.Icon)
-                childFrame.Icon:SetTexCoord(cooldownManagerSettings.General.IconZoom, 1 - cooldownManagerSettings.General.IconZoom, cooldownManagerSettings.General.IconZoom, 1 - cooldownManagerSettings.General.IconZoom)
+                local zoom = cooldownManagerSettings.General.IconZoom
+                childFrame.Icon:SetTexCoord(BCDM:CalculateTexCoords(zoom, cooldownManagerSettings[viewerType].IconWidth, cooldownManagerSettings[viewerType].IconHeight))
             end
             if childFrame.Cooldown then
                 childFrame.Cooldown:ClearAllPoints()
@@ -375,7 +388,7 @@ function BCDM:UpdateCooldownViewer(viewerType)
                 childFrame.Cooldown:SetSwipeTexture("Interface\\Buttons\\WHITE8X8")
             end
             if childFrame.CooldownFlash then childFrame.CooldownFlash:SetAlpha(0) end
-            childFrame:SetSize(cooldownManagerSettings[viewerType].IconSize, cooldownManagerSettings[viewerType].IconSize)
+            childFrame:SetSize(cooldownManagerSettings[viewerType].IconWidth, cooldownManagerSettings[viewerType].IconHeight)
         end
     end
 

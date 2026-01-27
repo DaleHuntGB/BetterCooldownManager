@@ -105,7 +105,8 @@ local Defaults = {
                 },
             },
             Essential = {
-                IconSize = 42,
+                IconWidth = 42,
+                IconHeight = 42,
                 Layout = {"CENTER", "CENTER", 0, -275.1},
                 Text = {
                     FontSize = 15,
@@ -114,7 +115,8 @@ local Defaults = {
                 },
             },
             Utility = {
-                IconSize = 36,
+                IconWidth = 36,
+                IconHeight = 36,
                 Layout = {"TOP", "EssentialCooldownViewer", "BOTTOM", 0, -1.1},
                 Text = {
                     FontSize = 15,
@@ -123,7 +125,8 @@ local Defaults = {
                 },
             },
             Buffs = {
-                IconSize = 32,
+                IconWidth = 32,
+                IconHeight = 32,
                 CenterBuffs = false,
                 Layout = {"BOTTOM", "BCDM_SecondaryPowerBar", "TOP", 0, 1.1},
                 Text = {
@@ -162,7 +165,8 @@ local Defaults = {
                 }
             },
             Custom = {
-                IconSize = 38,
+                IconWidth = 38,
+                IconHeight = 38,
                 FrameStrata = "LOW",
                 Layout = {"CENTER", "NONE", "CENTER", 0, 0},
                 Spacing = 1,
@@ -255,7 +259,8 @@ local Defaults = {
                 },
             },
             AdditionalCustom = {
-                IconSize = 38,
+                IconWidth = 38,
+                IconHeight = 38,
                 FrameStrata = "LOW",
                 Layout = {"CENTER", "NONE", "CENTER", 0, 0},
                 Spacing = 1,
@@ -348,7 +353,8 @@ local Defaults = {
                 },
             },
             Item = {
-                IconSize = 38,
+                IconWidth = 38,
+                IconHeight = 38,
                 FrameStrata = "LOW",
                 Layout = {"CENTER", "NONE", "CENTER", 0, 0},
                 Spacing = 1,
@@ -363,7 +369,8 @@ local Defaults = {
             },
             Trinket = {
                 Enabled = true,
-                IconSize = 38,
+                IconWidth = 38,
+                IconHeight = 38,
                 FrameStrata = "LOW",
                 Layout = {"CENTER", "NONE", "CENTER", 0, 0},
                 Spacing = 1,
@@ -377,7 +384,8 @@ local Defaults = {
                 Trinkets = {},
             },
             ItemSpell = {
-                IconSize = 38,
+                IconWidth = 38,
+                IconHeight = 38,
                 FrameStrata = "LOW",
                 Layout = {"CENTER", "NONE", "CENTER", 0, 0},
                 Spacing = 1,
