@@ -1,5 +1,7 @@
 local _, BCDM = ...
 local LEMO = BCDM.LEMO
+local Serialize = LibStub:GetLibrary("AceSerializer-3.0")
+local Compress = LibStub:GetLibrary("LibDeflate")
 
 function BCDMG:ExportBCDM(profileKey)
     local profile = BCDM.db.profiles[profileKey]
