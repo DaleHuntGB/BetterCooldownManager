@@ -77,6 +77,8 @@ local function DetectSecondaryPower()
     local class = select(2, UnitClass("player"))
     local spec  = GetSpecialization()
     local specID = GetSpecializationInfo(spec)
+    local secondaryPowerBarDB = BCDM.db and BCDM.db.profile and BCDM.db.profile.SecondaryPowerBar
+    local showMana = secondaryPowerBarDB and (secondaryPowerBarDB.ShowMana or secondaryPowerBarDB.ShowManaBar)
     if class == "MONK" then
         if specID == 268 then return true end
         if specID == 269 then return true end
@@ -99,6 +101,9 @@ local function DetectSecondaryPower()
         if specID == 1480 then return true end
     elseif class == "SHAMAN" then
         if specID == 263 then return true end
+        if specID == 262 and showMana then return true end
+    elseif class == "PRIEST" then
+        if specID == 258 and showMana then return true end
     end
     return false
 end
@@ -1709,6 +1714,14 @@ local function CreateSecondaryPowerBarSettings(parentContainer)
     swapToPowerBarPositionCheckBox:SetCallback("OnLeave", function() GameTooltip:Hide() end)
     swapToPowerBarPositionCheckBox:SetRelativeWidth(1)
     toggleContainer:AddChild(swapToPowerBarPositionCheckBox)
+
+    local showManaBarCheckbox = AG:Create("CheckBox")
+    showManaBarCheckbox:SetLabel("Show Mana Bar")
+    showManaBarCheckbox:SetDescription("Displays the Secondary Power Bar as Mana for Shadow and |cFF0070DDElemental|r")
+    showManaBarCheckbox:SetValue(BCDM.db.profile.SecondaryPowerBar.ShowManaBar)
+    showManaBarCheckbox:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.SecondaryPowerBar.ShowManaBar = value BCDM:UpdateSecondaryPowerBar() RefreshSecondaryPowerBarGUISettings() end)
+    showManaBarCheckbox:SetRelativeWidth(1)
+    toggleContainer:AddChild(showManaBarCheckbox)
 
     local foregroundColourPicker = AG:Create("ColorPicker")
     foregroundColourPicker:SetLabel("Foreground Colour")

@@ -425,6 +425,7 @@ local Defaults = {
             FrameStrata = "LOW",
             HideTicks = false,
             SwapToPowerBarPosition = false,
+            ShowManaBar = false,
             BackgroundColour = {34/255, 34/255, 34/255, 1},
             ForegroundColour = {34/255, 34/255, 34/255, 1},
             Layout = {"BOTTOM", "BCDM_PowerBar", "TOP", 0, 1},
