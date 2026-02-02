@@ -29,4 +29,5 @@ function BetterCooldownManager:OnEnable()
         BCDM:CreateCooldownViewerOverlays()
     end)
     BCDM:SetupEditModeManager()
+    
 end

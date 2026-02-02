@@ -111,6 +111,42 @@ updatePowerBarHeightEventFrame:SetScript("OnEvent", function(self, event, ...)
     end
 end)
 
+
+local hideout = CreateFrame("Frame")
+hideout:RegisterEvent("PLAYER_REGEN_DISABLED")
+hideout:RegisterEvent("PLAYER_REGEN_ENABLED") 
+hideout:SetScript("OnEvent", function(self, event, ...)
+    local PowerBarDB = BCDM.db.profile.PowerBar
+    local PowerBar = BCDM.PowerBar
+    local SecondaryPowerBarToPower = BCDM.db.profile.SecondaryPowerBar.SwapToPowerBarPosition
+    local SecondaryPowerBar = BCDM.SecondaryPowerBar
+
+    if event == "PLAYER_REGEN_DISABLED" then
+        if PowerBarDB.HideOutOfCombat then
+            if SecondaryPowerBarToPower and SecondaryPowerBar then
+                SecondaryPowerBar:Show()
+                return
+            end
+            if PowerBar then
+                PowerBar:Show()
+                if SecondaryPowerBar then   
+                    SecondaryPowerBar:Show()
+                end
+                return
+            end      
+        end
+    elseif event == "PLAYER_REGEN_ENABLED" then
+        if PowerBarDB.HideOutOfCombat then
+            if SecondaryPowerBar then
+                SecondaryPowerBar:Hide()
+            end
+            if PowerBar then
+                PowerBar:Hide()
+            end
+        end
+    end
+end)
+
 function BCDM:CreatePowerBar()
     local GeneralDB = BCDM.db.profile.General
     local PowerBarDB = BCDM.db.profile.PowerBar
@@ -229,7 +265,11 @@ function BCDM:UpdatePowerBar()
             UpdatePowerValues()
             if PowerBarDB.Text.Enabled then PowerBar.Text:Show() else PowerBar.Text:Hide() end
             NudgePowerBar("BCDM_PowerBar", -0.1, 0)
-            if PowerBarDB.Enabled and not BCDM.db.profile.SecondaryPowerBar.SwapToPowerBarPosition then PowerBar:Show() end
+            if PowerBarDB.Enabled and not BCDM.db.profile.SecondaryPowerBar.SwapToPowerBarPosition then 
+                if BCDM:ShowBarNow() then
+                    PowerBar:Show() 
+                end  
+            end
         else
             PowerBar:Hide()
             PowerBar:SetScript("OnEvent", nil)

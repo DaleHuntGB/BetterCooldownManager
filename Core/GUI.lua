@@ -1405,6 +1405,17 @@ local function CreatePowerBarSettings(parentContainer)
     enabledCheckbox:SetRelativeWidth(1)
     toggleContainer:AddChild(enabledCheckbox)
 
+
+    local hideOutOfCombatCheckbox = AG:Create("CheckBox")
+    hideOutOfCombatCheckbox:SetLabel("Hide Resource Bars Out of Combat")
+    hideOutOfCombatCheckbox:SetValue(BCDM.db.profile.PowerBar.HideOutOfCombat or false)
+    hideOutOfCombatCheckbox:SetCallback("OnValueChanged", function(_, _, value)
+        BCDM.db.profile.PowerBar.HideOutOfCombat = value
+        if BCDM.UpdatePowerBarVisibility then BCDM:UpdatePowerBarVisibility() end
+    end)
+    hideOutOfCombatCheckbox:SetRelativeWidth(1)
+    toggleContainer:AddChild(hideOutOfCombatCheckbox)
+
     local colourByTypeCheckbox = AG:Create("CheckBox")
     colourByTypeCheckbox:SetLabel("Colour By Power Type")
     colourByTypeCheckbox:SetValue(BCDM.db.profile.PowerBar.ColourByType)

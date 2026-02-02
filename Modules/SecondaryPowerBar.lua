@@ -318,7 +318,9 @@ local function UpdateRuneDisplay()
             runeBar:SetPoint("LEFT", runeBars[order[runePosition-1]], "RIGHT", 1, 0)
         end
 
-        runeBar:Show()
+        if ShowBarNow() then
+            runeBar:Show()
+        end
 
         local _, _, runeReady = GetRuneCooldown(i)
         if runeReady then
@@ -362,7 +364,9 @@ local function UpdateComboDisplay()
             else
                 bar:SetStatusBarColor(powerBarColourR, powerBarColourG, powerBarColourB, powerBarColourA or 1)
             end
-            bar:Show()
+            if ShowBarNow() then
+                bar:Show()
+            end
         else
             bar:SetValue(0)
             bar:Hide()
@@ -404,7 +408,9 @@ local function UpdateEssenceDisplay()
         local tick = essenceTicks[i]
         local bar = tick.bar
 
-        bar:Show()
+        if ShowBarNow() then
+            bar:Show()
+        end
 
         if i <= powerCurrent then
             bar:SetScript("OnUpdate", nil)
@@ -567,7 +573,9 @@ local function UpdatePowerValues()
         secondaryPowerBar.Status:SetMinMaxValues(0, powerMax)
         secondaryPowerBar.Status:SetValue(powerCurrent)
         secondaryPowerBar.Text:SetText(tostring(powerCurrent))
-        secondaryPowerBar.Status:Show()
+        if ShowBarNow() then
+            secondaryPowerBar:Show()
+        end
     elseif powerType == Enum.PowerType.Runes then
         secondaryPowerBar.Status:Hide()
         UpdateRuneDisplay()
@@ -576,7 +584,9 @@ local function UpdatePowerValues()
     if not (powerType == "STAGGER" and secondaryPowerBarDB.ColourByState) then
         secondaryPowerBar.Status:SetStatusBarColor(GetPowerBarColor())
     end
-    secondaryPowerBar:Show()
+    if ShowBarNow() then
+        secondaryPowerBar:Show()
+    end
 end
 
 local function CreateTicksBasedOnPowerType()
@@ -693,7 +703,11 @@ function BCDM:CreateSecondaryPowerBar()
         secondaryPowerBar:ClearAllPoints()
         secondaryPowerBar:SetPoint(secondaryPowerBarDB.Layout[1], _G[secondaryPowerBarDB.Layout[2]], secondaryPowerBarDB.Layout[3], secondaryPowerBarDB.Layout[4], secondaryPowerBarDB.Layout[5])
         secondaryPowerBar:SetHeight(secondaryPowerBarDB.Height)
-        if powerBarDB.Enabled then BCDM.PowerBar:Show() end
+        if powerBarDB.Enabled then 
+            if ShowBarNow() then
+                BCDM.PowerBar:Show() 
+            end
+        end
     end
 
     secondaryPowerBar:SetFrameStrata(secondaryPowerBarDB.FrameStrata)
@@ -737,9 +751,10 @@ function BCDM:CreateSecondaryPowerBar()
             secondaryPowerBar.Status:SetMinMaxValues(0, UnitPowerMax("player"))
             secondaryPowerBar.Status:SetValue(UnitPower("player"))
             NudgeSecondaryPowerBar("BCDM_SecondaryPowerBar", -0.1, 0)
-            secondaryPowerBar:Show()
+            if ShowBarNow() then
+                secondaryPowerBar:Show()
+            end
         end
-
         secondaryPowerBar:RegisterEvent("UNIT_POWER_UPDATE")
         secondaryPowerBar:RegisterEvent("UNIT_MAXPOWER")
         secondaryPowerBar:RegisterEvent("UNIT_HEALTH")
@@ -766,6 +781,9 @@ function BCDM:CreateSecondaryPowerBar()
             end
             UpdatePowerValues()
         end)
+        if not ShowBarNow() then
+            secondaryPowerBar:Hide()
+        end
     else
         secondaryPowerBar:Hide()
         secondaryPowerBar:SetScript("OnEvent", nil)
@@ -805,7 +823,11 @@ function BCDM:UpdateSecondaryPowerBar()
         secondaryPowerBar:ClearAllPoints()
         secondaryPowerBar:SetPoint(secondaryPowerBarDB.Layout[1], _G[secondaryPowerBarDB.Layout[2]], secondaryPowerBarDB.Layout[3], secondaryPowerBarDB.Layout[4], secondaryPowerBarDB.Layout[5])
         secondaryPowerBar:SetHeight(secondaryPowerBarDB.Height)
-        if powerBarDB.Enabled then BCDM.PowerBar:Show() end
+        if powerBarDB.Enabled then
+            if ShowBarNow() then
+                BCDM.PowerBar:Show() 
+            end
+        end
     end
     secondaryPowerBar:SetFrameStrata(secondaryPowerBarDB.FrameStrata)
     secondaryPowerBar.Status:SetPoint("TOPLEFT", secondaryPowerBar, "TOPLEFT", borderSize, -borderSize)
@@ -863,7 +885,9 @@ function BCDM:UpdateSecondaryPowerBar()
         UpdatePowerValues()
         CreateTicksBasedOnPowerType()
         NudgeSecondaryPowerBar("BCDM_SecondaryPowerBar", -0.1, 0)
-        secondaryPowerBar:Show()
+        if ShowBarNow() then
+            secondaryPowerBar:Show()
+        end
     else
         secondaryPowerBar:Hide()
         secondaryPowerBar:SetScript("OnEvent", nil)
@@ -871,6 +895,14 @@ function BCDM:UpdateSecondaryPowerBar()
         secondaryPowerBar:UnregisterAllEvents()
     end
     UpdateBarWidth()
+end
+
+function ShowBarNow()
+    local PowerBarDB = BCDM.db.profile.PowerBar
+    if not InCombatLockdown() and PowerBarDB.HideOutOfCombat then
+        return false
+    end
+    return true
 end
 
 function BCDM:UpdateSecondaryPowerBarWidth()
