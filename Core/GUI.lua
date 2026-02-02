@@ -821,7 +821,7 @@ local function CreateCooldownViewerSpellSettings(parentContainer, customDB, cont
     local SpellDB = BCDM.db.profile.CooldownManager[customDB].Spells
 
     local playerClass = select(2, UnitClass("player"))
-    local playerSpecialization = select(2, GetSpecializationInfo(GetSpecialization())):gsub(" ", ""):upper()
+    local playerSpecialization = GetSpecializationInfo(GetSpecialization())
 
     local addSpellEditBox = AG:Create("EditBox")
     addSpellEditBox:SetLabel("Add Spell by ID or Spell Name")

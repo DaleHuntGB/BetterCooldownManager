@@ -124,7 +124,7 @@ end
 
 local function CreateCustomIcons(iconTable)
     local playerClass = select(2, UnitClass("player"))
-    local playerSpecialization = select(2, GetSpecializationInfo(GetSpecialization())):gsub(" ", ""):upper()
+    local playerSpecialization = GetSpecializationInfo(GetSpecialization())
     local DefensiveSpells = BCDM.db.profile.CooldownManager.Custom.Spells
 
     wipe(iconTable)

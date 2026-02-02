@@ -176,82 +176,82 @@ local Defaults = {
                 Spells = {
                     -- Monk
                     ["MONK"] = {
-                        ["BREWMASTER"] = {},
-                        ["WINDWALKER"] = {},
-                        ["MISTWEAVER"] = {},
+                        [268] = {}, -- Brewmaster
+                        [269] = {}, -- Windwalker
+                        [270] = {}, -- Mistweaver
                     },
                     -- Demon Hunter
                     ["DEMONHUNTER"] = {
-                        ["HAVOC"] = {},
-                        ["VENGEANCE"] = {},
-                        ["DEVOURER"] = {},
+                        [577] = {}, -- Havoc
+                        [581] = {}, -- Vengeance
+                        [1480] = {}, -- Devourer
                     },
                     -- Death Knight
                     ["DEATHKNIGHT"] = {
-                        ["BLOOD"] = {},
-                        ["UNHOLY"] = {},
-                        ["FROST"] = {}
+                        [250] = {}, -- Blood
+                        [252] = {}, -- Unholy
+                        [251] = {}  -- Frost
                     },
                     -- Mage
                     ["MAGE"] = {
-                        ["FROST"] = {},
-                        ["FIRE"] = {},
-                        ["ARCANE"] = {},
+                        [64] = {}, -- Frost
+                        [63] = {}, -- Fire
+                        [62] = {}, -- Arcane
                     },
                     -- Paladin
                     ["PALADIN"] = {
-                        ["RETRIBUTION"] = {},
-                        ["HOLY"] = {},
-                        ["PROTECTION"] = {}
+                        [70] = {}, -- Retribution
+                        [65] = {}, -- Holy
+                        [66] = {}  -- Protection
                     },
                     -- Shaman
                     ["SHAMAN"] = {
-                        ["ELEMENTAL"] = {},
-                        ["ENHANCEMENT"] = {},
-                        ["RESTORATION"] = {}
+                        [262] = {}, -- Elemental
+                        [263] = {}, -- Enhancement
+                        [264] = {}  -- Restoration
                     },
                     -- Druid
                     ["DRUID"] = {
-                        ["GUARDIAN"] = {},
-                        ["FERAL"] = {},
-                        ["RESTORATION"] = {},
-                        ["BALANCE"] = {},
+                        [104] = {}, -- Guardian
+                        [103] = {}, -- Feral
+                        [105] = {}, -- Restoration
+                        [102] = {}, -- Balance
                     },
                     -- Evoker
                     ["EVOKER"] = {
-                        ["DEVASTATION"] = {},
-                        ["AUGMENTATION"] = {},
-                        ["PRESERVATION"] = {}
+                        [1467] = {}, -- Devastation
+                        [1473] = {}, -- Augmentation
+                        [1468] = {}  -- Preservation
                     },
                     -- Warrior
                     ["WARRIOR"] = {
-                        ["ARMS"] = {},
-                        ["FURY"] = {},
-                        ["PROTECTION"] = {},
+                        [71] = {}, -- Arms
+                        [72] = {}, -- Fury
+                        [73] = {}  -- Protection
                     },
                     -- Priest
                     ["PRIEST"] = {
-                        ["SHADOW"] = {},
-                        ["DISCIPLINE"] = {},
-                        ["HOLY"] = {},
+                        [258] = {}, -- Shadow
+                        [256] = {}, -- Discipline
+                        [257] = {}  -- Holy
                     },
                     -- Warlock
                     ["WARLOCK"] = {
-                        ["DESTRUCTION"] = {},
-                        ["AFFLICTION"] = {},
-                        ["DEMONOLOGY"] = {},
+                        [267] = {}, -- Destruction
+                        [265] = {}, -- Affliction
+                        [266] = {}  -- Demonology
                     },
                     -- Hunter
                     ["HUNTER"] = {
-                        ["SURVIVAL"] = {},
-                        ["MARKSMANSHIP"] = {},
-                        ["BEASTMASTERY"] = {},
+                        [255] = {}, -- Survival
+                        [254] = {}, -- Marksmanship
+                        [253] = {}  -- Beast Mastery
                     },
                     -- Rogue
                     ["ROGUE"] = {
-                        ["OUTLAW"] = {},
-                        ["ASSASSINATION"] = {},
-                        ["SUBTLETY"] = {},
+                        [260] = {}, -- Outlaw
+                        [259] = {}, -- Assassination
+                        [261] = {}  -- Subtlety
                     }
                 },
             },
@@ -269,82 +269,82 @@ local Defaults = {
                 Spells = {
                     -- Monk
                     ["MONK"] = {
-                        ["BREWMASTER"] = {},
-                        ["WINDWALKER"] = {},
-                        ["MISTWEAVER"] = {},
+                        [268] = {}, -- Brewmaster
+                        [269] = {}, -- Windwalker
+                        [270] = {}, -- Mistweaver
                     },
                     -- Demon Hunter
                     ["DEMONHUNTER"] = {
-                        ["HAVOC"] = {},
-                        ["VENGEANCE"] = {},
-                        ["DEVOURER"] = {},
+                        [577] = {}, -- Havoc
+                        [581] = {}, -- Vengeance
+                        [1480] = {}, -- Devourer
                     },
                     -- Death Knight
                     ["DEATHKNIGHT"] = {
-                        ["BLOOD"] = {},
-                        ["UNHOLY"] = {},
-                        ["FROST"] = {}
+                        [250] = {}, -- Blood
+                        [252] = {}, -- Unholy
+                        [251] = {}  -- Frost
                     },
                     -- Mage
                     ["MAGE"] = {
-                        ["FROST"] = {},
-                        ["FIRE"] = {},
-                        ["ARCANE"] = {},
+                        [64] = {}, -- Frost
+                        [63] = {}, -- Fire
+                        [62] = {}, -- Arcane
                     },
                     -- Paladin
                     ["PALADIN"] = {
-                        ["RETRIBUTION"] = {},
-                        ["HOLY"] = {},
-                        ["PROTECTION"] = {}
+                        [70] = {}, -- Retribution
+                        [65] = {}, -- Holy
+                        [66] = {}  -- Protection
                     },
                     -- Shaman
                     ["SHAMAN"] = {
-                        ["ELEMENTAL"] = {},
-                        ["ENHANCEMENT"] = {},
-                        ["RESTORATION"] = {}
+                        [262] = {}, -- Elemental
+                        [263] = {}, -- Enhancement
+                        [264] = {}  -- Restoration
                     },
                     -- Druid
                     ["DRUID"] = {
-                        ["GUARDIAN"] = {},
-                        ["FERAL"] = {},
-                        ["RESTORATION"] = {},
-                        ["BALANCE"] = {},
+                        [104] = {}, -- Guardian
+                        [103] = {}, -- Feral
+                        [105] = {}, -- Restoration
+                        [102] = {}, -- Balance
                     },
                     -- Evoker
                     ["EVOKER"] = {
-                        ["DEVASTATION"] = {},
-                        ["AUGMENTATION"] = {},
-                        ["PRESERVATION"] = {}
+                        [1467] = {}, -- Devastation
+                        [1473] = {}, -- Augmentation
+                        [1468] = {}  -- Preservation
                     },
                     -- Warrior
                     ["WARRIOR"] = {
-                        ["ARMS"] = {},
-                        ["FURY"] = {},
-                        ["PROTECTION"] = {},
+                        [71] = {}, -- Arms
+                        [72] = {}, -- Fury
+                        [73] = {}  -- Protection
                     },
                     -- Priest
                     ["PRIEST"] = {
-                        ["SHADOW"] = {},
-                        ["DISCIPLINE"] = {},
-                        ["HOLY"] = {},
+                        [258] = {}, -- Shadow
+                        [256] = {}, -- Discipline
+                        [257] = {}  -- Holy
                     },
                     -- Warlock
                     ["WARLOCK"] = {
-                        ["DESTRUCTION"] = {},
-                        ["AFFLICTION"] = {},
-                        ["DEMONOLOGY"] = {},
+                        [267] = {}, -- Destruction
+                        [265] = {}, -- Affliction
+                        [266] = {}  -- Demonology
                     },
                     -- Hunter
                     ["HUNTER"] = {
-                        ["SURVIVAL"] = {},
-                        ["MARKSMANSHIP"] = {},
-                        ["BEASTMASTERY"] = {},
+                        [255] = {}, -- Survival
+                        [254] = {}, -- Marksmanship
+                        [253] = {}  -- Beast Mastery
                     },
                     -- Rogue
                     ["ROGUE"] = {
-                        ["OUTLAW"] = {},
-                        ["ASSASSINATION"] = {},
-                        ["SUBTLETY"] = {},
+                        [260] = {}, -- Outlaw
+                        [259] = {}, -- Assassination
+                        [261] = {}  -- Subtlety
                     }
                 },
             },

@@ -282,7 +282,7 @@ function BCDM:AdjustSpellLayoutIndex(direction, spellId, customDB)
     local CooldownManagerDB = BCDM.db.profile
     local CustomDB = CooldownManagerDB.CooldownManager[customDB]
     local playerClass = select(2, UnitClass("player"))
-    local playerSpecialization = select(2, GetSpecializationInfo(GetSpecialization())):gsub(" ", ""):upper()
+    local playerSpecialization = GetSpecializationInfo(GetSpecialization())
     local DefensiveSpells = CustomDB.Spells
 
     if not DefensiveSpells[playerClass] or not DefensiveSpells[playerClass][playerSpecialization] or not DefensiveSpells[playerClass][playerSpecialization][spellId] then return end
@@ -343,7 +343,7 @@ function BCDM:AdjustSpellList(spellId, adjustingHow, customDB)
     local CooldownManagerDB = BCDM.db.profile
     local CustomDB = CooldownManagerDB.CooldownManager[customDB]
     local playerClass = select(2, UnitClass("player"))
-    local playerSpecialization = select(2, GetSpecializationInfo(GetSpecialization())):gsub(" ", ""):upper()
+    local playerSpecialization = GetSpecializationInfo(GetSpecialization())
     local DefensiveSpells = CustomDB.Spells
 
     if not DefensiveSpells[playerClass] then
