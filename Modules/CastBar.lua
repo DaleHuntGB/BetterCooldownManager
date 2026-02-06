@@ -235,7 +235,11 @@ function BCDM:CreateCastBar()
         if CastBarDB.Icon.Enabled then CastBar.Icon:Show() else CastBar.Icon:Hide() end
 
         CastBar:Hide()
-        PlayerCastingBarFrame:SetUnit(nil)
+
+        if (PlayerCastingBarFrame and not PlayerCastingBarFrame:IsForbidden()) then
+            PlayerCastingBarFrame:UnregisterAllEvents()
+            PlayerCastingBarFrame:Hide()
+        end
     else
         CastBar:Hide()
         CastBar:SetScript("OnEvent", nil)
