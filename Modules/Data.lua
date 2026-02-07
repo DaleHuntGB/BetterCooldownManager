@@ -1,5 +1,158 @@
 local _, BCDM = ...
 
+local function NormalizeSpecName(specName)
+    if not specName then return end
+    return tostring(specName):gsub("%s+", ""):upper()
+end
+
+BCDM.SpecIdToToken = BCDM.SpecIdToToken or {
+    [62] = "ARCANE",
+    [63] = "FIRE",
+    [64] = "FROST",
+    [65] = "HOLY",
+    [66] = "PROTECTION",
+    [70] = "RETRIBUTION",
+    [71] = "ARMS",
+    [72] = "FURY",
+    [73] = "PROTECTION",
+    [102] = "BALANCE",
+    [103] = "FERAL",
+    [104] = "GUARDIAN",
+    [105] = "RESTORATION",
+    [250] = "BLOOD",
+    [251] = "FROST",
+    [252] = "UNHOLY",
+    [253] = "BEASTMASTERY",
+    [254] = "MARKSMANSHIP",
+    [255] = "SURVIVAL",
+    [256] = "DISCIPLINE",
+    [257] = "HOLY",
+    [258] = "SHADOW",
+    [259] = "ASSASSINATION",
+    [260] = "OUTLAW",
+    [261] = "SUBTLETY",
+    [262] = "ELEMENTAL",
+    [263] = "ENHANCEMENT",
+    [264] = "RESTORATION",
+    [265] = "AFFLICTION",
+    [266] = "DEMONOLOGY",
+    [267] = "DESTRUCTION",
+    [268] = "BREWMASTER",
+    [269] = "WINDWALKER",
+    [270] = "MISTWEAVER",
+    [577] = "HAVOC",
+    [581] = "VENGEANCE",
+    [1467] = "DEVASTATION",
+    [1468] = "PRESERVATION",
+    [1473] = "AUGMENTATION",
+}
+
+function BCDM:NormalizeSpecToken(specToken, specId, specIndex)
+    local id = specId
+    if not id and specIndex then
+        id = GetSpecializationInfo(specIndex)
+    end
+    if not id and type(specToken) == "number" then
+        id = specToken
+    end
+    if id and self.SpecIdToToken and self.SpecIdToToken[id] then
+        return self.SpecIdToToken[id]
+    end
+    if specToken then
+        return NormalizeSpecName(specToken)
+    end
+end
+
+local function GetClassIdByToken(classToken)
+    if not classToken then return end
+    if CLASS_SORT_ORDER and C_ClassInfo and C_ClassInfo.GetClassInfo then
+        for _, classId in ipairs(CLASS_SORT_ORDER) do
+            local classInfo = C_ClassInfo.GetClassInfo(classId)
+            if classInfo and classInfo.classFile == classToken then
+                return classId
+            end
+        end
+    end
+    local numClasses = GetNumClasses()
+    if numClasses then
+        for classId = 1, numClasses do
+            local classInfo = C_ClassInfo and C_ClassInfo.GetClassInfo and C_ClassInfo.GetClassInfo(classId)
+            if classInfo and classInfo.classFile == classToken then
+                return classId
+            elseif GetClassInfo then
+                local _, classFile = GetClassInfo(classId)
+                if classFile == classToken then
+                    return classId
+                end
+            end
+        end
+    end
+end
+
+local function BuildSpecNameTokenMap(classId)
+    local map = {}
+    if not classId then return map end
+    if not (C_SpecializationInfo and C_SpecializationInfo.GetNumSpecializationsForClassID and GetSpecializationInfoForClassID) then
+        return map
+    end
+    local numSpecs = C_SpecializationInfo.GetNumSpecializationsForClassID(classId)
+    if not numSpecs then return map end
+    for i = 1, numSpecs do
+        local specID, specName = GetSpecializationInfoForClassID(classId, i)
+        if type(specID) == "table" then
+            local info = specID
+            specID = info.specID or info.id
+            specName = info.name or specName
+        end
+        local token = BCDM:NormalizeSpecToken(specName, specID)
+        local normalizedName = NormalizeSpecName(specName)
+        if token and normalizedName then
+            map[normalizedName] = token
+        end
+    end
+    return map
+end
+
+function BCDM:NormalizeCustomSpellSpecTokens()
+    local CooldownManagerDB = self.db and self.db.profile and self.db.profile.CooldownManager
+    if not CooldownManagerDB then return end
+    local targetDbs = { "Custom", "AdditionalCustom" }
+    for _, dbKey in ipairs(targetDbs) do
+        local spellDB = CooldownManagerDB[dbKey] and CooldownManagerDB[dbKey].Spells
+        if spellDB then
+            for classToken, specs in pairs(spellDB) do
+                local classId = GetClassIdByToken(classToken)
+                local nameMap = classId and BuildSpecNameTokenMap(classId) or nil
+                local remap = {}
+                for specToken in pairs(specs) do
+                    local targetToken
+                    if type(specToken) == "number" then
+                        targetToken = BCDM:NormalizeSpecToken(nil, specToken)
+                    else
+                        local normalizedToken = NormalizeSpecName(specToken)
+                        targetToken = nameMap and nameMap[normalizedToken] or normalizedToken
+                    end
+                    if targetToken and targetToken ~= specToken then
+                        remap[specToken] = targetToken
+                    end
+                end
+                for fromToken, toToken in pairs(remap) do
+                    if not specs[toToken] then
+                        specs[toToken] = specs[fromToken]
+                    else
+                        for spellId, data in pairs(specs[fromToken]) do
+                            if not specs[toToken][spellId] then
+                                specs[toToken][spellId] = data
+                            end
+                        end
+                    end
+                    specs[fromToken] = nil
+                end
+            end
+        end
+    end
+end
+
 local DEFENSIVE_SPELLS = {
     -- Monk
     ["MONK"] = {
@@ -292,13 +445,17 @@ function BCDM:FetchData(options)
     local includeItems = options.includeItems
     local dataList = {}
 
-    local function NormalizeSpecToken(specToken)
-        if not specToken then return end
-        return tostring(specToken):gsub(" ", ""):upper()
-    end
-
     local playerClass = options.classToken or select(2, UnitClass("player"))
-    local playerSpecialization = NormalizeSpecToken(options.specToken) or NormalizeSpecToken(select(2, GetSpecializationInfo(GetSpecialization())))
+    local playerSpecialization
+    if options.specToken then
+        playerSpecialization = BCDM:NormalizeSpecToken(options.specToken)
+    else
+        local specIndex = GetSpecialization()
+        if specIndex then
+            local specID, specName = GetSpecializationInfo(specIndex)
+            playerSpecialization = BCDM:NormalizeSpecToken(specName, specID, specIndex)
+        end
+    end
 
     if includeSpells and DEFENSIVE_SPELLS[playerClass] and DEFENSIVE_SPELLS[playerClass][playerSpecialization] then
         for spellId, data in pairs(DEFENSIVE_SPELLS[playerClass][playerSpecialization]) do
@@ -336,7 +493,9 @@ function BCDM:AddRecommendedSpells(customDB)
     local CooldownManagerDB = BCDM.db.profile
     local CustomDB = CooldownManagerDB.CooldownManager[customDB]
     local _, playerClass = UnitClass("player")
-    local playerSpecialization = select(2, GetSpecializationInfo(GetSpecialization())):gsub(" ", ""):upper()
+    local specIndex = GetSpecialization()
+    local specID, specName = specIndex and GetSpecializationInfo(specIndex)
+    local playerSpecialization = BCDM:NormalizeSpecToken(specName, specID, specIndex)
     if DEFENSIVE_SPELLS[playerClass] and DEFENSIVE_SPELLS[playerClass][playerSpecialization] then
         for spellId, data in pairs(DEFENSIVE_SPELLS[playerClass][playerSpecialization]) do
             if not CustomDB.Spells[playerClass] then CustomDB.Spells[playerClass] = {} end

@@ -189,6 +189,7 @@ end
 function BCDM:Init()
     SetupSlashCommands()
     BCDM:ResolveLSM()
+    BCDM:NormalizeCustomSpellSpecTokens()
     if C_AddOns.IsAddOnLoaded("Blizzard_CooldownViewer") then C_AddOns.LoadAddOn("Blizzard_CooldownViewer") end
 end
 
@@ -340,16 +341,21 @@ function BCDM:CreatePrompt(title, text, onAccept, onCancel, acceptText, cancelTe
     return promptDialog
 end
 
-local function NormalizeSpecToken(specToken)
-    if not specToken then return end
-    return tostring(specToken):gsub(" ", ""):upper()
+local function ResolveSpecToken(targetSpec)
+    if targetSpec then
+        return BCDM:NormalizeSpecToken(targetSpec)
+    end
+    local specIndex = GetSpecialization()
+    if not specIndex then return end
+    local specID, specName = GetSpecializationInfo(specIndex)
+    return BCDM:NormalizeSpecToken(specName, specID, specIndex)
 end
 
 function BCDM:AdjustSpellLayoutIndex(direction, spellId, customDB, targetClass, targetSpec)
     local CooldownManagerDB = BCDM.db.profile
     local CustomDB = CooldownManagerDB.CooldownManager[customDB]
     local playerClass = targetClass or select(2, UnitClass("player"))
-    local playerSpecialization = NormalizeSpecToken(targetSpec) or NormalizeSpecToken(select(2, GetSpecializationInfo(GetSpecialization())))
+    local playerSpecialization = ResolveSpecToken(targetSpec)
     local DefensiveSpells = CustomDB.Spells
 
     if not playerClass or not playerSpecialization then return end
@@ -411,7 +417,7 @@ function BCDM:AdjustSpellList(spellId, adjustingHow, customDB, targetClass, targ
     local CooldownManagerDB = BCDM.db.profile
     local CustomDB = CooldownManagerDB.CooldownManager[customDB]
     local playerClass = targetClass or select(2, UnitClass("player"))
-    local playerSpecialization = NormalizeSpecToken(targetSpec) or NormalizeSpecToken(select(2, GetSpecializationInfo(GetSpecialization())))
+    local playerSpecialization = ResolveSpecToken(targetSpec)
     local DefensiveSpells = CustomDB.Spells
 
     if not playerClass or not playerSpecialization then return end

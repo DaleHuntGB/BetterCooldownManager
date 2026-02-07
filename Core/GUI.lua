@@ -191,11 +191,6 @@ local function ParseDataDropdownValue(value)
     return entryType, tonumber(id)
 end
 
-local function NormalizeSpecToken(specToken)
-    if not specToken then return end
-    return tostring(specToken):gsub(" ", ""):upper()
-end
-
 local function GetClassIdByToken(classToken)
     if not classToken then return end
 
@@ -247,7 +242,8 @@ local function GetSpecDisplayName(classId, specToken)
                 specIcon = specIcon or info.icon
             end
         end
-        if specName and NormalizeSpecToken(specName) == specToken then
+        local normalizedToken = BCDM:NormalizeSpecToken(specName, specID)
+        if normalizedToken and normalizedToken == specToken then
             return specName, i, specIcon
         end
     end
@@ -317,9 +313,14 @@ local function BuildClassSpecDropdownMenuData(spellDB)
             local numSpecs = C_SpecializationInfo and C_SpecializationInfo.GetNumSpecializationsForClassID and C_SpecializationInfo.GetNumSpecializationsForClassID(classId)
             if numSpecs then
                 for i = 1, numSpecs do
-                    local _, specName = GetSpecializationInfoForClassID(classId, i)
+                    local specID, specName = GetSpecializationInfoForClassID(classId, i)
+                    if type(specID) == "table" then
+                        local info = specID
+                        specID = info.specID or info.id
+                        specName = info.name or specName
+                    end
                     if specName then
-                        local specToken = NormalizeSpecToken(specName)
+                        local specToken = BCDM:NormalizeSpecToken(specName, specID)
                         if specToken and specs[specToken] then
                             orderedSpecs[#orderedSpecs + 1] = specToken
                             seenSpecs[specToken] = true
@@ -418,8 +419,9 @@ local function ResolveSpellClassSpecSelection(customDB, spellDB)
     end
 
     local playerClass = select(2, UnitClass("player"))
-    local playerSpecName = select(2, GetSpecializationInfo(GetSpecialization()))
-    local playerSpecToken = NormalizeSpecToken(playerSpecName)
+    local specIndex = GetSpecialization()
+    local specID, playerSpecName = specIndex and GetSpecializationInfo(specIndex)
+    local playerSpecToken = BCDM:NormalizeSpecToken(playerSpecName, specID, specIndex)
     if playerClass and playerSpecToken and spellDB[playerClass] and spellDB[playerClass][playerSpecToken] then
         BCDMGUI.SelectedClassSpec[customDB] = { class = playerClass, spec = playerSpecToken }
         return playerClass, playerSpecToken
