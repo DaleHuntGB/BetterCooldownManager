@@ -450,6 +450,7 @@ function BCDM:RepositionSecondaryBar()
     local specIndex = GetSpecialization()
     if not specIndex then return false end
     local specID = GetSpecializationInfo(specIndex)
+    if not specID then return false end
     local classSpecs = SpecsNeedingAltPower[class]
     if not classSpecs then return false end
     for _, requiredSpec in ipairs(classSpecs) do if specID == requiredSpec then return true end end
