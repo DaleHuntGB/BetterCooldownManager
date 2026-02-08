@@ -568,6 +568,7 @@ local function CreateCustomGlowSettings(parentContainer)
     local glowType = AG:Create("Dropdown")
     glowType:SetLabel("Glow Type")
     glowType:SetList({
+        None = "None (Hide Yellow)",
         Pixel = "Pixel",
         Autocast = "Autocast",
         Proc = "Proc",
@@ -592,7 +593,14 @@ local function CreateCustomGlowSettings(parentContainer)
     local function AddCustomGlowOptions()
         dynamicGlowSettingsGroup:ReleaseChildren()
 
-        if glowSettings.Type == "Proc" then
+        if glowSettings.Type == "None" then
+            local infoLabel = AG:Create("Label")
+            infoLabel:SetText("No glow effect - Blizzard's yellow glow will be hidden.")
+            infoLabel:SetFont("Fonts\\FRIZQT__.TTF", 11, "")
+            infoLabel:SetFullWidth(true)
+            dynamicGlowSettingsGroup:AddChild(infoLabel)
+
+        elseif glowSettings.Type == "Proc" then
             local glowColor = AG:Create("ColorPicker")
             glowColor:SetRelativeWidth(0.5)
             glowColor:SetLabel("Glow Color")
@@ -810,6 +818,81 @@ local function CreateCustomGlowSettings(parentContainer)
 
     AddCustomGlowOptions()
     RefreshGlowSettingsState()
+end
+
+local function CreateActiveGlowSettings(parentContainer)
+    local glowSettings = BCDM:GetCustomGlowSettings()
+    if not glowSettings then
+        return
+    end
+
+    local ScrollFrame = AG:Create("ScrollFrame")
+    ScrollFrame:SetLayout("Flow")
+    ScrollFrame:SetFullWidth(true)
+    ScrollFrame:SetFullHeight(true)
+    parentContainer:AddChild(ScrollFrame)
+
+    -- Header info
+    local headerLabel = AG:Create("Label")
+    headerLabel:SetText(BCDM.INFOBUTTON .. " Configure the timer overlay color for cooldowns (replaces Blizzard's yellow swipe).")
+    headerLabel:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
+    headerLabel:SetFullWidth(true)
+    headerLabel:SetHeight(30)
+    ScrollFrame:AddChild(headerLabel)
+
+    -- Swipe Color Settings
+    local swipeContainer = AG:Create("InlineGroup")
+    swipeContainer:SetTitle("Timer Swipe Color")
+    swipeContainer:SetFullWidth(true)
+    swipeContainer:SetLayout("Flow")
+    ScrollFrame:AddChild(swipeContainer)
+
+    local enableSwipeOverride = AG:Create("CheckBox")
+    enableSwipeOverride:SetLabel("Override Blizzard's Yellow Swipe")
+    enableSwipeOverride:SetValue(glowSettings.Enabled)
+    enableSwipeOverride:SetFullWidth(true)
+    enableSwipeOverride:SetCallback("OnValueChanged", function(_, _, value)
+        glowSettings.Enabled = value
+        RefreshSwipeSettings()
+    end)
+    swipeContainer:AddChild(enableSwipeOverride)
+
+    local swipeInfoLabel = AG:Create("Label")
+    swipeInfoLabel:SetText("When enabled, replaces Blizzard's yellow countdown overlay with your custom color.")
+    swipeInfoLabel:SetFont("Fonts\\FRIZQT__.TTF", 11, "")
+    swipeInfoLabel:SetFullWidth(true)
+    swipeContainer:AddChild(swipeInfoLabel)
+
+    -- Single Swipe Color
+    local swipeColor = AG:Create("ColorPicker")
+    swipeColor:SetLabel("Swipe Color")
+    swipeColor:SetHasAlpha(true)
+    swipeColor:SetColor(unpack(glowSettings.BuffSwipeColor or {0, 0, 0, 0.8}))
+    swipeColor:SetRelativeWidth(0.5)
+    swipeColor:SetCallback("OnValueChanged", function(_, _, r, g, b, a)
+        glowSettings.BuffSwipeColor = {r, g, b, a}
+    end)
+    swipeContainer:AddChild(swipeColor)
+
+    local resetButton = AG:Create("Button")
+    resetButton:SetText("Reset to Default")
+    resetButton:SetRelativeWidth(0.5)
+    resetButton:SetCallback("OnClick", function()
+        glowSettings.BuffSwipeColor = {0, 0, 0, 0.8}
+        swipeColor:SetColor(0, 0, 0, 0.8)
+    end)
+    swipeContainer:AddChild(resetButton)
+
+    function RefreshSwipeSettings()
+        local disabled = not glowSettings.Enabled
+        swipeColor:SetDisabled(disabled)
+        resetButton:SetDisabled(disabled)
+    end
+
+    RefreshSwipeSettings()
+
+    ScrollFrame:DoLayout()
+    return ScrollFrame
 end
 
 local function CreateGeneralSettings(parentContainer)
@@ -1772,89 +1855,77 @@ local function CreateCooldownViewerSettings(parentContainer, viewerType)
     iconContainer:SetLayout("Flow")
     ScrollFrame:AddChild(iconContainer)
 
-    local keepAspectCheckbox = AG:Create("CheckBox")
-    keepAspectCheckbox:SetLabel("Keep Aspect Ratio")
-    keepAspectCheckbox:SetValue(BCDM.db.profile.CooldownManager[viewerType].KeepAspectRatio ~= false)
-    keepAspectCheckbox:SetRelativeWidth((viewerType == "Item" or viewerType == "ItemSpell") and 0.5 or 1)
-    iconContainer:AddChild(keepAspectCheckbox)
+        local keepAspectCheckbox = AG:Create("CheckBox")
+        keepAspectCheckbox:SetLabel("Keep Aspect Ratio")
+        keepAspectCheckbox:SetValue(BCDM.db.profile.CooldownManager[viewerType].KeepAspectRatio ~= false)
+        keepAspectCheckbox:SetRelativeWidth(1)
+        iconContainer:AddChild(keepAspectCheckbox)
 
-    if viewerType == "Item" or viewerType == "ItemSpell" then
-        local hideZeroChargesCheckbox = AG:Create("CheckBox")
-        hideZeroChargesCheckbox:SetLabel("Hide Items with Zero Charges/Uses")
-        hideZeroChargesCheckbox:SetValue(BCDM.db.profile.CooldownManager[viewerType].HideZeroCharges)
-        hideZeroChargesCheckbox:SetCallback("OnValueChanged", function(_, _, value)
-            BCDM.db.profile.CooldownManager[viewerType].HideZeroCharges = value
+        local iconSizeSlider = AG:Create("Slider")
+        iconSizeSlider:SetLabel("Icon Size")
+        iconSizeSlider:SetValue(BCDM.db.profile.CooldownManager[viewerType].IconSize)
+        iconSizeSlider:SetSliderValues(16, 128, 0.1)
+        iconSizeSlider:SetCallback("OnValueChanged", function(self, _, value)
+            BCDM.db.profile.CooldownManager[viewerType].IconSize = value
             BCDM:UpdateCooldownViewer(viewerType)
         end)
-        hideZeroChargesCheckbox:SetRelativeWidth(0.5)
-        iconContainer:AddChild(hideZeroChargesCheckbox)
-    end
+        iconSizeSlider:SetRelativeWidth(0.3333)
+        iconContainer:AddChild(iconSizeSlider)
 
-    local iconSizeSlider = AG:Create("Slider")
-    iconSizeSlider:SetLabel("Icon Size")
-    iconSizeSlider:SetValue(BCDM.db.profile.CooldownManager[viewerType].IconSize)
-    iconSizeSlider:SetSliderValues(16, 128, 0.1)
-    iconSizeSlider:SetCallback("OnValueChanged", function(self, _, value)
-        BCDM.db.profile.CooldownManager[viewerType].IconSize = value
-        BCDM:UpdateCooldownViewer(viewerType)
-    end)
-    iconSizeSlider:SetRelativeWidth(0.3333)
-    iconContainer:AddChild(iconSizeSlider)
+        local iconWidthSlider = AG:Create("Slider")
+        iconWidthSlider:SetLabel("Icon Width")
+        iconWidthSlider:SetValue(BCDM.db.profile.CooldownManager[viewerType].IconWidth or BCDM.db.profile.CooldownManager[viewerType].IconSize)
+        iconWidthSlider:SetSliderValues(16, 128, 0.1)
+        iconWidthSlider:SetCallback("OnValueChanged", function(self, _, value)
+            BCDM.db.profile.CooldownManager[viewerType].IconWidth = value
+            BCDM:UpdateCooldownViewer(viewerType)
+        end)
+        iconWidthSlider:SetRelativeWidth(0.3333)
+        iconContainer:AddChild(iconWidthSlider)
 
-    local iconWidthSlider = AG:Create("Slider")
-    iconWidthSlider:SetLabel("Icon Width")
-    iconWidthSlider:SetValue(BCDM.db.profile.CooldownManager[viewerType].IconWidth or BCDM.db.profile.CooldownManager[viewerType].IconSize)
-    iconWidthSlider:SetSliderValues(16, 128, 0.1)
-    iconWidthSlider:SetCallback("OnValueChanged", function(self, _, value)
-        BCDM.db.profile.CooldownManager[viewerType].IconWidth = value
-        BCDM:UpdateCooldownViewer(viewerType)
-    end)
-    iconWidthSlider:SetRelativeWidth(0.3333)
-    iconContainer:AddChild(iconWidthSlider)
-
-    local iconHeightSlider = AG:Create("Slider")
-    iconHeightSlider:SetLabel("Icon Height")
-    iconHeightSlider:SetValue(BCDM.db.profile.CooldownManager[viewerType].IconHeight or BCDM.db.profile.CooldownManager[viewerType].IconSize)
-    iconHeightSlider:SetSliderValues(16, 128, 0.1)
-    iconHeightSlider:SetCallback("OnValueChanged", function(self, _, value)
-        BCDM.db.profile.CooldownManager[viewerType].IconHeight = value
-        BCDM:UpdateCooldownViewer(viewerType)
-    end)
-    iconHeightSlider:SetRelativeWidth(0.3333)
-    iconContainer:AddChild(iconHeightSlider)
+        local iconHeightSlider = AG:Create("Slider")
+        iconHeightSlider:SetLabel("Icon Height")
+        iconHeightSlider:SetValue(BCDM.db.profile.CooldownManager[viewerType].IconHeight or BCDM.db.profile.CooldownManager[viewerType].IconSize)
+        iconHeightSlider:SetSliderValues(16, 128, 0.1)
+        iconHeightSlider:SetCallback("OnValueChanged", function(self, _, value)
+            BCDM.db.profile.CooldownManager[viewerType].IconHeight = value
+            BCDM:UpdateCooldownViewer(viewerType)
+        end)
+        iconHeightSlider:SetRelativeWidth(0.3333)
+        iconContainer:AddChild(iconHeightSlider)
 
 
-    if viewerType == "Essential" or viewerType == "Utility" or viewerType == "Buffs" then
-        local infoTag = CreateInformationTag(iconContainer, "Size changes will be applied on closing the |cFF8080FFBetter|rCooldownManager Configuration Window.", "LEFT")
-        infoTag:SetRelativeWidth(0.7)
-        local forceUpdateButton = AG:Create("Button")
-        forceUpdateButton:SetText("Update")
-        forceUpdateButton:SetRelativeWidth(0.3)
-        forceUpdateButton:SetCallback("OnClick", function() LEMO:ApplyChanges() end)
-        iconContainer:AddChild(forceUpdateButton)
-    end
-
-    local function UpdateIconSizeControlState()
-        local keepAspect = BCDM.db.profile.CooldownManager[viewerType].KeepAspectRatio ~= false
-        DeepDisable(iconSizeSlider, not keepAspect)
-        DeepDisable(iconWidthSlider, keepAspect)
-        DeepDisable(iconHeightSlider, keepAspect)
-    end
-
-    keepAspectCheckbox:SetCallback("OnValueChanged", function(self, _, value)
-        local viewerDB = BCDM.db.profile.CooldownManager[viewerType]
-        viewerDB.KeepAspectRatio = value
-        local fallbackSize = viewerDB.IconSize or viewerDB.IconWidth or viewerDB.IconHeight or 32
-        if value then
-            viewerDB.IconSize = viewerDB.IconWidth or viewerDB.IconHeight or fallbackSize
-        else
-            viewerDB.IconWidth = viewerDB.IconWidth or fallbackSize
-            viewerDB.IconHeight = viewerDB.IconHeight or fallbackSize
+        if viewerType == "Essential" or viewerType == "Utility" or viewerType == "Buffs" then
+            local infoTag = CreateInformationTag(iconContainer, "Size changes will be applied on closing the |cFF8080FFBetter|rCooldownManager Configuration Window.", "LEFT")
+            infoTag:SetRelativeWidth(0.7)
+            local forceUpdateButton = AG:Create("Button")
+            forceUpdateButton:SetText("Update")
+            forceUpdateButton:SetRelativeWidth(0.3)
+            forceUpdateButton:SetCallback("OnClick", function() LEMO:ApplyChanges() end)
+            iconContainer:AddChild(forceUpdateButton)
         end
-        UpdateIconSizeControlState()
-        BCDM:UpdateCooldownViewer(viewerType)
-        LEMO:ApplyChanges()
-    end)
+
+        local function UpdateIconSizeControlState()
+            local keepAspect = BCDM.db.profile.CooldownManager[viewerType].KeepAspectRatio ~= false
+            DeepDisable(iconSizeSlider, not keepAspect)
+            DeepDisable(iconWidthSlider, keepAspect)
+            DeepDisable(iconHeightSlider, keepAspect)
+        end
+
+        keepAspectCheckbox:SetCallback("OnValueChanged", function(self, _, value)
+            local viewerDB = BCDM.db.profile.CooldownManager[viewerType]
+            viewerDB.KeepAspectRatio = value
+            local fallbackSize = viewerDB.IconSize or viewerDB.IconWidth or viewerDB.IconHeight or 32
+            if value then
+                viewerDB.IconSize = viewerDB.IconWidth or viewerDB.IconHeight or fallbackSize
+            else
+                viewerDB.IconWidth = viewerDB.IconWidth or fallbackSize
+                viewerDB.IconHeight = viewerDB.IconHeight or fallbackSize
+            end
+            UpdateIconSizeControlState()
+            BCDM:UpdateCooldownViewer(viewerType)
+            LEMO:ApplyChanges()
+        end)
 
     UpdateIconSizeControlState()
 
@@ -3040,6 +3111,8 @@ function BCDM:CreateGUI()
             CreateGeneralSettings(Wrapper)
         elseif MainTab == "Global" then
             CreateGlobalSettings(Wrapper)
+        elseif MainTab == "ActiveGlow" then
+            CreateActiveGlowSettings(Wrapper)
         elseif MainTab == "EditModeManager" then
             CreateEditModeManagerSettings(Wrapper)
         elseif MainTab == "Essential" then
@@ -3081,6 +3154,7 @@ function BCDM:CreateGUI()
     ContainerTabGroup:SetTabs({
         { text = "General", value = "General"},
         { text = "Global", value = "Global"},
+        { text = "Active Glow", value = "ActiveGlow"},
         { text = "Edit Mode Manager", value = "EditModeManager"},
         { text = "Essential", value = "Essential"},
         { text = "Utility", value = "Utility"},

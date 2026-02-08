@@ -28,6 +28,9 @@ local function NormalizeGlowType(glowType)
         return nil
     end
     local normalized = tostring(glowType):lower()
+    if normalized == "none" or normalized == "disabled" or normalized == "off" then
+        return "None"
+    end
     if normalized == "pixel" or normalized == "pixelglow" or normalized == "pix" or normalized == "pixel_glow" then
         return "Pixel"
     end
@@ -59,7 +62,14 @@ function BCDM:NormalizeGlowSettings()
     end
 
     glow.Enabled = NormalizeValue(glow.Enabled, true)
-    glow.Type = glow.Type or "Pixel"
+    glow.Type = glow.Type or "None"
+    -- Migrate old SwipeColor to new format
+    if glow.SwipeColor and not glow.BuffSwipeColor then
+        glow.BuffSwipeColor = glow.SwipeColor
+        glow.CooldownSwipeColor = glow.SwipeColor
+    end
+    glow.BuffSwipeColor = NormalizeColor(glow.BuffSwipeColor, { 0, 0, 0, 0.8 })
+    glow.CooldownSwipeColor = NormalizeColor(glow.CooldownSwipeColor, { 0, 0, 0, 0.8 })
 
     local legacyColor = glow.Colour
     glow.Pixel = glow.Pixel or {}
@@ -98,28 +108,23 @@ function BCDM:GetCustomGlowSettings()
     return self:NormalizeGlowSettings()
 end
 
-local function GetCooldownViewerChild(frame)
-    if not frame or not frame.GetParent then return nil end
-
-    local current = frame
-    while current and current.GetParent do
-        local parent = current:GetParent()
-        if not parent then return nil end
-
-        for _, viewerName in ipairs(BCDM.CooldownManagerViewers or {}) do
-            if parent == _G[viewerName] then return current end
-        end
-
-        current = parent
+local function IsCooldownViewerChild(frame)
+    if not frame or not frame.GetParent then
+        return false
     end
 
-    return nil
-end
+    local parent = frame:GetParent()
+    if not parent then
+        return false
+    end
 
-local function GetGlowTarget(frame)
-    if not frame then return nil end
+    for _, viewerName in ipairs(BCDM.CooldownManagerViewers or {}) do
+        if parent == _G[viewerName] then
+            return true
+        end
+    end
 
-    return GetCooldownViewerChild(frame)
+    return false
 end
 
 function BCDM:StartCustomGlow(frame)
@@ -135,6 +140,13 @@ function BCDM:StartCustomGlow(frame)
     local glowType = glow.Type or "Pixel"
     if frame.BCDMGlowType and frame.BCDMGlowType ~= glowType then
         self:StopCustomGlow(frame)
+    end
+
+    -- If type is "None", don't apply any glow effect (Blizzard's is already hidden)
+    if glowType == "None" then
+        frame.BCDMGlowType = glowType
+        activeGlows[frame] = true
+        return
     end
 
     if glowType == "Pixel" then
@@ -200,6 +212,168 @@ function BCDM:RefreshCustomGlows()
     end
 end
 
+local function HideBlizzardSpellAlert(frame)
+    if not frame then return end
+    
+    -- Hide the SpellActivationAlert overlay (yellow glow)
+    if frame.SpellActivationAlert then
+        frame.SpellActivationAlert:Hide()
+        frame.SpellActivationAlert:SetAlpha(0)
+    end
+    
+    -- Also try to hide any overlay glow frames
+    if frame.overlay then
+        frame.overlay:Hide()
+        frame.overlay:SetAlpha(0)
+    end
+    
+    -- Hide ActionButton overlay glow
+    if frame.SpellHighlightTexture then
+        frame.SpellHighlightTexture:Hide()
+        frame.SpellHighlightTexture:SetAlpha(0)
+    end
+    
+    -- Try to stop the overlay glow using Blizzard's function
+    if ActionButton_HideOverlayGlow then
+        pcall(ActionButton_HideOverlayGlow, frame)
+    end
+    
+    -- Hide the ants animation if present
+    if frame.SpellActivationAlert and frame.SpellActivationAlert.ants then
+        frame.SpellActivationAlert.ants:Hide()
+    end
+    
+    -- Hide innerGlow and outerGlow
+    if frame.SpellActivationAlert then
+        if frame.SpellActivationAlert.innerGlow then
+            frame.SpellActivationAlert.innerGlow:Hide()
+        end
+        if frame.SpellActivationAlert.outerGlow then
+            frame.SpellActivationAlert.outerGlow:Hide()
+        end
+        if frame.SpellActivationAlert.innerGlowOver then
+            frame.SpellActivationAlert.innerGlowOver:Hide()
+        end
+        if frame.SpellActivationAlert.outerGlowOver then
+            frame.SpellActivationAlert.outerGlowOver:Hide()
+        end
+    end
+    
+    -- Search for any child frame that might be the glow overlay
+    for _, child in ipairs({frame:GetChildren()}) do
+        local name = child:GetName()
+        if name and (name:find("Overlay") or name:find("Glow") or name:find("Alert") or name:find("Highlight")) then
+            child:Hide()
+            child:SetAlpha(0)
+        end
+        -- Also check for unnamed frames with glow-like textures
+        if child.GetObjectType and child:GetObjectType() == "Frame" then
+            for _, region in ipairs({child:GetRegions()}) do
+                if region.GetTexture then
+                    local tex = region:GetTexture()
+                    if tex and type(tex) == "string" and (tex:find("Glow") or tex:find("overlay") or tex:find("SpellActivation")) then
+                        region:Hide()
+                        region:SetAlpha(0)
+                    end
+                end
+            end
+        end
+    end
+    
+    -- Hide any regions on the frame itself that look like glows
+    for _, region in ipairs({frame:GetRegions()}) do
+        if region.GetTexture then
+            local tex = region:GetTexture()
+            if tex and type(tex) == "string" and (tex:find("Glow") or tex:find("overlay") or tex:find("SpellActivation") or tex:find("IconAlert")) then
+                region:Hide()
+                region:SetAlpha(0)
+            end
+        end
+    end
+end
+
+-- Continuously monitor and hide yellow glows on cooldown viewer icons
+local function SetupContinuousGlowHiding()
+    local hideFrame = CreateFrame("Frame")
+    local elapsed = 0
+    local interval = 0.016 -- ~60fps
+    
+    -- Function to apply custom swipe color (only when enabled)
+    local function ApplySwipeColor(cooldown)
+        if not cooldown or not cooldown.SetSwipeColor then return end
+        
+        local glow = BCDM:GetCustomGlowSettings()
+        
+        -- Only apply custom color if enabled
+        if glow and glow.Enabled then
+            -- Use BuffSwipeColor as the single color for all swipes
+            local c = glow.BuffSwipeColor or {0, 0, 0, 0.8}
+            
+            -- Set flag to prevent recursive calls
+            cooldown.BCDMSettingColor = true
+            cooldown:SetSwipeColor(c[1], c[2], c[3], c[4])
+            cooldown.BCDMSettingColor = nil
+        end
+        -- If disabled, don't do anything - let Blizzard handle it naturally
+    end
+    
+    -- Hook the Cooldown SetCooldown function to change color immediately after Blizzard sets it
+    local hookedCooldowns = {}
+    local function HookCooldown(cooldown)
+        if not cooldown or hookedCooldowns[cooldown] then return end
+        hookedCooldowns[cooldown] = true
+        
+        if cooldown.SetCooldown then
+            hooksecurefunc(cooldown, "SetCooldown", function(self)
+                ApplySwipeColor(self)
+            end)
+        end
+        
+        if cooldown.SetCooldownDuration then
+            hooksecurefunc(cooldown, "SetCooldownDuration", function(self)
+                ApplySwipeColor(self)
+            end)
+        end
+        
+        -- Hook SetSwipeColor to override Blizzard's color changes
+        hooksecurefunc(cooldown, "SetSwipeColor", function(self)
+            -- Skip if we're the ones setting the color
+            if self.BCDMSettingColor then return end
+            
+            -- Apply our color immediately after Blizzard sets theirs
+            ApplySwipeColor(self)
+        end)
+    end
+    
+    hideFrame:SetScript("OnUpdate", function(self, delta)
+        elapsed = elapsed + delta
+        if elapsed < interval then return end
+        elapsed = 0
+        
+        local glow = BCDM:GetCustomGlowSettings()
+        
+        -- Only process if enabled
+        if not glow or not glow.Enabled then return end
+        
+        for _, viewerName in ipairs(BCDM.CooldownManagerViewers or {}) do
+            local viewer = _G[viewerName]
+            if viewer then
+                for _, child in ipairs({viewer:GetChildren()}) do
+                    if child and child.Cooldown then
+                        -- Hook the cooldown if not already hooked
+                        HookCooldown(child.Cooldown)
+                        
+                        if child:IsShown() then
+                            ApplySwipeColor(child.Cooldown)
+                            HideBlizzardSpellAlert(child)
+                        end
+                    end
+                end
+            end
+        end
+    end)
+end
+
 function BCDM:SetupCustomGlows()
     if self.CustomGlowHooksSet then
         return
@@ -207,44 +381,42 @@ function BCDM:SetupCustomGlows()
 
     self.CustomGlowHooksSet = true
 
+    -- Setup continuous monitoring to hide Blizzard's yellow glow
+    SetupContinuousGlowHiding()
+
     if not ActionButtonSpellAlertManager then
         return
     end
 
     hooksecurefunc(ActionButtonSpellAlertManager, "ShowAlert", function(_, frame)
-        local activeGlowTarget = GetGlowTarget(frame)
-        if not activeGlowTarget then
+        if not frame or not IsCooldownViewerChild(frame) then
             return
         end
+
+        -- Always hide Blizzard's yellow glow
+        HideBlizzardSpellAlert(frame)
 
         local glow = BCDM:GetCustomGlowSettings()
         if not glow or not glow.Enabled then
             return
         end
 
-        if activeGlowTarget.BCDMActiveGlow then
-            return
-        end
-
-        activeGlowTarget.BCDMActiveGlow = true
-        if activeGlowTarget.SpellActivationAlert then
-            activeGlowTarget.SpellActivationAlert:Hide()
-        end
+        frame.BCDMActiveGlow = true
 
         C_Timer.After(0, function()
-            if activeGlowTarget.BCDMActiveGlow then
-                BCDM:StartCustomGlow(activeGlowTarget)
+            if frame.BCDMActiveGlow then
+                HideBlizzardSpellAlert(frame)
+                BCDM:StartCustomGlow(frame)
             end
         end)
     end)
 
     hooksecurefunc(ActionButtonSpellAlertManager, "HideAlert", function(_, frame)
-        local activeGlowTarget = GetGlowTarget(frame)
-        if not activeGlowTarget or not activeGlowTarget.BCDMActiveGlow then
+        if not frame or not frame.BCDMActiveGlow then
             return
         end
 
-        activeGlowTarget.BCDMActiveGlow = nil
-        BCDM:StopCustomGlow(activeGlowTarget)
+        frame.BCDMActiveGlow = nil
+        BCDM:StopCustomGlow(frame)
     end)
 end
