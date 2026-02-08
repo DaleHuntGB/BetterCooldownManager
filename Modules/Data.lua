@@ -376,7 +376,7 @@ function BCDM:FetchEquippedTrinkets()
         if itemId and C_Item.IsUsableItem(itemId) then
             trinketProfile.Trinkets[itemId] = { isActive = true, layoutIndex = slotIndex }
             usableCount = usableCount + 1
-            BCDM.TrinketBarContainer:Show()
+            if BCDM.TrinketBarContainer then BCDM.TrinketBarContainer:Show() end
         end
     end
 
