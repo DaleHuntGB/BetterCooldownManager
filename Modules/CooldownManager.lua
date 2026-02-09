@@ -176,13 +176,29 @@ local function CenterBuffs()
     if visibleCount == 0 then return 0 end
 
     local iconWidth = visibleBuffIcons[1]:GetWidth()
-    local iconSpacing = BuffIconCooldownViewer.childXPadding or 0
-    local totalWidth = (visibleCount * iconWidth) + ((visibleCount - 1) * iconSpacing)
-    local startX = -totalWidth / 2 + iconWidth / 2
+    local iconHeight = visibleBuffIcons[1]:GetHeight()
+    local startX = 0
+    local startY = 0
+    local iconSpacing = 0
+
+    if BuffIconCooldownViewer.isHorizontal then
+        iconSpacing = BuffIconCooldownViewer.childXPadding or 0
+        local totalWidth = (visibleCount * iconWidth) + ((visibleCount - 1) * iconSpacing)
+        startX = -totalWidth / 2 + iconWidth / 2
+    else
+        iconSpacing = BuffIconCooldownViewer.childYPadding or 0
+        local totalHeight = (visibleCount * iconHeight) + ((visibleCount - 1) * iconSpacing)
+        startY = totalHeight / 2 - iconHeight / 2
+    end
 
     for index, iconFrame in ipairs(visibleBuffIcons) do
-        iconFrame:ClearAllPoints()
-        iconFrame:SetPoint("CENTER", BuffIconCooldownViewer, "CENTER", startX + (index - 1) * (iconWidth + iconSpacing), 0)
+        if BuffIconCooldownViewer.isHorizontal then
+            iconFrame:ClearAllPoints()
+            iconFrame:SetPoint("CENTER", BuffIconCooldownViewer, "CENTER", startX + (index - 1) * (iconWidth + iconSpacing), 0)
+        else
+            iconFrame:ClearAllPoints()
+            iconFrame:SetPoint("CENTER", BuffIconCooldownViewer, "CENTER", 0, startY - (index - 1) * (iconHeight + iconSpacing))
+        end
     end
 
     return visibleCount
