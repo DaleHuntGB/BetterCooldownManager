@@ -1635,7 +1635,7 @@ local function CreateCooldownViewerSettings(parentContainer, viewerType)
         ScrollFrame:AddChild(toggleContainer)
 
         local centerBuffsCheckbox = AG:Create("CheckBox")
-        centerBuffsCheckbox:SetLabel("Center Buffs (Horizontally) - |cFFFF4040Reload|r Required.")
+        centerBuffsCheckbox:SetLabel("Center Buffs (Horizontally or Vertically) - |cFFFF4040Reload|r Required.")
         centerBuffsCheckbox:SetValue(BCDM.db.profile.CooldownManager.Buffs.CenterBuffs)
         centerBuffsCheckbox:SetCallback("OnValueChanged", function(_, _, value)
             StaticPopupDialogs["BCDM_RELOAD_UI"] = {
