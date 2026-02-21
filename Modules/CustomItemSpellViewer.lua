@@ -121,7 +121,7 @@ local function CreateCustomItemIcon(itemId)
             local itemCount, startTime, durationTime = FetchItemData(itemId)
             if itemCount then
                 customIcon.Charges:SetText(tostring(itemCount))
-                customIcon.Cooldown:SetCooldown(startTime, durationTime)
+                if startTime and C_Item.IsUsableItem(itemId) then customIcon.Cooldown:SetCooldown(startTime, durationTime) end
                 if itemCount <= 0 then
                     customIcon.Icon:SetDesaturated(true)
                     customIcon.Charges:SetText("")
@@ -129,6 +129,7 @@ local function CreateCustomItemIcon(itemId)
                     customIcon.Icon:SetDesaturated(false)
                     customIcon.Charges:SetText(tostring(itemCount))
                 end
+                if not C_Item.IsUsableItem(itemId) then customIcon.Icon:SetVertexColor(0.3, 0.3, 0.3) else customIcon.Icon:SetVertexColor(1, 1, 1) end
                 customIcon.Charges:SetAlphaFromBoolean(itemCount > 1, 1, 0)
             end
         end
@@ -167,6 +168,9 @@ local function CreateCustomSpellIcon(spellId)
     customIcon:RegisterEvent("SPELL_UPDATE_COOLDOWN")
     customIcon:RegisterEvent("PLAYER_ENTERING_WORLD")
     customIcon:RegisterEvent("SPELL_UPDATE_CHARGES")
+    customIcon:RegisterEvent("ITEM_PUSH")
+    customIcon:EnableMouse(false)
+    customIcon:SetFrameStrata(CustomDB.FrameStrata or "LOW")
 
     local HighLevelContainer = CreateFrame("Frame", nil, customIcon)
     HighLevelContainer:SetAllPoints(customIcon)
@@ -309,7 +313,7 @@ local function LayoutCustomItemsSpellsBar()
                 BCDM:UpdateCustomItemsSpellsBar()
                 return
             end
-            if event == "ITEM_COUNT_CHANGED" then
+            if event == "ITEM_COUNT_CHANGED" or event == "ITEM_PUSH" then
                 local items = customDB.ItemsSpells
                 if not items then return end
                 if not itemId then
@@ -331,9 +335,11 @@ local function LayoutCustomItemsSpellsBar()
 
     if CustomDB.HideZeroCharges then
         BCDM.CustomItemSpellBarContainer:RegisterEvent("ITEM_COUNT_CHANGED")
+        BCDM.CustomItemSpellBarContainer:RegisterEvent("ITEM_PUSH")
         BCDM.CustomItemSpellBarContainer:RegisterEvent("PLAYER_ENTERING_WORLD")
     else
         BCDM.CustomItemSpellBarContainer:UnregisterEvent("ITEM_COUNT_CHANGED")
+        BCDM.CustomItemSpellBarContainer:UnregisterEvent("ITEM_PUSH")
         BCDM.CustomItemSpellBarContainer:UnregisterEvent("PLAYER_ENTERING_WORLD")
     end
 
