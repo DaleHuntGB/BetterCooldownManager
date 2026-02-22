@@ -472,6 +472,7 @@ local Defaults = {
                 Layout = {"CENTER", "CENTER", 0, 0},
                 ShowStaggerDPS = false,
             },
+            StaggerDisplayMode = "AMOUNT",
         },
         CastBar = {
             Enabled = true,

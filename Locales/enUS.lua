@@ -71,3 +71,8 @@ L["Use Global Profile Settings"] = "Use Global Profile Settings"
 L["Join the Discord Community!"] = "Join the Discord Community!"
 L["Report Issues / Feedback on GitHub!"] = "Report Issues / Feedback on GitHub!"
 L["Support is truly appreciated"] = "Support is truly appreciated"
+
+-- [[ StaggerDisplayModes]]
+L["Amount"] = "Amount"
+L["Percentage"] = "Percentage"
+L["Both"] = "Both"

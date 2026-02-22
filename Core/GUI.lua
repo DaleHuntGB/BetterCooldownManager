@@ -53,6 +53,19 @@ local PowerNames = {
     }
 }
 
+local StaggerDisplayModes = {
+    {
+        ["AMOUNT"] = LL("Amount"),
+        ["PERCENTAGE"] = LL("Percentage"),
+        ["BOTH"] = LL("Both")
+    },
+    {
+        "AMOUNT",
+        "PERCENTAGE",
+        "BOTH"
+    }
+}
+
 local ClassToPrettyClass = {
     ["DEATHKNIGHT"] = "|cFFC41E31" .. LL("DEATHKNIGHT") .. "|r",
     ["DRUID"]       = "|cFFFF7C0A" .. LL("DRUID") .. "|r",
@@ -2308,6 +2321,14 @@ local function CreateSecondaryPowerBarSettings(parentContainer)
         colourStaggerByStateCheckbox:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.SecondaryPowerBar.ColourByState = value BCDM:UpdateSecondaryPowerBar() RefreshSecondaryPowerBarGUISettings() end)
         colourStaggerByStateCheckbox:SetRelativeWidth(1)
         toggleContainer:AddChild(colourStaggerByStateCheckbox)
+
+        local staggerDropdown = AG:Create("Dropdown")
+        staggerDropdown:SetLabel("Stagger Display")
+        staggerDropdown:SetList(StaggerDisplayModes[1], StaggerDisplayModes[2], StaggerDisplayModes[3])
+        staggerDropdown:SetValue(BCDM.db.profile.SecondaryPowerBar.StaggerDisplayMode)
+        staggerDropdown:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.SecondaryPowerBar.StaggerDisplayMode = value BCDM:UpdateSecondaryPowerBar() end)
+        staggerDropdown:SetRelativeWidth(1)
+        toggleContainer:AddChild(staggerDropdown)
 
         local showStaggerDPSCheckbox = AG:Create("CheckBox")
         showStaggerDPSCheckbox:SetLabel(LL("Stagger Damage Per Second"))
