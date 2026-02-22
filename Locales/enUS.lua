@@ -72,7 +72,9 @@ L["Join the Discord Community!"] = "Join the Discord Community!"
 L["Report Issues / Feedback on GitHub!"] = "Report Issues / Feedback on GitHub!"
 L["Support is truly appreciated"] = "Support is truly appreciated"
 
--- [[ StaggerDisplayModes]]
+-- [[ Stagger Settings ]]
 L["Amount"] = "Amount"
 L["Percentage"] = "Percentage"
 L["Both"] = "Both"
+L["Displayed As"] = "Stagger Display As"
+L["Stagger Damage Per Second"] = "Stagger Damage Per Second"
