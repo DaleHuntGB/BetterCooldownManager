@@ -466,6 +466,11 @@ local function UpdatePowerValues()
             secondaryPowerBar.Status:SetStatusBarColor(GetPowerBarColor())
         end
         local textDisplay = AbbreviateLargeNumbers(powerCurrent)
+        if secondaryPowerBarDB.StaggerDisplayMode == "PERCENTAGE" then
+            textDisplay = string.format("%s (%.1f%%)", textDisplay, staggerPercentage)
+        elseif secondaryPowerBarDB.StaggerDisplayMode == "BOTH" then
+            textDisplay = string.format("%s (%.1f%%)", textDisplay, staggerPercentage)
+        end
         if secondaryPowerBarDB.Text.ShowStaggerDPS and powerCurrent > 0 then
             local damagePerTick = powerCurrent / 20
             textDisplay = textDisplay .. " (" .. AbbreviateLargeNumbers(damagePerTick) .. " / 0.5s)"
