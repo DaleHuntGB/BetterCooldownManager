@@ -467,9 +467,9 @@ local function UpdatePowerValues()
         end
         local textDisplay = AbbreviateLargeNumbers(powerCurrent)
         if secondaryPowerBarDB.StaggerDisplayMode == "PERCENTAGE" then
-            textDisplay = string.format("%s (%.1f%%)", textDisplay, staggerPercentage)
+            textDisplay = string.format("%.0f%%", staggerPercentage)
         elseif secondaryPowerBarDB.StaggerDisplayMode == "BOTH" then
-            textDisplay = string.format("%s (%.1f%%)", textDisplay, staggerPercentage)
+            textDisplay = string.format("%s (%.0f%%)", textDisplay, staggerPercentage)
         end
         if secondaryPowerBarDB.Text.ShowStaggerDPS and powerCurrent > 0 then
             local damagePerTick = powerCurrent / 20

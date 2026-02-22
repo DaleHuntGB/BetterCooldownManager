@@ -2327,7 +2327,7 @@ local function CreateSecondaryPowerBarSettings(parentContainer)
         staggerDropdown:SetList(StaggerDisplayModes[1], StaggerDisplayModes[2], StaggerDisplayModes[3])
         staggerDropdown:SetValue(BCDM.db.profile.SecondaryPowerBar.StaggerDisplayMode)
         staggerDropdown:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.SecondaryPowerBar.StaggerDisplayMode = value BCDM:UpdateSecondaryPowerBar() end)
-        staggerDropdown:SetRelativeWidth(1)
+        staggerDropdown:SetRelativeWidth(0.5)
         toggleContainer:AddChild(staggerDropdown)
 
         local showStaggerDPSCheckbox = AG:Create("CheckBox")
