@@ -1691,6 +1691,18 @@ local function CreateCooldownViewerSettings(parentContainer, viewerType)
         end)
         centerHorizontallyCheckbox:SetRelativeWidth(1)
         toggleContainer:AddChild(centerHorizontallyCheckbox)
+
+        if viewerType == "Essential" then
+            local growRowsUpwardCheckbox = AG:Create("CheckBox")
+            growRowsUpwardCheckbox:SetLabel(LL("Grow rows upward"))
+            growRowsUpwardCheckbox:SetValue(BCDM.db.profile.CooldownManager.Essential.GrowRowsUpward)
+            growRowsUpwardCheckbox:SetCallback("OnValueChanged", function(_, _, value)
+                BCDM.db.profile.CooldownManager.Essential.GrowRowsUpward = value
+                BCDM:UpdateCooldownViewer("Essential")
+            end)
+            growRowsUpwardCheckbox:SetRelativeWidth(1)
+            toggleContainer:AddChild(growRowsUpwardCheckbox)
+        end
     end
 
     if viewerType == "Trinket" then
