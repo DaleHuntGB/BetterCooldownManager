@@ -186,6 +186,82 @@ function BCDM:ApplyIconTexCoord(texture, width, height, baseZoom)
     texture:SetTexCoord(left, right, top, bottom)
 end
 
+function BCDM:LayoutIconGrid(container, iconTable, db, applyCooldownTextFn)
+    local iconWidth, iconHeight = BCDM:GetIconDimensions(db)
+    local iconSpacing = db.Spacing or 0
+    local iconsPerRow = db.IconsPerRow or 40
+    local growthDirection = db.GrowthDirection or "RIGHT"
+    local count = #iconTable
+
+    if count == 0 then
+        container:SetSize(1, 1)
+        return
+    end
+
+    local isVertical = (growthDirection == "UP" or growthDirection == "DOWN")
+    local effectivePerRow = math.min(iconsPerRow, count)
+    local numRows = math.ceil(count / effectivePerRow)
+
+    local totalWidth, totalHeight
+    if isVertical then
+        totalWidth = (numRows * iconWidth) + ((numRows - 1) * iconSpacing)
+        totalHeight = (effectivePerRow * iconHeight) + ((effectivePerRow - 1) * iconSpacing)
+    else
+        totalWidth = (effectivePerRow * iconWidth) + ((effectivePerRow - 1) * iconSpacing)
+        totalHeight = (numRows * iconHeight) + ((numRows - 1) * iconSpacing)
+    end
+    container:SetSize(totalWidth, totalHeight)
+
+    local point = select(1, container:GetPoint(1))
+    local useCenteredLayout = (point == "TOP" or point == "BOTTOM") and not isVertical
+
+    for i, icon in ipairs(iconTable) do
+        icon:SetParent(container)
+        icon:SetSize(iconWidth, iconHeight)
+        icon:ClearAllPoints()
+
+        local rowIndex = math.floor((i - 1) / effectivePerRow)
+        local colIndex = (i - 1) % effectivePerRow
+
+        if useCenteredLayout then
+            local iconsInThisRow = math.min(effectivePerRow, count - rowIndex * effectivePerRow)
+            local rowWidth = (iconsInThisRow * iconWidth) + ((iconsInThisRow - 1) * iconSpacing)
+            local startX = -(rowWidth / 2) + (iconWidth / 2)
+            local xOff = startX + colIndex * (iconWidth + iconSpacing)
+            if point == "TOP" then
+                icon:SetPoint("TOP", container, "TOP", xOff, -(rowIndex * (iconHeight + iconSpacing)))
+            else
+                icon:SetPoint("BOTTOM", container, "BOTTOM", xOff, rowIndex * (iconHeight + iconSpacing))
+            end
+        elseif isVertical then
+            local visualCol = rowIndex
+            local visualRow = colIndex
+            if growthDirection == "DOWN" then
+                icon:SetPoint("TOPLEFT", container, "TOPLEFT",
+                    visualCol * (iconWidth + iconSpacing),
+                    -(visualRow * (iconHeight + iconSpacing)))
+            else
+                icon:SetPoint("BOTTOMLEFT", container, "BOTTOMLEFT",
+                    visualCol * (iconWidth + iconSpacing),
+                    visualRow * (iconHeight + iconSpacing))
+            end
+        else
+            if growthDirection == "RIGHT" then
+                icon:SetPoint("TOPLEFT", container, "TOPLEFT",
+                    colIndex * (iconWidth + iconSpacing),
+                    -(rowIndex * (iconHeight + iconSpacing)))
+            else
+                icon:SetPoint("TOPRIGHT", container, "TOPRIGHT",
+                    -(colIndex * (iconWidth + iconSpacing)),
+                    -(rowIndex * (iconHeight + iconSpacing)))
+            end
+        end
+
+        if applyCooldownTextFn then applyCooldownTextFn() end
+        icon:Show()
+    end
+end
+
 function BCDM:Init()
     SetupSlashCommands()
     BCDM:ResolveLSM()

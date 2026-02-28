@@ -67,6 +67,9 @@ L["Enable Power Bar"] = "Enable Power Bar"
 L["Reset Profile"] = "Reset Profile"
 L["Use Global Profile Settings"] = "Use Global Profile Settings"
 
+-- [[ Grid & Layout ]]
+L["Icons Per Row"] = "Icons Per Row"
+
 -- [[ Support & Links ]]
 L["Join the Discord Community!"] = "Join the Discord Community!"
 L["Report Issues / Feedback on GitHub!"] = "Report Issues / Feedback on GitHub!"

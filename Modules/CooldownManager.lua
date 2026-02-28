@@ -155,6 +155,8 @@ local function StyleChargeCount()
     end
 end
 
+local CenterWrappedRows
+
 local centerBuffsUpdateThrottle = 0.01
 local nextcenterBuffsUpdate = 0
 
@@ -162,6 +164,13 @@ local function CenterBuffs()
     local currentTime = GetTime()
     if currentTime < nextcenterBuffsUpdate then return end
     nextcenterBuffsUpdate = currentTime + centerBuffsUpdateThrottle
+
+    local buffsSettings = BCDM.db.profile.CooldownManager.Buffs
+    if (buffsSettings.IconsPerRow or 40) < 40 then
+        CenterWrappedRows("BuffIconCooldownViewer")
+        return
+    end
+
     local visibleBuffIcons = {}
 
     for _, childFrame in ipairs({ BuffIconCooldownViewer:GetChildren() }) do
@@ -209,7 +218,7 @@ local centerBuffsEventFrame = CreateFrame("Frame")
 local function SetupCenterBuffs()
     local buffsSettings = BCDM.db.profile.CooldownManager.Buffs
 
-    if buffsSettings.CenterBuffs then
+    if buffsSettings.CenterBuffs or (buffsSettings.IconsPerRow or 40) < 40 then
         centerBuffsEventFrame:SetScript("OnUpdate", CenterBuffs)
     else
         centerBuffsEventFrame:SetScript("OnUpdate", nil)
@@ -217,11 +226,14 @@ local function SetupCenterBuffs()
     end
 end
 
-local function CenterWrappedRows(viewerName)
+CenterWrappedRows = function(viewerName)
     local viewer = _G[viewerName]
     if not viewer then return end
 
-    local iconLimit = viewer.iconLimit
+    local viewerType = BCDM.CooldownManagerViewerToDBViewer[viewerName]
+    local viewerSettings = viewerType and BCDM.db.profile.CooldownManager[viewerType]
+    local bcdmIconsPerRow = viewerSettings and viewerSettings.IconsPerRow or 40
+    local iconLimit = (bcdmIconsPerRow < 40) and bcdmIconsPerRow or viewer.iconLimit
     if not iconLimit or iconLimit <= 0 then return end
 
     local visibleIcons = {}
@@ -254,11 +266,13 @@ local function CenterWrappedRows(viewerName)
     end
 
     local rowCount = math.ceil(visibleCount / iconLimit)
+    local maxRowWidth = 0
     for rowIndex = 1, rowCount do
         local rowStart = (rowIndex - 1) * iconLimit + 1
         local rowEnd = math.min(rowStart + iconLimit - 1, visibleCount)
         local rowIcons = rowEnd - rowStart + 1
         local rowWidth = (rowIcons * iconWidth) + ((rowIcons - 1) * iconSpacing)
+        if rowWidth > maxRowWidth then maxRowWidth = rowWidth end
         local startX = -rowWidth / 2 + iconWidth / 2
         local rowY = baseY + yDirection * (rowIndex - 1) * rowHeight
 
@@ -268,15 +282,24 @@ local function CenterWrappedRows(viewerName)
             iconFrame:SetPoint(anchorPoint, viewer, relativePoint, startX + (index - rowStart) * (iconWidth + iconSpacing), rowY)
         end
     end
+
+    local totalHeight = rowCount * iconHeight + (rowCount - 1) * rowSpacing
+    C_Timer.After(0, function()
+        if not InCombatLockdown() then
+            viewer:SetSize(maxRowWidth, totalHeight)
+        end
+    end)
 end
 
 local function CenterWrappedIcons()
     local cooldownManagerSettings = BCDM.db.profile.CooldownManager
     local essentialSettings = cooldownManagerSettings.Essential
     local utilitySettings = cooldownManagerSettings.Utility
+    local buffsSettings = cooldownManagerSettings.Buffs
 
-    if essentialSettings and essentialSettings.CenterHorizontally then CenterWrappedRows("EssentialCooldownViewer") end
-    if utilitySettings and utilitySettings.CenterHorizontally then CenterWrappedRows("UtilityCooldownViewer") end
+    if essentialSettings and (essentialSettings.CenterHorizontally or (essentialSettings.IconsPerRow or 40) < 40) then CenterWrappedRows("EssentialCooldownViewer") end
+    if utilitySettings and (utilitySettings.CenterHorizontally or (utilitySettings.IconsPerRow or 40) < 40) then CenterWrappedRows("UtilityCooldownViewer") end
+    if buffsSettings and (buffsSettings.IconsPerRow or 40) < 40 then CenterWrappedRows("BuffIconCooldownViewer") end
 end
 
 function BCDM:SkinCooldownManager()
@@ -336,6 +359,8 @@ function BCDM:UpdateCooldownViewer(viewerType)
     StyleIcons()
 
     Position()
+
+    CenterWrappedIcons()
 
     StyleChargeCount()
 
