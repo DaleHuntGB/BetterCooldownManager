@@ -1757,6 +1757,17 @@ local function CreateCooldownViewerSettings(parentContainer, viewerType)
         layoutContainer:AddChild(spacingSlider)
     end
 
+    local iconsPerRowSlider = AG:Create("Slider")
+    iconsPerRowSlider:SetLabel(LL("Icons Per Row"))
+    iconsPerRowSlider:SetValue(BCDM.db.profile.CooldownManager[viewerType].IconsPerRow or 40)
+    iconsPerRowSlider:SetSliderValues(1, 40, 1)
+    iconsPerRowSlider:SetCallback("OnValueChanged", function(self, _, value)
+        BCDM.db.profile.CooldownManager[viewerType].IconsPerRow = value
+        BCDM:UpdateCooldownViewer(viewerType)
+    end)
+    iconsPerRowSlider:SetRelativeWidth(0.5)
+    layoutContainer:AddChild(iconsPerRowSlider)
+
     local isPrimaryViewer = viewerType == "Essential" or viewerType == "Utility" or viewerType == "Buffs"
 
     local xOffsetSlider = AG:Create("Slider")
