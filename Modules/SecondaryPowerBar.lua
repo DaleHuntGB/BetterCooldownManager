@@ -301,7 +301,7 @@ local function UpdateRuneDisplay()
         end
     end
 
-    table.sort(runeOnCDList, function(a, b) return a.remaining < b.remaining end)
+    table.sort(runeOnCDList, function(left, right) return left.remaining < right.remaining end)
 
     local order = {}
     for _, v in ipairs(runeReadyList) do table.insert(order, v.index) end
@@ -751,7 +751,7 @@ function BCDM:CreateSecondaryPowerBar()
         secondaryPowerBar:RegisterEvent("RUNE_TYPE_UPDATE")
         secondaryPowerBar:RegisterEvent("UNIT_AURA")
 
-        secondaryPowerBar:SetScript("OnEvent", function(self, event, ...)
+        secondaryPowerBar:SetScript("OnEvent", function(frame, event, ...)
             if event == "RUNE_POWER_UPDATE" or event == "RUNE_TYPE_UPDATE" then
                 if DetectSecondaryPower() == Enum.PowerType.Runes then
                     UpdateRuneDisplay()
@@ -838,7 +838,7 @@ function BCDM:UpdateSecondaryPowerBar()
         secondaryPowerBar:RegisterEvent("RUNE_POWER_UPDATE")
         secondaryPowerBar:RegisterEvent("RUNE_TYPE_UPDATE")
 
-        secondaryPowerBar:SetScript("OnEvent", function(self, event, ...)
+        secondaryPowerBar:SetScript("OnEvent", function(frame, event, ...)
             if event == "RUNE_POWER_UPDATE" or event == "RUNE_TYPE_UPDATE" then
                 if DetectSecondaryPower() == Enum.PowerType.Runes then UpdateRuneDisplay() end
                 return

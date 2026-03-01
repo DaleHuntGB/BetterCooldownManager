@@ -1284,7 +1284,7 @@ local function CreateCooldownViewerTextSettings(parentContainer, viewerType)
     colourPicker:SetLabel(LL("Font Colour"))
     local r, g, b = unpack(BCDM.db.profile.CooldownManager[viewerType].Text.Colour)
     colourPicker:SetColor(r, g, b)
-    colourPicker:SetCallback("OnValueChanged", function(self, _, r, g, b) BCDM.db.profile.CooldownManager[viewerType].Text.Colour = {r, g, b} BCDM:UpdateCooldownViewer(viewerType) end)
+    colourPicker:SetCallback("OnValueChanged", function(self, _, cr, cg, cb) BCDM.db.profile.CooldownManager[viewerType].Text.Colour = {cr, cg, cb} BCDM:UpdateCooldownViewer(viewerType) end)
     colourPicker:SetRelativeWidth(0.5)
     textContainer:AddChild(colourPicker)
 

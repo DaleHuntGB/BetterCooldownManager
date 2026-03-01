@@ -41,8 +41,8 @@ function BCDM:ImportSavedVariables(encodedInfo, profileName)
         whileDead = true,
         hideOnEscape = true,
         preferredIndex = 3,
-        OnAccept = function(self)
-            local name = self.EditBox:GetText()
+        OnAccept = function(dialog)
+            local name = dialog.EditBox:GetText()
             if not name or name == "" then
                 BCDM:PrettyPrint("Please enter a valid profile name.")
                 return

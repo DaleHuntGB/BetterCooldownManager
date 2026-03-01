@@ -296,13 +296,13 @@ function BCDM:OpenURL(title, urlText)
         button1 = CLOSE,
         hasEditBox = true,
         editBoxWidth = 300,
-        OnShow = function(self)
-            self.EditBox:SetText(urlText or "")
-            self.EditBox:SetFocus()
-            self.EditBox:HighlightText()
+        OnShow = function(dialog)
+            dialog.EditBox:SetText(urlText or "")
+            dialog.EditBox:SetFocus()
+            dialog.EditBox:HighlightText()
         end,
-        OnAccept = function(self) end,
-        EditBoxOnEscapePressed = function(self) self:GetParent():Hide() end,
+        OnAccept = function(dialog) end,
+        EditBoxOnEscapePressed = function(dialog) dialog:GetParent():Hide() end,
         timeout = 0,
         whileDead = true,
         hideOnEscape = true,
@@ -320,12 +320,12 @@ function BCDM:CreatePrompt(title, text, onAccept, onCancel, acceptText, cancelTe
         text = text or "",
         button1 = acceptText or ACCEPT,
         button2 = cancelText or CANCEL,
-        OnAccept = function(self, data)
+        OnAccept = function(dialog, data)
             if data and data.onAccept then
                 data.onAccept()
             end
         end,
-        OnCancel = function(self, data)
+        OnCancel = function(dialog, data)
             if data and data.onCancel then
                 data.onCancel()
             end
