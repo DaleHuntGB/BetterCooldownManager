@@ -1,6 +1,9 @@
 local _, BCDM = ...
 BCDMG = BCDMG or {}
 
+local GetSpecialization = C_SpecializationInfo and C_SpecializationInfo.GetSpecialization
+local GetSpecializationInfo = C_SpecializationInfo and C_SpecializationInfo.GetSpecializationInfo
+
 BCDM.IS_DEATHKNIGHT = select(2, UnitClass("player")) == "DEATHKNIGHT"
 BCDM.IS_MONK = select(2, UnitClass("player")) == "MONK"
 

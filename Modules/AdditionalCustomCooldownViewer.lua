@@ -1,5 +1,8 @@
 local _, BCDM = ...
 
+local GetSpecialization = C_SpecializationInfo and C_SpecializationInfo.GetSpecialization
+local GetSpecializationInfo = C_SpecializationInfo and C_SpecializationInfo.GetSpecializationInfo
+
 local function FetchCooldownTextRegion(cooldown)
     if not cooldown then return end
     for _, region in ipairs({ cooldown:GetRegions() }) do
@@ -129,28 +132,29 @@ end
 local function CreateCustomIcons(iconTable)
     local playerClass = select(2, UnitClass("player"))
     local specIndex = GetSpecialization()
-    local specID, specName = specIndex and GetSpecializationInfo(specIndex)
-    local playerSpecialization = BCDM:NormalizeSpecToken(specName, specID, specIndex)
-    local DefensiveSpells = BCDM.db.profile.CooldownManager.AdditionalCustom.Spells
+    if specIndex then
+        local specID, specName = GetSpecializationInfo(specIndex)
+        local playerSpecialization = BCDM:NormalizeSpecToken(specName, specID, specIndex)
+        local DefensiveSpells = BCDM.db.profile.CooldownManager.AdditionalCustom.Spells
 
-    wipe(iconTable)
+        wipe(iconTable)
 
-    if playerSpecialization and DefensiveSpells[playerClass] and DefensiveSpells[playerClass][playerSpecialization] then
+        if playerSpecialization and DefensiveSpells[playerClass] and DefensiveSpells[playerClass][playerSpecialization] then
+            local defensiveSpells = {}
 
-        local defensiveSpells = {}
-
-        for spellId, data in pairs(DefensiveSpells[playerClass][playerSpecialization]) do
-            if data.isActive then
-                table.insert(defensiveSpells, {id = spellId, index = data.layoutIndex})
+            for spellId, data in pairs(DefensiveSpells[playerClass][playerSpecialization]) do
+                if data.isActive then
+                    table.insert(defensiveSpells, { id = spellId, index = data.layoutIndex })
+                end
             end
-        end
 
-        table.sort(defensiveSpells, function(a, b) return a.index < b.index end)
+            table.sort(defensiveSpells, function(a, b) return a.index < b.index end)
 
-        for _, spell in ipairs(defensiveSpells) do
-            local customSpell = CreateCustomIcon(spell.id)
-            if customSpell then
-                table.insert(iconTable, customSpell)
+            for _, spell in ipairs(defensiveSpells) do
+                local customSpell = CreateCustomIcon(spell.id)
+                if customSpell then
+                    table.insert(iconTable, customSpell)
+                end
             end
         end
     end

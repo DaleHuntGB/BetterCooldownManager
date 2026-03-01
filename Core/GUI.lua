@@ -10,6 +10,10 @@ local LEMO = BCDM.LEMO
 local AnchorParents = BCDM.AnchorParents
 BCDMGUI = {}
 
+local GetClassInfo = C_CreatureInfo and C_CreatureInfo.GetClassInfo
+local GetSpecialization = C_SpecializationInfo and C_SpecializationInfo.GetSpecialization
+local GetSpecializationInfo = C_SpecializationInfo and C_SpecializationInfo.GetSpecializationInfo
+local GetNumSpecializationsForClassID = C_SpecializationInfo and C_SpecializationInfo.GetNumSpecializationsForClassID
 local function LL(key)
     if not key then return key end
     return (LocaleTable and rawget(LocaleTable, key)) or key
@@ -201,38 +205,27 @@ end
 local function GetClassIdByToken(classToken)
     if not classToken then return end
 
-    local function MatchesClassInfo(classInfo, classId)
-        if classInfo and classInfo.classFile == classToken then return classId, classInfo.className end
-    end
-
-    if CLASS_SORT_ORDER and C_ClassInfo and C_ClassInfo.GetClassInfo then
-        for _, classId in ipairs(CLASS_SORT_ORDER) do
-            local classInfo = C_ClassInfo.GetClassInfo(classId)
-            local matchId, matchName = MatchesClassInfo(classInfo, classId)
-            if matchId then
-                return matchId, matchName
-            end
+    for classId, token in ipairs(CLASS_SORT_ORDER) do
+        if token == classToken then
+            local classInfo = GetClassInfo(classId)
+            return classId, classInfo and classInfo.className
         end
     end
 
-    local numClasses = (C_ClassInfo and C_ClassInfo.GetNumClasses and C_ClassInfo.GetNumClasses()) or (GetNumClasses and GetNumClasses())
+    local numClasses = GetNumClasses()
     if numClasses then
         for classId = 1, numClasses do
-            local classInfo = C_ClassInfo and C_ClassInfo.GetClassInfo and C_ClassInfo.GetClassInfo(classId)
-            if classInfo then
-                local matchId, matchName = MatchesClassInfo(classInfo, classId)
-                if matchId then return matchId, matchName end
-            elseif GetClassInfo then
-                local className, classFile = GetClassInfo(classId)
-                if classFile == classToken then return classId, className end
+            local classInfo = GetClassInfo(classId)
+            if classInfo and classInfo.classFile == classToken then
+                return classId, classInfo.className
             end
         end
     end
 end
 
 local function GetSpecDisplayName(classId, specToken)
-    if not classId or not specToken or not C_SpecializationInfo or not C_SpecializationInfo.GetNumSpecializationsForClassID or not GetSpecializationInfoForClassID then return end
-    local numSpecs = C_SpecializationInfo.GetNumSpecializationsForClassID(classId)
+    if not classId or not specToken then return end
+    local numSpecs = GetNumSpecializationsForClassID(classId)
     if not numSpecs then return end
     for i = 1, numSpecs do
         local specID, specName, _, specIcon = GetSpecializationInfoForClassID(classId, i)
@@ -242,12 +235,10 @@ local function GetSpecDisplayName(classId, specToken)
             specName = info.name or specName
             specIcon = info.icon or specIcon
         end
-        if specID and (not specIcon) and C_SpecializationInfo and C_SpecializationInfo.GetSpecializationInfoByID then
-            local info = C_SpecializationInfo.GetSpecializationInfoByID(specID)
-            if info then
-                specName = specName or info.name
-                specIcon = specIcon or info.icon
-            end
+        if specID and (not specIcon) then
+            local _, fallbackName, _, fallbackIcon = GetSpecializationInfoByID(specID)
+            specName = specName or fallbackName
+            specIcon = specIcon or fallbackIcon
         end
         local normalizedToken = BCDM:NormalizeSpecToken(specName, specID)
         if normalizedToken and normalizedToken == specToken then
@@ -289,13 +280,10 @@ local function BuildClassSpecDropdownMenuData(spellDB)
     local orderedClasses = {}
     local seenClasses = {}
 
-    if CLASS_SORT_ORDER and C_ClassInfo and C_ClassInfo.GetClassInfo then
-        for _, classId in ipairs(CLASS_SORT_ORDER) do
-            local classInfo = C_ClassInfo.GetClassInfo(classId)
-            if classInfo and spellDB[classInfo.classFile] then
-                orderedClasses[#orderedClasses + 1] = classInfo.classFile
-                seenClasses[classInfo.classFile] = true
-            end
+    for _, classToken in ipairs(CLASS_SORT_ORDER) do
+        if spellDB[classToken] then
+            orderedClasses[#orderedClasses + 1] = classToken
+            seenClasses[classToken] = true
         end
     end
 
@@ -317,7 +305,7 @@ local function BuildClassSpecDropdownMenuData(spellDB)
         local seenSpecs = {}
 
         if classId then
-            local numSpecs = C_SpecializationInfo and C_SpecializationInfo.GetNumSpecializationsForClassID and C_SpecializationInfo.GetNumSpecializationsForClassID(classId)
+            local numSpecs = GetNumSpecializationsForClassID(classId)
             if numSpecs then
                 for i = 1, numSpecs do
                     local specID, specName = GetSpecializationInfoForClassID(classId, i)
@@ -427,17 +415,19 @@ local function ResolveSpellClassSpecSelection(customDB, spellDB)
 
     local playerClass = select(2, UnitClass("player"))
     local specIndex = GetSpecialization()
-    local specID, playerSpecName = specIndex and GetSpecializationInfo(specIndex)
-    local playerSpecToken = BCDM:NormalizeSpecToken(playerSpecName, specID, specIndex)
-    if playerClass and playerSpecToken and spellDB[playerClass] and spellDB[playerClass][playerSpecToken] then
-        BCDMGUI.SelectedClassSpec[customDB] = { class = playerClass, spec = playerSpecToken }
-        return playerClass, playerSpecToken
-    end
+    if specIndex then
+        local specID, playerSpecName = GetSpecializationInfo(specIndex)
+        local playerSpecToken = BCDM:NormalizeSpecToken(playerSpecName, specID, specIndex)
+        if playerClass and playerSpecToken and spellDB[playerClass] and spellDB[playerClass][playerSpecToken] then
+            BCDMGUI.SelectedClassSpec[customDB] = { class = playerClass, spec = playerSpecToken }
+            return playerClass, playerSpecToken
+        end
 
-    for classToken, specs in pairs(spellDB) do
-        for specToken in pairs(specs) do
-            BCDMGUI.SelectedClassSpec[customDB] = { class = classToken, spec = specToken }
-            return classToken, specToken
+        for classToken, specs in pairs(spellDB) do
+            for specToken in pairs(specs) do
+                BCDMGUI.SelectedClassSpec[customDB] = { class = classToken, spec = specToken }
+                return classToken, specToken
+            end
         end
     end
 end
