@@ -14,6 +14,14 @@ local GetClassInfo = C_CreatureInfo and C_CreatureInfo.GetClassInfo
 local GetSpecialization = C_SpecializationInfo and C_SpecializationInfo.GetSpecialization
 local GetSpecializationInfo = C_SpecializationInfo and C_SpecializationInfo.GetSpecializationInfo
 local GetNumSpecializationsForClassID = C_SpecializationInfo and C_SpecializationInfo.GetNumSpecializationsForClassID
+
+local RefreshShadowSettings
+local RefreshPowerBarTextGUISettings
+local RefreshPowerBarGUISettings
+local RefreshSecondaryPowerBarTextGUISettings
+local RefreshSecondaryPowerBarGUISettings
+local RefreshCastBarGUISettings
+
 local function LL(key)
     if not key then return key end
     return (LocaleTable and rawget(LocaleTable, key)) or key

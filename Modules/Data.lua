@@ -5,7 +5,7 @@ local GetSpecializationInfo = C_SpecializationInfo.GetSpecializationInfo
 local GetSpecialization = C_SpecializationInfo.GetSpecialization
 
 local function NormalizeSpecName(specName)
-    if not specName then return end
+    if not specName then return "" end
     return tostring(specName):gsub("%s+", ""):upper()
 end
 
