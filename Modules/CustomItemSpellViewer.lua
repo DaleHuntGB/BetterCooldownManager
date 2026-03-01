@@ -245,7 +245,8 @@ local function CreateCustomIcons(iconTable, visibleItemIds)
         local items = {}
         for entryId, data in pairs(Items) do
             if data.isActive then
-                local entryType = ResolveItemSpellEntryType(entryId, data)
+                local entryType
+                entryType = ResolveItemSpellEntryType(entryId, data)
                 if entryType then
                     if entryType == "item" and not ShouldShowItem(CustomDB, entryId) then
                         entryType = nil

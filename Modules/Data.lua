@@ -1,7 +1,11 @@
 local _, BCDM = ...
 
+local GetClassInfo = C_CreatureInfo.GetClassInfo
+local GetSpecializationInfo = C_SpecializationInfo.GetSpecializationInfo
+local GetSpecialization = C_SpecializationInfo.GetSpecialization
+
 local function NormalizeSpecName(specName)
-    if not specName then return end
+    if not specName then return "" end
     return tostring(specName):gsub("%s+", ""):upper()
 end
 
@@ -66,25 +70,17 @@ end
 
 local function GetClassIdByToken(classToken)
     if not classToken then return end
-    if CLASS_SORT_ORDER and C_ClassInfo and C_ClassInfo.GetClassInfo then
-        for _, classId in ipairs(CLASS_SORT_ORDER) do
-            local classInfo = C_ClassInfo.GetClassInfo(classId)
-            if classInfo and classInfo.classFile == classToken then
-                return classId
-            end
+    for classId, token in ipairs(CLASS_SORT_ORDER) do
+        if token == classToken then
+            return classId
         end
     end
     local numClasses = GetNumClasses()
     if numClasses then
         for classId = 1, numClasses do
-            local classInfo = C_ClassInfo and C_ClassInfo.GetClassInfo and C_ClassInfo.GetClassInfo(classId)
+            local classInfo = GetClassInfo(classId)
             if classInfo and classInfo.classFile == classToken then
                 return classId
-            elseif GetClassInfo then
-                local _, classFile = GetClassInfo(classId)
-                if classFile == classToken then
-                    return classId
-                end
             end
         end
     end
@@ -93,9 +89,6 @@ end
 local function BuildSpecNameTokenMap(classId)
     local map = {}
     if not classId then return map end
-    if not (C_SpecializationInfo and C_SpecializationInfo.GetNumSpecializationsForClassID and GetSpecializationInfoForClassID) then
-        return map
-    end
     local numSpecs = C_SpecializationInfo.GetNumSpecializationsForClassID(classId)
     if not numSpecs then return map end
     for i = 1, numSpecs do
@@ -430,7 +423,10 @@ function BCDM:AddRecommendedItems()
 
     local CustomDB = CooldownManagerDB.CooldownManager.Item
     if not ITEMS or type(ITEMS) ~= "table" then return end
-    if not CustomDB then CustomDB = {} CooldownManagerDB.CooldownManager.Item = CustomDB end
+    if not CustomDB then
+        CustomDB = {}
+        CooldownManagerDB.CooldownManager.Item = CustomDB
+    end
     if not CustomDB.Items then CustomDB.Items = {} end
 
     for itemId, data in pairs(ITEMS) do
@@ -495,14 +491,16 @@ function BCDM:AddRecommendedSpells(customDB)
     local CustomDB = CooldownManagerDB.CooldownManager[customDB]
     local _, playerClass = UnitClass("player")
     local specIndex = GetSpecialization()
-    local specID, specName = specIndex and GetSpecializationInfo(specIndex)
-    local playerSpecialization = BCDM:NormalizeSpecToken(specName, specID, specIndex)
-    if DEFENSIVE_SPELLS[playerClass] and DEFENSIVE_SPELLS[playerClass][playerSpecialization] then
-        for spellId, data in pairs(DEFENSIVE_SPELLS[playerClass][playerSpecialization]) do
-            if not CustomDB.Spells[playerClass] then CustomDB.Spells[playerClass] = {} end
-            if not CustomDB.Spells[playerClass][playerSpecialization] then CustomDB.Spells[playerClass][playerSpecialization] = {} end
-            if not CustomDB.Spells[playerClass][playerSpecialization][spellId] then
-                CustomDB.Spells[playerClass][playerSpecialization][spellId] = data
+    if specIndex then
+        local specID, specName = GetSpecializationInfo(specIndex)
+        local playerSpecialization = BCDM:NormalizeSpecToken(specName, specID, specIndex)
+        if DEFENSIVE_SPELLS[playerClass] and DEFENSIVE_SPELLS[playerClass][playerSpecialization] then
+            for spellId, data in pairs(DEFENSIVE_SPELLS[playerClass][playerSpecialization]) do
+                if not CustomDB.Spells[playerClass] then CustomDB.Spells[playerClass] = {} end
+                if not CustomDB.Spells[playerClass][playerSpecialization] then CustomDB.Spells[playerClass][playerSpecialization] = {} end
+                if not CustomDB.Spells[playerClass][playerSpecialization][spellId] then
+                    CustomDB.Spells[playerClass][playerSpecialization][spellId] = data
+                end
             end
         end
     end
