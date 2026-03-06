@@ -19,12 +19,14 @@ local function ApplyCooldownText()
         if icon and icon.Cooldown then
             local textRegion = FetchCooldownTextRegion(icon.Cooldown)
             if textRegion then
+                local cooldownFont = BCDM:ResolveElementFont(CooldownTextDB.Font)
+                local cooldownFontFlag = CooldownTextDB.FontFlag or GeneralDB.Fonts.FontFlag
                 if CooldownTextDB.ScaleByIconSize then
                     local iconWidth = icon:GetWidth()
                     local scaleFactor = iconWidth / 36
-                    textRegion:SetFont(BCDM.Media.Font, CooldownTextDB.FontSize * scaleFactor, GeneralDB.Fonts.FontFlag)
+                    textRegion:SetFont(cooldownFont, CooldownTextDB.FontSize * scaleFactor, cooldownFontFlag)
                 else
-                    textRegion:SetFont(BCDM.Media.Font, CooldownTextDB.FontSize, GeneralDB.Fonts.FontFlag)
+                    textRegion:SetFont(cooldownFont, CooldownTextDB.FontSize, cooldownFontFlag)
                 end
                 textRegion:SetTextColor(CooldownTextDB.Colour[1], CooldownTextDB.Colour[2], CooldownTextDB.Colour[3], 1)
                 textRegion:ClearAllPoints()

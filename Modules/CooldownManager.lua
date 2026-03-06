@@ -34,12 +34,14 @@ local function ApplyCooldownText(cooldownViewer)
         if icon and icon.Cooldown then
             local textRegion = FetchCooldownTextRegion(icon.Cooldown)
             if textRegion then
+                local cooldownFont = BCDM:ResolveElementFont(CooldownTextDB.Font)
+                local cooldownFontFlag = CooldownTextDB.FontFlag or GeneralDB.Fonts.FontFlag
                 if CooldownTextDB.ScaleByIconSize then
                     local iconWidth = icon:GetWidth()
                     local scaleFactor = iconWidth / 36
-                    textRegion:SetFont(BCDM.Media.Font, CooldownTextDB.FontSize * scaleFactor, GeneralDB.Fonts.FontFlag)
+                    textRegion:SetFont(cooldownFont, CooldownTextDB.FontSize * scaleFactor, cooldownFontFlag)
                 else
-                    textRegion:SetFont(BCDM.Media.Font, CooldownTextDB.FontSize, GeneralDB.Fonts.FontFlag)
+                    textRegion:SetFont(cooldownFont, CooldownTextDB.FontSize, cooldownFontFlag)
                 end
                 textRegion:SetTextColor(CooldownTextDB.Colour[1], CooldownTextDB.Colour[2], CooldownTextDB.Colour[3], 1)
                 textRegion:ClearAllPoints()
@@ -121,7 +123,8 @@ local function StyleChargeCount()
         for _, childFrame in ipairs({ _G[viewerName]:GetChildren() }) do
             if childFrame and childFrame.ChargeCount and childFrame.ChargeCount.Current then
                 local currentChargeText = childFrame.ChargeCount.Current
-                currentChargeText:SetFont(BCDM.Media.Font, cooldownManagerSettings[BCDM.CooldownManagerViewerToDBViewer[viewerName]].Text.FontSize, generalSettings.Fonts.FontFlag)
+                local viewerTextDB = cooldownManagerSettings[BCDM.CooldownManagerViewerToDBViewer[viewerName]].Text
+                currentChargeText:SetFont(BCDM:ResolveElementFont(viewerTextDB.Font), viewerTextDB.FontSize, viewerTextDB.FontFlag or generalSettings.Fonts.FontFlag)
                 currentChargeText:ClearAllPoints()
                 currentChargeText:SetPoint(cooldownManagerSettings[BCDM.CooldownManagerViewerToDBViewer[viewerName]].Text.Layout[1], childFrame, cooldownManagerSettings[BCDM.CooldownManagerViewerToDBViewer[viewerName]].Text.Layout[2], cooldownManagerSettings[BCDM.CooldownManagerViewerToDBViewer[viewerName]].Text.Layout[3], cooldownManagerSettings[BCDM.CooldownManagerViewerToDBViewer[viewerName]].Text.Layout[4])
                 currentChargeText:SetTextColor(cooldownManagerSettings[BCDM.CooldownManagerViewerToDBViewer[viewerName]].Text.Colour[1], cooldownManagerSettings[BCDM.CooldownManagerViewerToDBViewer[viewerName]].Text.Colour[2], cooldownManagerSettings[BCDM.CooldownManagerViewerToDBViewer[viewerName]].Text.Colour[3], 1)
@@ -138,7 +141,8 @@ local function StyleChargeCount()
         for _, childFrame in ipairs({ _G[viewerName]:GetChildren() }) do
             if childFrame and childFrame.Applications then
                 local applicationsText = childFrame.Applications.Applications
-                applicationsText:SetFont(BCDM.Media.Font, cooldownManagerSettings[BCDM.CooldownManagerViewerToDBViewer[viewerName]].Text.FontSize, generalSettings.Fonts.FontFlag)
+                local viewerTextDB = cooldownManagerSettings[BCDM.CooldownManagerViewerToDBViewer[viewerName]].Text
+                applicationsText:SetFont(BCDM:ResolveElementFont(viewerTextDB.Font), viewerTextDB.FontSize, viewerTextDB.FontFlag or generalSettings.Fonts.FontFlag)
                 applicationsText:ClearAllPoints()
                 applicationsText:SetPoint(cooldownManagerSettings[BCDM.CooldownManagerViewerToDBViewer[viewerName]].Text.Layout[1], childFrame, cooldownManagerSettings[BCDM.CooldownManagerViewerToDBViewer[viewerName]].Text.Layout[2], cooldownManagerSettings[BCDM.CooldownManagerViewerToDBViewer[viewerName]].Text.Layout[3], cooldownManagerSettings[BCDM.CooldownManagerViewerToDBViewer[viewerName]].Text.Layout[4])
                 applicationsText:SetTextColor(cooldownManagerSettings[BCDM.CooldownManagerViewerToDBViewer[viewerName]].Text.Colour[1], cooldownManagerSettings[BCDM.CooldownManagerViewerToDBViewer[viewerName]].Text.Colour[2], cooldownManagerSettings[BCDM.CooldownManagerViewerToDBViewer[viewerName]].Text.Colour[3], 1)
