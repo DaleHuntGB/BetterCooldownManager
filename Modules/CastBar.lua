@@ -191,7 +191,7 @@ function BCDM:CreateCastBar()
     end
 
     CastBar.SpellNameText = CastBar.Status:CreateFontString(nil, "OVERLAY")
-    CastBar.SpellNameText:SetFont(BCDM.Media.Font, CastBarDB.Text.SpellName.FontSize, GeneralDB.Fonts.FontFlag)
+    CastBar.SpellNameText:SetFont(BCDM:ResolveElementFont(CastBarDB.Text.SpellName.Font), CastBarDB.Text.SpellName.FontSize, CastBarDB.Text.SpellName.FontFlag or GeneralDB.Fonts.FontFlag)
     CastBar.SpellNameText:SetTextColor(CastBarDB.Text.SpellName.Colour[1], CastBarDB.Text.SpellName.Colour[2], CastBarDB.Text.SpellName.Colour[3], 1)
     CastBar.SpellNameText:SetPoint(CastBarDB.Text.SpellName.Layout[1], CastBar.Status, CastBarDB.Text.SpellName.Layout[2], CastBarDB.Text.SpellName.Layout[3], CastBarDB.Text.SpellName.Layout[4])
     if GeneralDB.Fonts.Shadow.Enabled then
@@ -204,7 +204,7 @@ function BCDM:CreateCastBar()
     CastBar.SpellNameText:SetText("")
 
     CastBar.CastTimeText = CastBar.Status:CreateFontString(nil, "OVERLAY")
-    CastBar.CastTimeText:SetFont(BCDM.Media.Font, CastBarDB.Text.CastTime.FontSize, GeneralDB.Fonts.FontFlag)
+    CastBar.CastTimeText:SetFont(BCDM:ResolveElementFont(CastBarDB.Text.CastTime.Font), CastBarDB.Text.CastTime.FontSize, CastBarDB.Text.CastTime.FontFlag or GeneralDB.Fonts.FontFlag)
     CastBar.CastTimeText:SetTextColor(CastBarDB.Text.CastTime.Colour[1], CastBarDB.Text.CastTime.Colour[2], CastBarDB.Text.CastTime.Colour[3], 1)
     CastBar.CastTimeText:SetPoint(CastBarDB.Text.CastTime.Layout[1], CastBar.Status, CastBarDB.Text.CastTime.Layout[2], CastBarDB.Text.CastTime.Layout[3], CastBarDB.Text.CastTime.Layout[4])
     if GeneralDB.Fonts.Shadow.Enabled then
@@ -289,7 +289,7 @@ function BCDM:UpdateCastBar()
         CastBar.Status:SetPoint("BOTTOMRIGHT", CastBar.Icon, "BOTTOMLEFT", 0, 0)
     end
 
-    CastBar.SpellNameText:SetFont(BCDM.Media.Font, CastBarDB.Text.SpellName.FontSize, BCDM.db.profile.General.Fonts.FontFlag)
+    CastBar.SpellNameText:SetFont(BCDM:ResolveElementFont(CastBarDB.Text.SpellName.Font), CastBarDB.Text.SpellName.FontSize, CastBarDB.Text.SpellName.FontFlag or BCDM.db.profile.General.Fonts.FontFlag)
     CastBar.SpellNameText:SetTextColor(CastBarDB.Text.SpellName.Colour[1], CastBarDB.Text.SpellName.Colour[2], CastBarDB.Text.SpellName.Colour[3], 1)
     CastBar.SpellNameText:ClearAllPoints()
     CastBar.SpellNameText:SetPoint(CastBarDB.Text.SpellName.Layout[1], CastBar.Status, CastBarDB.Text.SpellName.Layout[2], CastBarDB.Text.SpellName.Layout[3], CastBarDB.Text.SpellName.Layout[4])
@@ -301,7 +301,7 @@ function BCDM:UpdateCastBar()
         CastBar.SpellNameText:SetShadowOffset(0, 0)
     end
 
-    CastBar.CastTimeText:SetFont(BCDM.Media.Font, CastBarDB.Text.CastTime.FontSize, BCDM.db.profile.General.Fonts.FontFlag)
+    CastBar.CastTimeText:SetFont(BCDM:ResolveElementFont(CastBarDB.Text.CastTime.Font), CastBarDB.Text.CastTime.FontSize, CastBarDB.Text.CastTime.FontFlag or BCDM.db.profile.General.Fonts.FontFlag)
     CastBar.CastTimeText:SetTextColor(CastBarDB.Text.CastTime.Colour[1], CastBarDB.Text.CastTime.Colour[2], CastBarDB.Text.CastTime.Colour[3], 1)
     CastBar.CastTimeText:ClearAllPoints()
     CastBar.CastTimeText:SetPoint(CastBarDB.Text.CastTime.Layout[1], CastBar.Status, CastBarDB.Text.CastTime.Layout[2], CastBarDB.Text.CastTime.Layout[3], CastBarDB.Text.CastTime.Layout[4])
