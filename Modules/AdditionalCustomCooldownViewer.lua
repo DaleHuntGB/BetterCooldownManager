@@ -41,13 +41,97 @@ local function ApplyCooldownText()
     end
 end
 
-local function IsCooldownFrameActive(customIcon)
-    if not customIcon or not customIcon.Cooldown then return end
+local desaturationCurve
+local gcdFilterCurve
 
-    if customIcon.Cooldown:IsShown() then
-        customIcon.Icon:SetDesaturated(true)
+local function IsSecretNumber(value)
+    return type(value) == "number" and type(issecretvalue) == "function" and issecretvalue(value)
+end
+
+local function EnsureCurves()
+    if desaturationCurve and gcdFilterCurve then return end
+    if not (C_CurveUtil and C_CurveUtil.CreateCurve and Enum and Enum.LuaCurveType and Enum.LuaCurveType.Step) then return end
+
+    if not desaturationCurve then
+        desaturationCurve = C_CurveUtil.CreateCurve()
+        if desaturationCurve then
+            desaturationCurve:SetType(Enum.LuaCurveType.Step)
+            desaturationCurve:AddPoint(0, 0)
+            desaturationCurve:AddPoint(0.001, 1)
+        end
+    end
+
+    if not gcdFilterCurve then
+        gcdFilterCurve = C_CurveUtil.CreateCurve()
+        if gcdFilterCurve then
+            gcdFilterCurve:SetType(Enum.LuaCurveType.Step)
+            gcdFilterCurve:AddPoint(0, 0)
+            gcdFilterCurve:AddPoint(1.6, 0)
+            gcdFilterCurve:AddPoint(1.601, 1)
+        end
+    end
+end
+
+local function SetIconDesaturation(icon, value)
+    if not icon then return end
+    if icon.SetDesaturation then
+        icon:SetDesaturation(value)
+        return
+    end
+    if icon.SetDesaturated then
+        icon:SetDesaturated(value > 0)
+    end
+end
+
+local function CalculateFallbackDesaturation(startTime, duration)
+    if not startTime or not duration then return 0 end
+    if IsSecretNumber(startTime) or IsSecretNumber(duration) then return 0 end
+    local remaining = (startTime + duration) - GetTime()
+    return remaining > 0.001 and 1 or 0
+end
+
+local function GetReadableNumber(value)
+    if type(value) ~= "number" then return nil end
+    if IsSecretNumber(value) then return nil end
+    return value
+end
+
+local function UpdateSpellIconDesaturation(customIcon, spellId)
+    if not customIcon or not customIcon.Icon then return end
+    EnsureCurves()
+
+    local cooldownData = C_Spell.GetSpellCooldown(spellId)
+    if cooldownData and cooldownData.isOnGCD then
+        SetIconDesaturation(customIcon.Icon, 0)
+        return
+    end
+
+    local spellCharges = C_Spell.GetSpellCharges(spellId)
+    local currentCharges = spellCharges and GetReadableNumber(spellCharges.currentCharges)
+    if currentCharges then
+        if currentCharges > 0 then
+            SetIconDesaturation(customIcon.Icon, 0)
+            return
+        end
+        local chargeDuration = C_Spell.GetSpellChargeDuration and C_Spell.GetSpellChargeDuration(spellId)
+        if chargeDuration and type(chargeDuration.EvaluateRemainingDuration) == "function" then
+            SetIconDesaturation(customIcon.Icon, (desaturationCurve and chargeDuration:EvaluateRemainingDuration(desaturationCurve, 0)) or CalculateFallbackDesaturation(spellCharges.cooldownStartTime, spellCharges.cooldownDuration))
+        else
+            SetIconDesaturation(customIcon.Icon, CalculateFallbackDesaturation(spellCharges.cooldownStartTime, spellCharges.cooldownDuration))
+        end
+        return
+    end
+
+    local durationObject = C_Spell.GetSpellCooldownDuration and C_Spell.GetSpellCooldownDuration(spellId)
+    if durationObject and type(durationObject.EvaluateRemainingDuration) == "function" then
+        local curve = (cooldownData and cooldownData.isOnGCD) and gcdFilterCurve or desaturationCurve
+        SetIconDesaturation(customIcon.Icon, (curve and durationObject:EvaluateRemainingDuration(curve, 0)) or 0)
     else
-        customIcon.Icon:SetDesaturated(false)
+        if not cooldownData then
+            SetIconDesaturation(customIcon.Icon, 0)
+        else
+            SetIconDesaturation(customIcon.Icon, CalculateFallbackDesaturation(cooldownData.startTime, cooldownData.duration))
+        end
     end
 end
 
@@ -111,7 +195,7 @@ local function CreateCustomIcon(spellId)
                 local cooldownData = C_Spell.GetSpellCooldown(spellId)
                 customIcon.Cooldown:SetCooldown(cooldownData.startTime, cooldownData.duration)
             end
-            -- IsCooldownFrameActive(self)
+            UpdateSpellIconDesaturation(self, spellId)
         end
     end)
 
@@ -156,6 +240,26 @@ local function CreateCustomIcons(iconTable)
     end
 end
 
+local function GetColumnWrapLimit(customDB)
+    local wrapLimit = math.floor(tonumber(customDB.Columns) or 0)
+    if wrapLimit < 1 then
+        return 0
+    end
+    return wrapLimit
+end
+
+local function IsCenteredHorizontalLayout(point, growthDirection)
+    return (point == "TOP" or point == "BOTTOM") and (growthDirection == "LEFT" or growthDirection == "RIGHT")
+end
+
+local function ShouldGrowUp(point)
+    return point and point:find("BOTTOM") ~= nil
+end
+
+local function ShouldGrowLeft(point)
+    return point and point:find("RIGHT") ~= nil
+end
+
 local function LayoutAdditionalCustomCooldownViewer()
     local CooldownManagerDB = BCDM.db.profile
     local CustomDB = CooldownManagerDB.CooldownManager.AdditionalCustom
@@ -192,53 +296,66 @@ local function LayoutAdditionalCustomCooldownViewer()
 
     local iconWidth, iconHeight = BCDM:GetIconDimensions(CustomDB)
     local iconSpacing = CustomDB.Spacing
+    local point = select(1, BCDM.AdditionalCustomCooldownViewerContainer:GetPoint(1))
+    local isHorizontalGrowth = growthDirection == "LEFT" or growthDirection == "RIGHT"
+    local wrapLimit = GetColumnWrapLimit(CustomDB)
+    local lineLimit = (wrapLimit > 0) and wrapLimit or #AdditionalCustomCooldownViewerIcons
+    local useCenteredLayout = IsCenteredHorizontalLayout(point, growthDirection)
 
     -- Calculate and set container size first
     if #AdditionalCustomCooldownViewerIcons == 0 then
         BCDM.AdditionalCustomCooldownViewerContainer:SetSize(1, 1)
     else
-        local point = select(1, BCDM.AdditionalCustomCooldownViewerContainer:GetPoint(1))
-        local useCenteredLayout = (point == "TOP" or point == "BOTTOM") and (growthDirection == "LEFT" or growthDirection == "RIGHT")
+        local totalWidth, totalHeight
+        local lineCount = math.ceil(#AdditionalCustomCooldownViewerIcons / lineLimit)
 
-        local totalWidth, totalHeight = 0, 0
-        if useCenteredLayout or growthDirection == "RIGHT" or growthDirection == "LEFT" then
-            totalWidth = (#AdditionalCustomCooldownViewerIcons * iconWidth) + ((#AdditionalCustomCooldownViewerIcons - 1) * iconSpacing)
-            totalHeight = iconHeight
-        elseif growthDirection == "UP" or growthDirection == "DOWN" then
-            totalWidth = iconWidth
-            totalHeight = (#AdditionalCustomCooldownViewerIcons * iconHeight) + ((#AdditionalCustomCooldownViewerIcons - 1) * iconSpacing)
+        if isHorizontalGrowth then
+            local columnsInRow = math.min(lineLimit, #AdditionalCustomCooldownViewerIcons)
+            totalWidth = (columnsInRow * iconWidth) + ((columnsInRow - 1) * iconSpacing)
+            totalHeight = (lineCount * iconHeight) + ((lineCount - 1) * iconSpacing)
+        else
+            local rowsInColumn = math.min(lineLimit, #AdditionalCustomCooldownViewerIcons)
+            totalWidth = (lineCount * iconWidth) + ((lineCount - 1) * iconSpacing)
+            totalHeight = (rowsInColumn * iconHeight) + ((rowsInColumn - 1) * iconSpacing)
         end
         BCDM.AdditionalCustomCooldownViewerContainer:SetSize(totalWidth, totalHeight)
     end
 
     local LayoutConfig = {
-        TOPLEFT     = { anchor="TOPLEFT",     xMult=1,  yMult=1  },
-        TOP         = { anchor="TOP",         xMult=0,  yMult=1  },
-        TOPRIGHT    = { anchor="TOPRIGHT",    xMult=-1, yMult=1  },
-        BOTTOMLEFT  = { anchor="BOTTOMLEFT",  xMult=1,  yMult=-1 },
-        BOTTOM      = { anchor="BOTTOM",      xMult=0,  yMult=-1 },
-        BOTTOMRIGHT = { anchor="BOTTOMRIGHT", xMult=-1, yMult=-1 },
-        LEFT        = { anchor="LEFT",        xMult=1,  yMult=0  },
-        RIGHT       = { anchor="RIGHT",       xMult=-1, yMult=0  },
-        CENTER      = { anchor="CENTER",      xMult=0,  yMult=0  },
+        TOPLEFT     = { anchor = "TOPLEFT" },
+        TOP         = { anchor = "TOP" },
+        TOPRIGHT    = { anchor = "TOPRIGHT" },
+        BOTTOMLEFT  = { anchor = "BOTTOMLEFT" },
+        BOTTOM      = { anchor = "BOTTOM" },
+        BOTTOMRIGHT = { anchor = "BOTTOMRIGHT" },
+        LEFT        = { anchor = "LEFT" },
+        RIGHT       = { anchor = "RIGHT" },
+        CENTER      = { anchor = "CENTER" },
     }
 
-    local point = select(1, BCDM.AdditionalCustomCooldownViewerContainer:GetPoint(1))
-    local useCenteredLayout = (point == "TOP" or point == "BOTTOM") and (growthDirection == "LEFT" or growthDirection == "RIGHT")
-
     if useCenteredLayout and #AdditionalCustomCooldownViewerIcons > 0 then
-        local totalWidth = (#AdditionalCustomCooldownViewerIcons * iconWidth) + ((#AdditionalCustomCooldownViewerIcons - 1) * iconSpacing)
-        local startOffset = -(totalWidth / 2) + (iconWidth / 2)
+        local rowCount = math.ceil(#AdditionalCustomCooldownViewerIcons / lineLimit)
+        local rowDirection = ShouldGrowUp(point) and 1 or -1
 
-        for i, spellIcon in ipairs(AdditionalCustomCooldownViewerIcons) do
-            spellIcon:SetParent(BCDM.AdditionalCustomCooldownViewerContainer)
-            spellIcon:SetSize(iconWidth, iconHeight)
-            spellIcon:ClearAllPoints()
+        for rowIndex = 1, rowCount do
+            local rowStart = ((rowIndex - 1) * lineLimit) + 1
+            local rowEnd = math.min(rowStart + lineLimit - 1, #AdditionalCustomCooldownViewerIcons)
+            local rowIcons = rowEnd - rowStart + 1
+            local rowWidth = (rowIcons * iconWidth) + ((rowIcons - 1) * iconSpacing)
+            local startOffset = -(rowWidth / 2) + (iconWidth / 2)
+            local yOffset = (rowIndex - 1) * (iconHeight + iconSpacing) * rowDirection
 
-            local xOffset = startOffset + ((i - 1) * (iconWidth + iconSpacing))
-            spellIcon:SetPoint("CENTER", BCDM.AdditionalCustomCooldownViewerContainer, "CENTER", xOffset, 0)
-            ApplyCooldownText()
-            spellIcon:Show()
+            for i = rowStart, rowEnd do
+                local spellIcon = AdditionalCustomCooldownViewerIcons[i]
+                spellIcon:SetParent(BCDM.AdditionalCustomCooldownViewerContainer)
+                spellIcon:SetSize(iconWidth, iconHeight)
+                spellIcon:ClearAllPoints()
+
+                local xOffset = startOffset + ((i - rowStart) * (iconWidth + iconSpacing))
+                spellIcon:SetPoint("CENTER", BCDM.AdditionalCustomCooldownViewerContainer, "CENTER", xOffset, yOffset)
+                ApplyCooldownText()
+                spellIcon:Show()
+            end
         end
     else
         for i, spellIcon in ipairs(AdditionalCustomCooldownViewerIcons) do
@@ -250,14 +367,32 @@ local function LayoutAdditionalCustomCooldownViewer()
                 local config = LayoutConfig[point] or LayoutConfig.TOPLEFT
                 spellIcon:SetPoint(config.anchor, BCDM.AdditionalCustomCooldownViewerContainer, config.anchor, 0, 0)
             else
-                if growthDirection == "RIGHT" then
-                    spellIcon:SetPoint("LEFT", AdditionalCustomCooldownViewerIcons[i - 1], "RIGHT", iconSpacing, 0)
-                elseif growthDirection == "LEFT" then
-                    spellIcon:SetPoint("RIGHT", AdditionalCustomCooldownViewerIcons[i - 1], "LEFT", -iconSpacing, 0)
-                elseif growthDirection == "UP" then
-                    spellIcon:SetPoint("BOTTOM", AdditionalCustomCooldownViewerIcons[i - 1], "TOP", 0, iconSpacing)
-                elseif growthDirection == "DOWN" then
-                    spellIcon:SetPoint("TOP", AdditionalCustomCooldownViewerIcons[i - 1], "BOTTOM", 0, -iconSpacing)
+                local isWrappedRowStart = (i - 1) % lineLimit == 0
+                if isWrappedRowStart then
+                    local lineAnchorIcon = AdditionalCustomCooldownViewerIcons[i - lineLimit]
+                    if isHorizontalGrowth then
+                        if ShouldGrowUp(point) then
+                            spellIcon:SetPoint("BOTTOM", lineAnchorIcon, "TOP", 0, iconSpacing)
+                        else
+                            spellIcon:SetPoint("TOP", lineAnchorIcon, "BOTTOM", 0, -iconSpacing)
+                        end
+                    else
+                        if ShouldGrowLeft(point) then
+                            spellIcon:SetPoint("RIGHT", lineAnchorIcon, "LEFT", -iconSpacing, 0)
+                        else
+                            spellIcon:SetPoint("LEFT", lineAnchorIcon, "RIGHT", iconSpacing, 0)
+                        end
+                    end
+                else
+                    if growthDirection == "RIGHT" then
+                        spellIcon:SetPoint("LEFT", AdditionalCustomCooldownViewerIcons[i - 1], "RIGHT", iconSpacing, 0)
+                    elseif growthDirection == "LEFT" then
+                        spellIcon:SetPoint("RIGHT", AdditionalCustomCooldownViewerIcons[i - 1], "LEFT", -iconSpacing, 0)
+                    elseif growthDirection == "UP" then
+                        spellIcon:SetPoint("BOTTOM", AdditionalCustomCooldownViewerIcons[i - 1], "TOP", 0, iconSpacing)
+                    elseif growthDirection == "DOWN" then
+                        spellIcon:SetPoint("TOP", AdditionalCustomCooldownViewerIcons[i - 1], "BOTTOM", 0, -iconSpacing)
+                    end
                 end
             end
             ApplyCooldownText()

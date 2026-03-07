@@ -41,15 +41,75 @@ local function ApplyCooldownText()
     end
 end
 
-local function IsCooldownFrameActive(customIcon)
-    -- Thanks Mapko for this idea!
-    if not customIcon or not customIcon.Cooldown then return end
+local desaturationCurve
+local gcdFilterCurve
 
-    if customIcon.Cooldown:IsShown() then
-        customIcon.Icon:SetDesaturated(true)
-    else
-        customIcon.Icon:SetDesaturated(false)
+local function IsSecretNumber(value)
+    return type(value) == "number" and type(issecretvalue) == "function" and issecretvalue(value)
+end
+
+local function EnsureCurves()
+    if desaturationCurve and gcdFilterCurve then return end
+    if not (C_CurveUtil and C_CurveUtil.CreateCurve and Enum and Enum.LuaCurveType and Enum.LuaCurveType.Step) then return end
+
+    if not desaturationCurve then
+        desaturationCurve = C_CurveUtil.CreateCurve()
+        if desaturationCurve then
+            desaturationCurve:SetType(Enum.LuaCurveType.Step)
+            desaturationCurve:AddPoint(0, 0)
+            desaturationCurve:AddPoint(0.001, 1)
+        end
     end
+
+    if not gcdFilterCurve then
+        gcdFilterCurve = C_CurveUtil.CreateCurve()
+        if gcdFilterCurve then
+            gcdFilterCurve:SetType(Enum.LuaCurveType.Step)
+            gcdFilterCurve:AddPoint(0, 0)
+            gcdFilterCurve:AddPoint(1.6, 0)
+            gcdFilterCurve:AddPoint(1.601, 1)
+        end
+    end
+end
+
+local function SetIconDesaturation(icon, value)
+    if not icon then return end
+    if icon.SetDesaturation then
+        icon:SetDesaturation(value)
+        return
+    end
+    if icon.SetDesaturated then
+        icon:SetDesaturated(value > 0)
+    end
+end
+
+local function CalculateFallbackDesaturation(startTime, duration)
+    if not startTime or not duration then return 0 end
+    if IsSecretNumber(startTime) or IsSecretNumber(duration) then return 0 end
+    local remaining = (startTime + duration) - GetTime()
+    return remaining > 0.001 and 1 or 0
+end
+
+local function ShouldRefreshItemCooldownFrame(cooldownFrame, hasActiveCooldown, startTime, durationTime)
+    if not cooldownFrame then
+        return false
+    end
+
+    local oldStart, oldDuration = cooldownFrame:GetCooldownTimes()
+    oldStart = tonumber(oldStart) or 0
+    oldDuration = tonumber(oldDuration) or 0
+
+    if hasActiveCooldown then
+        if oldStart <= 0 or oldDuration <= 0 then
+            return true
+        end
+        -- GetCooldownTimes returns milliseconds, SetCooldown uses seconds.
+        local oldEnd = (oldStart + oldDuration) / 1000
+        local newEnd = (startTime or 0) + (durationTime or 0)
+        return math.abs(oldEnd - newEnd) > 0.01
+    end
+
+    return oldStart > 0 and oldDuration > 0
 end
 
 local function FetchItemData(itemId)
@@ -64,6 +124,205 @@ local function ShouldShowItem(customDB, itemId)
     local itemCount = select(1, FetchItemData(itemId))
     if itemCount == nil then return true end
     return itemCount > 0
+end
+
+local POTION_CLASS_ID = (Enum and Enum.ItemClass and Enum.ItemClass.Consumable) or 0
+local POTION_SUBCLASS_ID = (Enum and Enum.ItemConsumableSubclass and Enum.ItemConsumableSubclass.Potion) or 1
+
+local function IsPotionItem(itemId)
+    if not itemId then return false end
+    local _, _, _, _, _, classId, subClassId = C_Item.GetItemInfoInstant(itemId)
+    return classId == POTION_CLASS_ID and subClassId == POTION_SUBCLASS_ID
+end
+
+local function ParseProfessionAtlasFromItemLink(itemLink)
+    if type(itemLink) ~= "string" then return end
+
+    return string.match(itemLink, "|A:(Professions%-[^:|]-Tier%d+):")
+        or string.match(itemLink, "(Professions%-ChatIcon%-Quality%-%d+%-Tier%d+)")
+        or string.match(itemLink, "(Professions%-ChatIcon%-Quality%-Tier%d+)")
+        or string.match(itemLink, "(Professions%-Icon%-Quality%-%d+%-Tier%d+)")
+        or string.match(itemLink, "(Professions%-Icon%-Quality%-Tier%d+)")
+end
+
+local function ParseProfessionRankFromItemLink(itemLink)
+    local atlasName = ParseProfessionAtlasFromItemLink(itemLink)
+    local rank = atlasName and string.match(atlasName, "Tier(%d+)")
+    return rank and tonumber(rank) or nil
+end
+
+local function BuildProfessionAtlasFromRank(itemId, rank)
+    if not rank or rank <= 0 then return end
+
+    local expansionID = select(15, C_Item.GetItemInfo(itemId))
+    if expansionID == 11 then
+        return "Professions-Icon-Quality-12-Tier" .. rank .. "-Small"
+    end
+    return "Professions-Icon-Quality-Tier" .. rank .. "-Small"
+end
+
+local function FetchPotionProfessionRank(itemId)
+    if not itemId then
+        return 0
+    end
+
+    local _, itemLink = C_Item.GetItemInfo(itemId)
+    local parsedRank = ParseProfessionRankFromItemLink(itemLink)
+    if parsedRank then
+        return parsedRank
+    end
+
+    if not C_TradeSkillUI then
+        return 0
+    end
+
+    local itemInfo = itemLink or itemId
+
+    if C_TradeSkillUI.GetItemCraftedQualityByItemInfo then
+        local craftedRank = C_TradeSkillUI.GetItemCraftedQualityByItemInfo(itemInfo)
+        if craftedRank then return craftedRank end
+        if itemInfo ~= itemId then
+            craftedRank = C_TradeSkillUI.GetItemCraftedQualityByItemInfo(itemId)
+            if craftedRank then return craftedRank end
+        end
+    end
+
+    if C_TradeSkillUI.GetItemReagentQualityByItemInfo then
+        local reagentRank = C_TradeSkillUI.GetItemReagentQualityByItemInfo(itemInfo)
+        if reagentRank then return reagentRank end
+        if itemInfo ~= itemId then
+            reagentRank = C_TradeSkillUI.GetItemReagentQualityByItemInfo(itemId)
+            if reagentRank then return reagentRank end
+        end
+    end
+
+    return 0
+end
+
+local function ResolveItemQualityAtlas(itemId)
+    if not itemId then return end
+
+    local _, itemLink = C_Item.GetItemInfo(itemId)
+    local atlasFromLink = ParseProfessionAtlasFromItemLink(itemLink)
+    if atlasFromLink then
+        return atlasFromLink
+    end
+
+    local rank = FetchPotionProfessionRank(itemId)
+    return BuildProfessionAtlasFromRank(itemId, rank)
+end
+
+local function SelectPotionRankCandidate(potionGroups, itemId, layoutIndex)
+    if not IsPotionItem(itemId) then
+        return false
+    end
+
+    local itemName = C_Item.GetItemInfo(itemId)
+    if not itemName then
+        return false
+    end
+
+    local itemCount = select(1, FetchItemData(itemId)) or 0
+    local group = potionGroups[itemName]
+    if not group then
+        group = { index = layoutIndex, selected = nil }
+        potionGroups[itemName] = group
+    else
+        group.index = math.min(group.index or layoutIndex, layoutIndex)
+    end
+
+    local candidate = {
+        id = itemId,
+        count = itemCount,
+        rank = FetchPotionProfessionRank(itemId),
+    }
+
+    local selected = group.selected
+    if not selected then
+        group.selected = candidate
+        return true
+    end
+
+    local candidateAvailable = candidate.count > 0
+    local selectedAvailable = selected.count > 0
+
+    if candidateAvailable ~= selectedAvailable then
+        if candidateAvailable then
+            group.selected = candidate
+        end
+        return true
+    end
+
+    if candidate.rank > selected.rank then
+        group.selected = candidate
+        return true
+    end
+
+    if candidate.rank == selected.rank and candidate.id > selected.id then
+            group.selected = candidate
+    end
+
+    return true
+end
+
+local function HasTrackedPotionEntries(items)
+    if not items then return false end
+    for itemId, data in pairs(items) do
+        if data and data.isActive and IsPotionItem(itemId) then
+            return true
+        end
+    end
+    return false
+end
+
+local function ApplyItemQualityAtlas(customIcon, itemId, customDB, iconWidth, iconHeight)
+    if not customIcon or not customIcon.QualityAtlas then return end
+    if not itemId or customDB.ShowItemQualityBorder == false then
+        customIcon.QualityAtlas:Hide()
+        return
+    end
+
+    local atlasName = ResolveItemQualityAtlas(itemId)
+    if not atlasName then
+        customIcon.QualityAtlas:Hide()
+        return
+    end
+
+    local iconSize = math.min(iconWidth or customIcon:GetWidth() or 0, iconHeight or customIcon:GetHeight() or 0)
+    local atlasSize = math.max(10, math.floor(iconSize * 0.42))
+    customIcon.QualityAtlas:ClearAllPoints()
+    customIcon.QualityAtlas:SetPoint("TOPLEFT", customIcon, "TOPLEFT", 0, 0)
+    customIcon.QualityAtlas:SetSize(atlasSize, atlasSize)
+    customIcon.QualityAtlas:SetAtlas(atlasName)
+    customIcon.QualityAtlas:Show()
+end
+
+local function ParseClassSpecFilterValue(value)
+    if not value then return end
+    local normalizedValue = tostring(value):upper()
+    local classToken, specToken = string.match(normalizedValue, "^(%u+):([%u%d_]+)$")
+    if not classToken or not specToken then return end
+    return classToken, (BCDM:NormalizeSpecToken(specToken) or specToken)
+end
+
+local function IsEntryEnabledForPlayerSpec(entryData, playerClass, playerSpecialization)
+    local classSpecFilters = entryData and entryData.classSpecFilters
+    if type(classSpecFilters) ~= "table" then
+        return true
+    end
+
+    local hasActiveFilter = false
+    for classSpecValue, isEnabled in pairs(classSpecFilters) do
+        if isEnabled then
+            hasActiveFilter = true
+            local classToken, specToken = ParseClassSpecFilterValue(classSpecValue)
+            if classToken and classToken == playerClass and ((not playerSpecialization) or playerSpecialization == specToken) then
+                return true
+            end
+        end
+    end
+
+    return not hasActiveFilter
 end
 
 local function CreateCustomIcon(itemId)
@@ -118,18 +377,40 @@ local function CreateCustomIcon(itemId)
     customIcon.Cooldown:SetHideCountdownNumbers(false)
     customIcon.Cooldown:SetReverse(false)
 
+    customIcon.QualityAtlas = HighLevelContainer:CreateTexture(nil, "OVERLAY")
+    customIcon.QualityAtlas:Hide()
+    ApplyItemQualityAtlas(customIcon, itemId, CustomDB, iconWidth, iconHeight)
+
     customIcon:SetScript("OnEvent", function(self, event, ...)
         if event == "SPELL_UPDATE_COOLDOWN" or event == "PLAYER_ENTERING_WORLD" or event == "ITEM_COUNT_CHANGED" then
             local itemCount, startTime, durationTime = FetchItemData(itemId)
             if itemCount then
+                local hasActiveCooldown = (startTime and durationTime and startTime > 0 and durationTime > 0) or false
                 customIcon.Charges:SetText(tostring(itemCount))
-                if startTime and C_Item.IsUsableItem(itemId) then customIcon.Cooldown:SetCooldown(startTime, durationTime) end
+                if C_Item.IsUsableItem(itemId) then
+                    local shouldRefreshCooldown = ShouldRefreshItemCooldownFrame(customIcon.Cooldown, hasActiveCooldown, startTime, durationTime)
+                    if hasActiveCooldown and shouldRefreshCooldown then
+                        customIcon.Cooldown:SetCooldown(startTime, durationTime)
+                    elseif not hasActiveCooldown and event ~= "ITEM_COUNT_CHANGED" and shouldRefreshCooldown then
+                        -- Avoid cooldown flicker from transient ITEM_COUNT_CHANGED updates.
+                        customIcon.Cooldown:SetCooldown(0, 0)
+                    end
+                end
                 if itemCount <= 0 then
-                    customIcon.Icon:SetDesaturated(true)
                     customIcon.Charges:SetText("")
                 else
-                    customIcon.Icon:SetDesaturated(false)
                     customIcon.Charges:SetText(tostring(itemCount))
+                end
+                local cooldownStartMs, cooldownDurationMs = customIcon.Cooldown:GetCooldownTimes()
+                local frameHasCooldown = (cooldownStartMs and cooldownDurationMs and cooldownStartMs > 0 and cooldownDurationMs > 0) or false
+                local isOnCooldown = hasActiveCooldown or frameHasCooldown
+                EnsureCurves()
+                if IsSecretNumber(startTime) or IsSecretNumber(durationTime) then
+                    SetIconDesaturation(customIcon.Icon, 0)
+                elseif hasActiveCooldown then
+                    SetIconDesaturation(customIcon.Icon, CalculateFallbackDesaturation(startTime, durationTime))
+                else
+                    SetIconDesaturation(customIcon.Icon, 0)
                 end
                 if not C_Item.IsUsableItem(itemId) then customIcon.Icon:SetVertexColor(0.5, 0.5, 0.5) else customIcon.Icon:SetVertexColor(1, 1, 1) end
                 customIcon.Charges:SetAlphaFromBoolean(itemCount > 1, 1, 0)
@@ -145,12 +426,21 @@ local function CreateCustomIcon(itemId)
     BCDM:ApplyIconTexCoord(customIcon.Icon, iconWidth, iconHeight, iconZoom)
     customIcon.Icon:SetTexture(select(10, C_Item.GetItemInfo(itemId)))
 
+    local onEvent = customIcon:GetScript("OnEvent")
+    if onEvent then
+        onEvent(customIcon, "PLAYER_ENTERING_WORLD")
+    end
+
     return customIcon
 end
 
 local function CreateCustomIcons(iconTable, visibleItemIds)
     local CustomDB = BCDM.db.profile.CooldownManager.Item
     local Items = CustomDB.Items
+    local playerClass = select(2, UnitClass("player"))
+    local specIndex = GetSpecialization()
+    local specID, specName = specIndex and GetSpecializationInfo(specIndex)
+    local playerSpecialization = BCDM:NormalizeSpecToken(specName, specID, specIndex)
 
     local isWarlock = select(2, UnitClass("player")) == "WARLOCK"
     local pactOfGluttony = C_SpellBook.IsSpellKnown(386689)
@@ -167,17 +457,26 @@ local function CreateCustomIcons(iconTable, visibleItemIds)
 
     if Items then
         local items = {}
+        local potionGroups = {}
         local healthstoneIndex = nil
         for itemId, data in pairs(Items) do
             local layoutIndex = data.layoutIndex or math.huge
+            local isEntryEnabled = data.isActive and IsEntryEnabledForPlayerSpec(data, playerClass, playerSpecialization)
             if isWarlock and (itemId == healthstoneBaseId or itemId == healthstoneGluttonyId) then
-                if data.isActive then
+                if isEntryEnabled then
                     healthstoneIndex = math.min(healthstoneIndex or math.huge, layoutIndex)
                 end
-            elseif data.isActive then
-                if ShouldShowItem(CustomDB, itemId) then
+            elseif isEntryEnabled then
+                local isPotionEntry = SelectPotionRankCandidate(potionGroups, itemId, layoutIndex)
+                if (not isPotionEntry) and ShouldShowItem(CustomDB, itemId) then
                     table.insert(items, {id = itemId, index = layoutIndex})
                 end
+            end
+        end
+        for _, potionGroup in pairs(potionGroups) do
+            local selected = potionGroup.selected
+            if selected and selected.count > 0 then
+                table.insert(items, {id = selected.id, index = potionGroup.index or math.huge})
             end
         end
         if isWarlock and healthstoneIndex and activeHealthstoneId then
@@ -196,6 +495,38 @@ local function CreateCustomIcons(iconTable, visibleItemIds)
             end
         end
     end
+end
+
+local function GetColumnWrapLimit(customDB)
+    local wrapLimit = math.floor(tonumber(customDB.Columns) or 0)
+    if wrapLimit < 1 then
+        return 0
+    end
+    return wrapLimit
+end
+
+local function IsCenteredHorizontalLayout(point, growthDirection)
+    return (point == "TOP" or point == "BOTTOM") and (growthDirection == "LEFT" or growthDirection == "RIGHT")
+end
+
+local function ShouldGrowUp(point)
+    return point and point:find("BOTTOM") ~= nil
+end
+
+local function ShouldGrowLeft(point)
+    return point and point:find("RIGHT") ~= nil
+end
+
+local function RequestDeferredContainerUpdate(container)
+    if not container or container.PendingRefresh then
+        return
+    end
+
+    container.PendingRefresh = true
+    C_Timer.After(0, function()
+        container.PendingRefresh = false
+        BCDM:UpdateCustomItemBar()
+    end)
 end
 
 local function LayoutCustomItemBar()
@@ -233,25 +564,36 @@ local function LayoutCustomItemBar()
         BCDM.CustomItemBarContainer.HideZeroEventHooked = true
         BCDM.CustomItemBarContainer:SetScript("OnEvent", function(self, event, itemId)
             local customDB = BCDM.db.profile.CooldownManager.Item
-            if not customDB.HideZeroCharges then return end
-            if event == "PLAYER_ENTERING_WORLD" then
-                BCDM:UpdateCustomItemBar()
+            local items = customDB.Items
+            if not items then return end
+            if event == "PLAYER_ENTERING_WORLD" or event == "BAG_UPDATE_DELAYED" then
+                RequestDeferredContainerUpdate(self)
                 return
             end
             if event == "ITEM_COUNT_CHANGED" or event == "ITEM_PUSH" then
-                local items = customDB.Items
-                if not items then return end
                 if not itemId then
-                    BCDM:UpdateCustomItemBar()
+                    RequestDeferredContainerUpdate(self)
                     return
                 end
                 local entry = items[itemId]
+                local playerClass = select(2, UnitClass("player"))
+                local specIndex = GetSpecialization()
+                local specID, specName = specIndex and GetSpecializationInfo(specIndex)
+                local playerSpecialization = BCDM:NormalizeSpecToken(specName, specID, specIndex)
                 local isWarlock = select(2, UnitClass("player")) == "WARLOCK"
-                if not (entry and entry.isActive) then
+                local isEntryEnabled = entry and entry.isActive and IsEntryEnabledForPlayerSpec(entry, playerClass, playerSpecialization)
+                if isEntryEnabled and IsPotionItem(itemId) then
+                    RequestDeferredContainerUpdate(self)
+                    return
+                end
+                if not customDB.HideZeroCharges then return end
+                if not isEntryEnabled then
                     if isWarlock and (itemId == 224464 or itemId == 5512) then
                         local baseEntry = items[5512]
                         local gluttonyEntry = items[224464]
-                        if not ((baseEntry and baseEntry.isActive) or (gluttonyEntry and gluttonyEntry.isActive)) then
+                        local hasValidBaseEntry = baseEntry and baseEntry.isActive and IsEntryEnabledForPlayerSpec(baseEntry, playerClass, playerSpecialization)
+                        local hasValidGluttonyEntry = gluttonyEntry and gluttonyEntry.isActive and IsEntryEnabledForPlayerSpec(gluttonyEntry, playerClass, playerSpecialization)
+                        if not (hasValidBaseEntry or hasValidGluttonyEntry) then
                             return
                         end
                     else
@@ -265,19 +607,22 @@ local function LayoutCustomItemBar()
                 local visible = self.VisibleItemIds and self.VisibleItemIds[activeItemId] or false
                 local shouldShow = ShouldShowItem(customDB, activeItemId)
                 if visible ~= shouldShow then
-                    BCDM:UpdateCustomItemBar()
+                    RequestDeferredContainerUpdate(self)
                 end
             end
         end)
     end
 
-    if CustomDB.HideZeroCharges then
+    local shouldTrackItemCountChanges = CustomDB.HideZeroCharges or HasTrackedPotionEntries(CustomDB.Items)
+    if shouldTrackItemCountChanges then
         BCDM.CustomItemBarContainer:RegisterEvent("ITEM_COUNT_CHANGED")
         BCDM.CustomItemBarContainer:RegisterEvent("ITEM_PUSH")
+        BCDM.CustomItemBarContainer:RegisterEvent("BAG_UPDATE_DELAYED")
         BCDM.CustomItemBarContainer:RegisterEvent("PLAYER_ENTERING_WORLD")
     else
         BCDM.CustomItemBarContainer:UnregisterEvent("ITEM_COUNT_CHANGED")
         BCDM.CustomItemBarContainer:UnregisterEvent("ITEM_PUSH")
+        BCDM.CustomItemBarContainer:UnregisterEvent("BAG_UPDATE_DELAYED")
         BCDM.CustomItemBarContainer:UnregisterEvent("PLAYER_ENTERING_WORLD")
     end
 
@@ -288,53 +633,66 @@ local function LayoutCustomItemBar()
 
     local iconWidth, iconHeight = BCDM:GetIconDimensions(CustomDB)
     local iconSpacing = CustomDB.Spacing
+    local point = select(1, BCDM.CustomItemBarContainer:GetPoint(1))
+    local isHorizontalGrowth = growthDirection == "LEFT" or growthDirection == "RIGHT"
+    local wrapLimit = GetColumnWrapLimit(CustomDB)
+    local lineLimit = (wrapLimit > 0) and wrapLimit or #customItemBarIcons
+    local useCenteredLayout = IsCenteredHorizontalLayout(point, growthDirection)
 
     if #customItemBarIcons == 0 then
         BCDM.CustomItemBarContainer:SetSize(1, 1)
     else
-        local point = select(1, BCDM.CustomItemBarContainer:GetPoint(1))
-        local useCenteredLayout = (point == "TOP" or point == "BOTTOM") and (growthDirection == "LEFT" or growthDirection == "RIGHT")
+        local totalWidth, totalHeight
+        local lineCount = math.ceil(#customItemBarIcons / lineLimit)
 
-        local totalWidth, totalHeight = 0, 0
-        if useCenteredLayout or growthDirection == "RIGHT" or growthDirection == "LEFT" then
-            totalWidth = (#customItemBarIcons * iconWidth) + ((#customItemBarIcons - 1) * iconSpacing)
-            totalHeight = iconHeight
-        elseif growthDirection == "UP" or growthDirection == "DOWN" then
-            totalWidth = iconWidth
-            totalHeight = (#customItemBarIcons * iconHeight) + ((#customItemBarIcons - 1) * iconSpacing)
+        if isHorizontalGrowth then
+            local columnsInRow = math.min(lineLimit, #customItemBarIcons)
+            totalWidth = (columnsInRow * iconWidth) + ((columnsInRow - 1) * iconSpacing)
+            totalHeight = (lineCount * iconHeight) + ((lineCount - 1) * iconSpacing)
+        else
+            local rowsInColumn = math.min(lineLimit, #customItemBarIcons)
+            totalWidth = (lineCount * iconWidth) + ((lineCount - 1) * iconSpacing)
+            totalHeight = (rowsInColumn * iconHeight) + ((rowsInColumn - 1) * iconSpacing)
         end
         BCDM.CustomItemBarContainer:SetWidth(totalWidth)
         BCDM.CustomItemBarContainer:SetHeight(totalHeight)
     end
 
     local LayoutConfig = {
-        TOPLEFT     = { anchor="TOPLEFT",     xMult=1,  yMult=1  },
-        TOP         = { anchor="TOP",         xMult=0,  yMult=1  },
-        TOPRIGHT    = { anchor="TOPRIGHT",    xMult=-1, yMult=1  },
-        BOTTOMLEFT  = { anchor="BOTTOMLEFT",  xMult=1,  yMult=-1 },
-        BOTTOM      = { anchor="BOTTOM",      xMult=0,  yMult=-1 },
-        BOTTOMRIGHT = { anchor="BOTTOMRIGHT", xMult=-1, yMult=-1 },
-        LEFT        = { anchor="LEFT",        xMult=1,  yMult=0  },
-        RIGHT       = { anchor="RIGHT",       xMult=-1, yMult=0  },
-        CENTER      = { anchor="CENTER",      xMult=0,  yMult=0  },
+        TOPLEFT     = { anchor = "TOPLEFT" },
+        TOP         = { anchor = "TOP" },
+        TOPRIGHT    = { anchor = "TOPRIGHT" },
+        BOTTOMLEFT  = { anchor = "BOTTOMLEFT" },
+        BOTTOM      = { anchor = "BOTTOM" },
+        BOTTOMRIGHT = { anchor = "BOTTOMRIGHT" },
+        LEFT        = { anchor = "LEFT" },
+        RIGHT       = { anchor = "RIGHT" },
+        CENTER      = { anchor = "CENTER" },
     }
 
-    local point = select(1, BCDM.CustomItemBarContainer:GetPoint(1))
-    local useCenteredLayout = (point == "TOP" or point == "BOTTOM") and (growthDirection == "LEFT" or growthDirection == "RIGHT")
-
     if useCenteredLayout and #customItemBarIcons > 0 then
-        local totalWidth = (#customItemBarIcons * iconWidth) + ((#customItemBarIcons - 1) * iconSpacing)
-        local startOffset = -(totalWidth / 2) + (iconWidth / 2)
+        local rowCount = math.ceil(#customItemBarIcons / lineLimit)
+        local rowDirection = ShouldGrowUp(point) and 1 or -1
 
-        for i, spellIcon in ipairs(customItemBarIcons) do
-            spellIcon:SetParent(BCDM.CustomItemBarContainer)
-            spellIcon:SetSize(iconWidth, iconHeight)
-            spellIcon:ClearAllPoints()
+        for rowIndex = 1, rowCount do
+            local rowStart = ((rowIndex - 1) * lineLimit) + 1
+            local rowEnd = math.min(rowStart + lineLimit - 1, #customItemBarIcons)
+            local rowIcons = rowEnd - rowStart + 1
+            local rowWidth = (rowIcons * iconWidth) + ((rowIcons - 1) * iconSpacing)
+            local startOffset = -(rowWidth / 2) + (iconWidth / 2)
+            local yOffset = (rowIndex - 1) * (iconHeight + iconSpacing) * rowDirection
 
-            local xOffset = startOffset + ((i - 1) * (iconWidth + iconSpacing))
-            spellIcon:SetPoint("CENTER", BCDM.CustomItemBarContainer, "CENTER", xOffset, 0)
-            ApplyCooldownText()
-            spellIcon:Show()
+            for i = rowStart, rowEnd do
+                local spellIcon = customItemBarIcons[i]
+                spellIcon:SetParent(BCDM.CustomItemBarContainer)
+                spellIcon:SetSize(iconWidth, iconHeight)
+                spellIcon:ClearAllPoints()
+
+                local xOffset = startOffset + ((i - rowStart) * (iconWidth + iconSpacing))
+                spellIcon:SetPoint("CENTER", BCDM.CustomItemBarContainer, "CENTER", xOffset, yOffset)
+                ApplyCooldownText()
+                spellIcon:Show()
+            end
         end
     else
         for i, spellIcon in ipairs(customItemBarIcons) do
@@ -346,14 +704,32 @@ local function LayoutCustomItemBar()
                 local config = LayoutConfig[point] or LayoutConfig.TOPLEFT
                 spellIcon:SetPoint(config.anchor, BCDM.CustomItemBarContainer, config.anchor, 0, 0)
             else
-                if growthDirection == "RIGHT" then
-                    spellIcon:SetPoint("LEFT", customItemBarIcons[i - 1], "RIGHT", iconSpacing, 0)
-                elseif growthDirection == "LEFT" then
-                    spellIcon:SetPoint("RIGHT", customItemBarIcons[i - 1], "LEFT", -iconSpacing, 0)
-                elseif growthDirection == "UP" then
-                    spellIcon:SetPoint("BOTTOM", customItemBarIcons[i - 1], "TOP", 0, iconSpacing)
-                elseif growthDirection == "DOWN" then
-                    spellIcon:SetPoint("TOP", customItemBarIcons[i - 1], "BOTTOM", 0, -iconSpacing)
+                local isWrappedRowStart = (i - 1) % lineLimit == 0
+                if isWrappedRowStart then
+                    local lineAnchorIcon = customItemBarIcons[i - lineLimit]
+                    if isHorizontalGrowth then
+                        if ShouldGrowUp(point) then
+                            spellIcon:SetPoint("BOTTOM", lineAnchorIcon, "TOP", 0, iconSpacing)
+                        else
+                            spellIcon:SetPoint("TOP", lineAnchorIcon, "BOTTOM", 0, -iconSpacing)
+                        end
+                    else
+                        if ShouldGrowLeft(point) then
+                            spellIcon:SetPoint("RIGHT", lineAnchorIcon, "LEFT", -iconSpacing, 0)
+                        else
+                            spellIcon:SetPoint("LEFT", lineAnchorIcon, "RIGHT", iconSpacing, 0)
+                        end
+                    end
+                else
+                    if growthDirection == "RIGHT" then
+                        spellIcon:SetPoint("LEFT", customItemBarIcons[i - 1], "RIGHT", iconSpacing, 0)
+                    elseif growthDirection == "LEFT" then
+                        spellIcon:SetPoint("RIGHT", customItemBarIcons[i - 1], "LEFT", -iconSpacing, 0)
+                    elseif growthDirection == "UP" then
+                        spellIcon:SetPoint("BOTTOM", customItemBarIcons[i - 1], "TOP", 0, iconSpacing)
+                    elseif growthDirection == "DOWN" then
+                        spellIcon:SetPoint("TOP", customItemBarIcons[i - 1], "BOTTOM", 0, -iconSpacing)
+                    end
                 end
             end
             ApplyCooldownText()

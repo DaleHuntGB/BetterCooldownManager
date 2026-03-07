@@ -5,7 +5,17 @@ local comboPoints = {}
 local essenceTicks = {}
 local resizeTimer = nil
 
-local isDestruction;
+local isDestruction
+
+local SPEC_ARCANE = 62
+local SPEC_SHADOW = 258
+local SPEC_ELEMENTAL = 262
+local SPEC_ENHANCEMENT = 263
+local SPEC_DESTRUCTION = 267
+local SPEC_BREWMASTER = 268
+local SPEC_WINDWALKER = 269
+local SPEC_VENGEANCE = 581
+local SPEC_DEVOURER = 1480
 
 local function SetBarValue(bar, value)
     local GeneralDB = BCDM.db.profile.General
@@ -19,14 +29,21 @@ end
 
 local function DetectSecondaryPower()
     local class = select(2, UnitClass("player"))
-    local spec = C_SpecializationInfo.GetSpecialization()
-    local specID = C_SpecializationInfo.GetSpecializationInfo(spec)
+    local spec = GetSpecialization()
+    local specID = spec and GetSpecializationInfo(spec)
     local secondaryPowerBarDB = BCDM.db and BCDM.db.profile and BCDM.db.profile.SecondaryPowerBar
-    isDestruction = C_SpecializationInfo.GetSpecializationInfo(C_SpecializationInfo.GetSpecialization()) == 267
+    local showMana = secondaryPowerBarDB and (secondaryPowerBarDB.ShowMana or secondaryPowerBarDB.ShowManaBar)
+
+    if not specID then
+        isDestruction = false
+        return nil
+    end
+
+    isDestruction = specID == SPEC_DESTRUCTION
 
     if class == "MONK" then
-        if specID == 268 then return "STAGGER" end
-        if specID == 269 then return Enum.PowerType.Chi end
+        if specID == SPEC_BREWMASTER then return "STAGGER" end
+        if specID == SPEC_WINDWALKER then return Enum.PowerType.Chi end
     elseif class == "ROGUE" then
         return Enum.PowerType.ComboPoints
     elseif class == "DRUID" then
@@ -37,15 +54,18 @@ local function DetectSecondaryPower()
     elseif class == "WARLOCK" then
         return Enum.PowerType.SoulShards
     elseif class == "MAGE" then
-        if specID == 62 then return Enum.PowerType.ArcaneCharges end
+        if specID == SPEC_ARCANE then return Enum.PowerType.ArcaneCharges end
     elseif class == "EVOKER" then
         return Enum.PowerType.Essence
     elseif class == "DEATHKNIGHT" then
         return Enum.PowerType.Runes
     elseif class == "DEMONHUNTER" then
-        if specID == 1480 then return "SOUL" end
+        if specID == SPEC_VENGEANCE or specID == SPEC_DEVOURER then return "SOUL" end
     elseif class == "SHAMAN" then
-        if specID == 263 then return Enum.PowerType.Maelstrom end
+        if specID == SPEC_ENHANCEMENT then return Enum.PowerType.Maelstrom end
+        if specID == SPEC_ELEMENTAL and showMana then return Enum.PowerType.Mana end
+    elseif class == "PRIEST" then
+        if specID == SPEC_SHADOW and showMana then return Enum.PowerType.Mana end
     end
 
     return nil
@@ -72,6 +92,9 @@ local function GetPowerBarColor()
     if secondaryPowerBarDB.ColourByType then
         local powerType = DetectSecondaryPower()
         local powerColour = generalDB.Colours.SecondaryPower[powerType]
+        if not powerColour and powerType == Enum.PowerType.Mana then
+            powerColour = generalDB.Colours.PrimaryPower[Enum.PowerType.Mana]
+        end
         if powerColour then
             return powerColour[1], powerColour[2], powerColour[3], powerColour[4] or 1
         end
@@ -472,12 +495,12 @@ local function UpdatePowerValues()
         end
         secondaryPowerBar.Text:SetText(textDisplay)
         secondaryPowerBar.Status:Show()
-    elseif powerType == "MANA" then
+    elseif powerType == Enum.PowerType.Mana then
         BCDM:ClearTicks()
         powerCurrent = UnitPower("player", Enum.PowerType.Mana)
         local powerMax = UnitPowerMax("player", Enum.PowerType.Mana)
         secondaryPowerBar.Status:SetMinMaxValues(0, powerMax)
-        secondaryPowerBar.Status:SetValue(powerCurrent)
+        SetBarValue(secondaryPowerBar.Status, powerCurrent)
         secondaryPowerBar.Text:SetText(tostring(powerCurrent))
         secondaryPowerBar.Status:Show()
     elseif powerType == Enum.PowerType.Maelstrom then
@@ -584,6 +607,11 @@ local function CreateTicksBasedOnPowerType()
     if SecondaryPowerBarDB.HideTicks then BCDM:ClearTicks() return end
     local secondaryPowerResource = DetectSecondaryPower()
 
+    if not secondaryPowerResource then
+        BCDM:ClearTicks()
+        return
+    end
+
     if secondaryPowerResource == "SOUL" then
         local hasSoulGlutton = C_SpellBook.IsSpellKnown(1247534)
         BCDM:CreateTicks(hasSoulGlutton and 7 or 10)
@@ -593,7 +621,7 @@ local function CreateTicksBasedOnPowerType()
     if secondaryPowerResource == "STAGGER" then
         return
     end
-    if secondaryPowerResource == "MANA" then
+    if secondaryPowerResource == Enum.PowerType.Mana then
         return
     end
     if secondaryPowerResource == Enum.PowerType.Runes then
@@ -665,6 +693,65 @@ local function SetHooks()
     hooksecurefunc(EditModeManagerFrame, "ExitEditMode", function() if InCombatLockdown() then return end UpdateBarWidth() end)
 end
 
+local function OnSecondaryPowerBarSizeChanged()
+    CreateTicksBasedOnPowerType()
+    local powerType = DetectSecondaryPower()
+    if powerType == Enum.PowerType.ComboPoints and #comboPoints > 0 then
+        LayoutComboPoints()
+    elseif powerType == Enum.PowerType.Essence and #essenceTicks > 0 then
+        LayoutEssenceTicks()
+        UpdateEssenceDisplay()
+    end
+end
+
+local function OnSecondaryPowerBarEvent(self, event, ...)
+    if event == "RUNE_POWER_UPDATE" or event == "RUNE_TYPE_UPDATE" then
+        if DetectSecondaryPower() == Enum.PowerType.Runes then
+            UpdateRuneDisplay()
+        end
+        return
+    end
+
+    if event == "PLAYER_SPECIALIZATION_CHANGED" then
+        local unit = ...
+        if unit and unit ~= "player" then return end
+    elseif event == "UNIT_POWER_UPDATE" or event == "UNIT_MAXPOWER" or event == "UNIT_HEALTH"
+        or event == "UNIT_MAXHEALTH" or event == "UNIT_ABSORB_AMOUNT_CHANGED"
+        or event == "UNIT_AURA" then
+        local unit = ...
+        if unit and unit ~= "player" then return end
+    end
+
+    if event == "UNIT_MAXPOWER" or event == "PLAYER_ENTERING_WORLD"
+        or event == "PLAYER_SPECIALIZATION_CHANGED" or event == "UPDATE_SHAPESHIFT_FORM" then
+        CreateTicksBasedOnPowerType()
+    end
+
+    UpdatePowerValues()
+end
+
+local function RegisterSecondaryPowerBarEvents(secondaryPowerBar)
+    secondaryPowerBar:RegisterEvent("UNIT_POWER_UPDATE")
+    secondaryPowerBar:RegisterEvent("UNIT_MAXPOWER")
+    secondaryPowerBar:RegisterEvent("UNIT_HEALTH")
+    secondaryPowerBar:RegisterEvent("UNIT_MAXHEALTH")
+    secondaryPowerBar:RegisterEvent("UNIT_ABSORB_AMOUNT_CHANGED")
+    secondaryPowerBar:RegisterEvent("PLAYER_ENTERING_WORLD")
+    secondaryPowerBar:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
+    secondaryPowerBar:RegisterEvent("UPDATE_SHAPESHIFT_FORM")
+    secondaryPowerBar:RegisterEvent("RUNE_POWER_UPDATE")
+    secondaryPowerBar:RegisterEvent("RUNE_TYPE_UPDATE")
+    secondaryPowerBar:RegisterEvent("UNIT_AURA")
+    secondaryPowerBar:SetScript("OnEvent", OnSecondaryPowerBarEvent)
+    secondaryPowerBar.Status:SetScript("OnSizeChanged", OnSecondaryPowerBarSizeChanged)
+end
+
+local function UnregisterSecondaryPowerBarEvents(secondaryPowerBar)
+    secondaryPowerBar:SetScript("OnEvent", nil)
+    secondaryPowerBar.Status:SetScript("OnSizeChanged", nil)
+    secondaryPowerBar:UnregisterAllEvents()
+end
+
 function BCDM:CreateSecondaryPowerBar()
     local generalDB = BCDM.db.profile.General
     local powerBarDB = BCDM.db.profile.PowerBar
@@ -707,7 +794,7 @@ function BCDM:CreateSecondaryPowerBar()
     secondaryPowerBar.TickFrame:SetFrameLevel(secondaryPowerBar.Status:GetFrameLevel() + 10)
     secondaryPowerBar.Ticks = {}
 
-    secondaryPowerBar.Status:SetScript("OnSizeChanged", function() CreateTicksBasedOnPowerType() end)
+    secondaryPowerBar.Status:SetScript("OnSizeChanged", OnSecondaryPowerBarSizeChanged)
 
     secondaryPowerBar.Text = secondaryPowerBar.Status:CreateFontString(nil, "OVERLAY")
     secondaryPowerBar.Text:SetFont(BCDM.Media.Font, secondaryPowerBarDB.Text.FontSize, generalDB.Fonts.FontFlag)
@@ -732,44 +819,18 @@ function BCDM:CreateSecondaryPowerBar()
     BCDM.SecondaryPowerBar = secondaryPowerBar
 
     if secondaryPowerBarDB.Enabled then
+        RegisterSecondaryPowerBarEvents(secondaryPowerBar)
+        UpdatePowerValues()
+        CreateTicksBasedOnPowerType()
+        NudgeSecondaryPowerBar("BCDM_SecondaryPowerBar", -0.1, 0)
         if DetectSecondaryPower() then
-            secondaryPowerBar.Status:SetStatusBarColor(GetPowerBarColor())
-            secondaryPowerBar.Status:SetMinMaxValues(0, UnitPowerMax("player"))
-            secondaryPowerBar.Status:SetValue(UnitPower("player"))
-            NudgeSecondaryPowerBar("BCDM_SecondaryPowerBar", -0.1, 0)
             secondaryPowerBar:Show()
+        else
+            secondaryPowerBar:Hide()
         end
-
-        secondaryPowerBar:RegisterEvent("UNIT_POWER_UPDATE")
-        secondaryPowerBar:RegisterEvent("UNIT_MAXPOWER")
-        secondaryPowerBar:RegisterEvent("UNIT_HEALTH")
-        secondaryPowerBar:RegisterEvent("UNIT_MAXHEALTH")
-        secondaryPowerBar:RegisterEvent("UNIT_ABSORB_AMOUNT_CHANGED")
-        secondaryPowerBar:RegisterEvent("PLAYER_ENTERING_WORLD")
-        secondaryPowerBar:RegisterEvent("UPDATE_SHAPESHIFT_COOLDOWN")
-        secondaryPowerBar:RegisterEvent("RUNE_POWER_UPDATE")
-        secondaryPowerBar:RegisterEvent("RUNE_TYPE_UPDATE")
-        secondaryPowerBar:RegisterEvent("UNIT_AURA")
-
-        secondaryPowerBar:SetScript("OnEvent", function(self, event, ...)
-            if event == "RUNE_POWER_UPDATE" or event == "RUNE_TYPE_UPDATE" then
-                if DetectSecondaryPower() == Enum.PowerType.Runes then
-                    UpdateRuneDisplay()
-                end
-                return
-            end
-            if event == "UNIT_POWER_UPDATE" or event == "UNIT_MAXPOWER" or event == "UNIT_HEALTH"
-                or event == "UNIT_MAXHEALTH" or event == "UNIT_ABSORB_AMOUNT_CHANGED"
-                or event == "UNIT_AURA" then                
-                local unit = ...
-                if unit and unit ~= "player" then return end
-            end
-            UpdatePowerValues()
-        end)
     else
         secondaryPowerBar:Hide()
-        secondaryPowerBar:SetScript("OnEvent", nil)
-        secondaryPowerBar:UnregisterAllEvents()
+        UnregisterSecondaryPowerBarEvents(secondaryPowerBar)
     end
 
     UpdateBarWidth()
@@ -828,47 +889,14 @@ function BCDM:UpdateSecondaryPowerBar()
     secondaryPowerBar.Text:SetText("")
     if secondaryPowerBarDB.Text.Enabled then secondaryPowerBar.Text:Show() else secondaryPowerBar.Text:Hide() end
     if secondaryPowerBarDB.Enabled then
-        secondaryPowerBar:RegisterEvent("UNIT_POWER_UPDATE")
-        secondaryPowerBar:RegisterEvent("UNIT_MAXPOWER")
-        secondaryPowerBar:RegisterEvent("UNIT_HEALTH")
-        secondaryPowerBar:RegisterEvent("UNIT_MAXHEALTH")
-        secondaryPowerBar:RegisterEvent("UNIT_ABSORB_AMOUNT_CHANGED")
-        secondaryPowerBar:RegisterEvent("PLAYER_ENTERING_WORLD")
-        secondaryPowerBar:RegisterEvent("UPDATE_SHAPESHIFT_COOLDOWN")
-        secondaryPowerBar:RegisterEvent("RUNE_POWER_UPDATE")
-        secondaryPowerBar:RegisterEvent("RUNE_TYPE_UPDATE")
-
-        secondaryPowerBar:SetScript("OnEvent", function(self, event, ...)
-            if event == "RUNE_POWER_UPDATE" or event == "RUNE_TYPE_UPDATE" then
-                if DetectSecondaryPower() == Enum.PowerType.Runes then UpdateRuneDisplay() end
-                return
-            end
-            if event == "UNIT_POWER_UPDATE" or event == "UNIT_MAXPOWER" or event == "UNIT_HEALTH"
-                or event == "UNIT_MAXHEALTH" or event == "UNIT_ABSORB_AMOUNT_CHANGED" then
-                local unit = ...
-                if unit and unit ~= "player" then return end
-            end
-            UpdatePowerValues()
-        end)
-        secondaryPowerBar.Status:SetScript("OnSizeChanged", function()
-            CreateTicksBasedOnPowerType()
-            local powerType = DetectSecondaryPower()
-            if powerType == Enum.PowerType.ComboPoints and #comboPoints > 0 then
-                LayoutComboPoints()
-            elseif powerType == Enum.PowerType.Essence and #essenceTicks > 0 then
-                LayoutEssenceTicks()
-                UpdateEssenceDisplay()
-            end
-        end)
+        RegisterSecondaryPowerBarEvents(secondaryPowerBar)
         UpdatePowerValues()
         CreateTicksBasedOnPowerType()
         NudgeSecondaryPowerBar("BCDM_SecondaryPowerBar", -0.1, 0)
         secondaryPowerBar:Show()
     else
         secondaryPowerBar:Hide()
-        secondaryPowerBar:SetScript("OnEvent", nil)
-        secondaryPowerBar.Status:SetScript("OnSizeChanged", nil)
-        secondaryPowerBar:UnregisterAllEvents()
+        UnregisterSecondaryPowerBarEvents(secondaryPowerBar)
     end
     UpdateBarWidth()
 end
