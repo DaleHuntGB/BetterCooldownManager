@@ -36,6 +36,14 @@ if BCDM.LSM then BCDM.LSM:Register("statusbar", "Better Blizzard", [[Interface\A
 
 function BCDM:PrettyPrint(MSG) print(BCDM.ADDON_NAME .. ":|r " .. MSG) end
 
+function BCDM:ResolveElementFont(fontName)
+    if fontName then
+        local resolved = BCDM.LSM:Fetch("font", fontName)
+        if resolved then return resolved end
+    end
+    return BCDM.Media.Font
+end
+
 function BCDM:ResolveLSM()
     local LSM = BCDM.LSM
     local General = BCDM.db.profile.General

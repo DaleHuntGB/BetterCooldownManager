@@ -148,7 +148,7 @@ function BCDM:CreatePowerBar()
     PowerBar.Status:SetValue(UnitPower("player"))
 
     PowerBar.Text = PowerBar.Status:CreateFontString(nil, "OVERLAY")
-    PowerBar.Text:SetFont(BCDM.Media.Font, PowerBarDB.Text.FontSize, GeneralDB.Fonts.FontFlag)
+    PowerBar.Text:SetFont(BCDM:ResolveElementFont(PowerBarDB.Text.Font), PowerBarDB.Text.FontSize, PowerBarDB.Text.FontFlag or GeneralDB.Fonts.FontFlag)
     PowerBar.Text:SetTextColor(PowerBarDB.Text.Colour[1], PowerBarDB.Text.Colour[2], PowerBarDB.Text.Colour[3], 1)
     PowerBar.Text:SetPoint(PowerBarDB.Text.Layout[1], PowerBar, PowerBarDB.Text.Layout[2], PowerBarDB.Text.Layout[3], PowerBarDB.Text.Layout[4])
     if GeneralDB.Fonts.Shadow.Enabled then
@@ -208,7 +208,7 @@ function BCDM:UpdatePowerBar()
             PowerBar:SetHeight(hasSecondary and PowerBarDB.Height or PowerBarDB.HeightWithoutSecondary)
             PowerBar:SetBackdropColor(PowerBarDB.BackgroundColour[1], PowerBarDB.BackgroundColour[2], PowerBarDB.BackgroundColour[3], PowerBarDB.BackgroundColour[4])
             PowerBar.Status:SetStatusBarTexture(BCDM.Media.Foreground)
-            PowerBar.Text:SetFont(BCDM.Media.Font, PowerBarDB.Text.FontSize, BCDM.db.profile.General.Fonts.FontFlag)
+            PowerBar.Text:SetFont(BCDM:ResolveElementFont(PowerBarDB.Text.Font), PowerBarDB.Text.FontSize, PowerBarDB.Text.FontFlag or BCDM.db.profile.General.Fonts.FontFlag)
             PowerBar.Text:SetTextColor(PowerBarDB.Text.Colour[1], PowerBarDB.Text.Colour[2], PowerBarDB.Text.Colour[3], 1)
             PowerBar.Text:SetPoint(PowerBarDB.Text.Layout[1], PowerBar, PowerBarDB.Text.Layout[2], PowerBarDB.Text.Layout[3], PowerBarDB.Text.Layout[4])
             if GeneralDB.Fonts.Shadow.Enabled then

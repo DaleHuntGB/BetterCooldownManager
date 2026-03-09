@@ -19,12 +19,14 @@ local function ApplyCooldownText()
         if icon and icon.Cooldown then
             local textRegion = FetchCooldownTextRegion(icon.Cooldown)
             if textRegion then
+                local cooldownFont = BCDM:ResolveElementFont(CooldownTextDB.Font)
+                local cooldownFontFlag = CooldownTextDB.FontFlag or GeneralDB.Fonts.FontFlag
                 if CooldownTextDB.ScaleByIconSize then
                     local iconWidth = icon:GetWidth()
                     local scaleFactor = iconWidth / 36
-                    textRegion:SetFont(BCDM.Media.Font, CooldownTextDB.FontSize * scaleFactor, GeneralDB.Fonts.FontFlag)
+                    textRegion:SetFont(cooldownFont, CooldownTextDB.FontSize * scaleFactor, cooldownFontFlag)
                 else
-                    textRegion:SetFont(BCDM.Media.Font, CooldownTextDB.FontSize, GeneralDB.Fonts.FontFlag)
+                    textRegion:SetFont(cooldownFont, CooldownTextDB.FontSize, cooldownFontFlag)
                 end
                 textRegion:SetTextColor(CooldownTextDB.Colour[1], CooldownTextDB.Colour[2], CooldownTextDB.Colour[3], 1)
                 textRegion:ClearAllPoints()
@@ -165,7 +167,7 @@ local function CreateCustomIcon(spellId)
     HighLevelContainer:SetFrameLevel(customIcon:GetFrameLevel() + 999)
 
     customIcon.Charges = HighLevelContainer:CreateFontString(nil, "OVERLAY")
-    customIcon.Charges:SetFont(BCDM.Media.Font, CustomDB.Text.FontSize, GeneralDB.Fonts.FontFlag)
+    customIcon.Charges:SetFont(BCDM:ResolveElementFont(CustomDB.Text.Font), CustomDB.Text.FontSize, CustomDB.Text.FontFlag or GeneralDB.Fonts.FontFlag)
     customIcon.Charges:SetPoint(CustomDB.Text.Layout[1], customIcon, CustomDB.Text.Layout[2], CustomDB.Text.Layout[3], CustomDB.Text.Layout[4])
     customIcon.Charges:SetTextColor(CustomDB.Text.Colour[1], CustomDB.Text.Colour[2], CustomDB.Text.Colour[3], 1)
     if GeneralDB.Fonts.Shadow.Enabled then

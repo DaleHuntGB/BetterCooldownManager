@@ -623,6 +623,27 @@ local function CreateCooldownTextSettings(containerParent)
     cooldownTextContainer:SetLayout("Flow")
     containerParent:AddChild(cooldownTextContainer)
 
+    local fontDropdown = AG:Create("LSM30_Font")
+    fontDropdown:SetLabel(LL("Font"))
+    fontDropdown:SetList(LSM:HashTable("font"))
+    fontDropdown:SetValue(CooldownTextDB.Font or BCDM.db.profile.General.Fonts.Font)
+    fontDropdown:SetCallback("OnValueChanged", function(widget, _, value) widget:SetValue(value) CooldownTextDB.Font = value BCDM:UpdateCooldownViewers() end)
+    fontDropdown:SetRelativeWidth(0.5)
+    cooldownTextContainer:AddChild(fontDropdown)
+
+    local fontFlagDropdown = AG:Create("Dropdown")
+    fontFlagDropdown:SetLabel(LL("Font Flag"))
+    fontFlagDropdown:SetList({
+        ["NONE"] = "NONE",
+        ["OUTLINE"] = "Outline",
+        ["THICKOUTLINE"] = "Thick Outline",
+        ["MONOCHROME"] = "Monochrome",
+    })
+    fontFlagDropdown:SetValue(CooldownTextDB.FontFlag or BCDM.db.profile.General.Fonts.FontFlag)
+    fontFlagDropdown:SetCallback("OnValueChanged", function(_, _, value) CooldownTextDB.FontFlag = value BCDM:UpdateCooldownViewers() end)
+    fontFlagDropdown:SetRelativeWidth(0.5)
+    cooldownTextContainer:AddChild(fontFlagDropdown)
+
     local colourPicker = AG:Create("ColorPicker")
     colourPicker:SetLabel(LL("Text Colour"))
     colourPicker:SetColor(unpack(CooldownTextDB.Colour))
@@ -1185,6 +1206,27 @@ local function CreateGlobalSettings(parentContainer)
 
     CreateCustomGlowSettings(globalSettingsContainer)
 
+    local function PropagateGlobalFontSettings(font, fontFlag, colour)
+        local db = BCDM.db.profile
+        local elements = {"Essential", "Utility", "Buffs", "Custom", "AdditionalCustom", "Item", "Trinket", "ItemSpell"}
+        for _, el in ipairs(elements) do
+            if db.CooldownManager[el] and db.CooldownManager[el].Text then
+                if font then db.CooldownManager[el].Text.Font = font end
+                if fontFlag then db.CooldownManager[el].Text.FontFlag = fontFlag end
+                if colour then db.CooldownManager[el].Text.Colour = {unpack(colour)} end
+            end
+        end
+        local barTextDBs = {db.PowerBar.Text, db.SecondaryPowerBar.Text, db.CastBar.Text.SpellName, db.CastBar.Text.CastTime}
+        for _, textDB in ipairs(barTextDBs) do
+            if font then textDB.Font = font end
+            if fontFlag then textDB.FontFlag = fontFlag end
+            if colour then textDB.Colour = {unpack(colour)} end
+        end
+        local cooldownTextDB = db.CooldownManager.General.CooldownText
+        if font then cooldownTextDB.Font = font end
+        if fontFlag then cooldownTextDB.FontFlag = fontFlag end
+    end
+
     local FontContainer = AG:Create("InlineGroup")
     FontContainer:SetTitle(LL("Font Settings"))
     FontContainer:SetFullWidth(true)
@@ -1195,8 +1237,8 @@ local function CreateGlobalSettings(parentContainer)
     CooldownManagerFontDropdown:SetLabel(LL("Font"))
     CooldownManagerFontDropdown:SetList(LSM:HashTable("font"))
     CooldownManagerFontDropdown:SetValue(GeneralDB.Fonts.Font)
-    CooldownManagerFontDropdown:SetCallback("OnValueChanged", function(widget, _, value) widget:SetValue(value) GeneralDB.Fonts.Font = value BCDM:UpdateBCDM() end)
-    CooldownManagerFontDropdown:SetRelativeWidth(0.5)
+    CooldownManagerFontDropdown:SetCallback("OnValueChanged", function(widget, _, value) widget:SetValue(value) GeneralDB.Fonts.Font = value PropagateGlobalFontSettings(value, nil, nil) BCDM:UpdateBCDM() end)
+    CooldownManagerFontDropdown:SetRelativeWidth(0.33)
     FontContainer:AddChild(CooldownManagerFontDropdown)
 
     local CooldownManagerFontFlagDropdown = AG:Create("Dropdown")
@@ -1208,9 +1250,16 @@ local function CreateGlobalSettings(parentContainer)
         ["MONOCHROME"] = "Monochrome",
     })
     CooldownManagerFontFlagDropdown:SetValue(GeneralDB.Fonts.FontFlag)
-    CooldownManagerFontFlagDropdown:SetCallback("OnValueChanged", function(_, _, value) GeneralDB.Fonts.FontFlag = value BCDM:UpdateBCDM() end)
-    CooldownManagerFontFlagDropdown:SetRelativeWidth(0.5)
+    CooldownManagerFontFlagDropdown:SetCallback("OnValueChanged", function(_, _, value) GeneralDB.Fonts.FontFlag = value PropagateGlobalFontSettings(nil, value, nil) BCDM:UpdateBCDM() end)
+    CooldownManagerFontFlagDropdown:SetRelativeWidth(0.33)
     FontContainer:AddChild(CooldownManagerFontFlagDropdown)
+
+    local CooldownManagerFontColour = AG:Create("ColorPicker")
+    CooldownManagerFontColour:SetLabel(LL("Font Colour"))
+    CooldownManagerFontColour:SetColor(unpack(GeneralDB.Fonts.Colour))
+    CooldownManagerFontColour:SetCallback("OnValueChanged", function(_, _, r, g, b) GeneralDB.Fonts.Colour = {r, g, b} PropagateGlobalFontSettings(nil, nil, {r, g, b}) BCDM:UpdateBCDM() end)
+    CooldownManagerFontColour:SetRelativeWidth(0.33)
+    FontContainer:AddChild(CooldownManagerFontColour)
 
     local FontShadowsContainer = AG:Create("InlineGroup")
     FontShadowsContainer:SetTitle(LL("Font Shadows"))
@@ -1373,6 +1422,27 @@ local function CreateCooldownViewerTextSettings(parentContainer, viewerType)
     textContainer:SetFullWidth(true)
     textContainer:SetLayout("Flow")
     parentContainer:AddChild(textContainer)
+
+    local fontDropdown = AG:Create("LSM30_Font")
+    fontDropdown:SetLabel(LL("Font"))
+    fontDropdown:SetList(LSM:HashTable("font"))
+    fontDropdown:SetValue(BCDM.db.profile.CooldownManager[viewerType].Text.Font or BCDM.db.profile.General.Fonts.Font)
+    fontDropdown:SetCallback("OnValueChanged", function(widget, _, value) widget:SetValue(value) BCDM.db.profile.CooldownManager[viewerType].Text.Font = value BCDM:UpdateCooldownViewer(viewerType) end)
+    fontDropdown:SetRelativeWidth(0.5)
+    textContainer:AddChild(fontDropdown)
+
+    local fontFlagDropdown = AG:Create("Dropdown")
+    fontFlagDropdown:SetLabel(LL("Font Flag"))
+    fontFlagDropdown:SetList({
+        ["NONE"] = "NONE",
+        ["OUTLINE"] = "Outline",
+        ["THICKOUTLINE"] = "Thick Outline",
+        ["MONOCHROME"] = "Monochrome",
+    })
+    fontFlagDropdown:SetValue(BCDM.db.profile.CooldownManager[viewerType].Text.FontFlag or BCDM.db.profile.General.Fonts.FontFlag)
+    fontFlagDropdown:SetCallback("OnValueChanged", function(_, _, value) BCDM.db.profile.CooldownManager[viewerType].Text.FontFlag = value BCDM:UpdateCooldownViewer(viewerType) end)
+    fontFlagDropdown:SetRelativeWidth(0.5)
+    textContainer:AddChild(fontFlagDropdown)
 
     local anchorFromDropdown = AG:Create("Dropdown")
     anchorFromDropdown:SetLabel(LL("Anchor From"))
@@ -2095,9 +2165,7 @@ local function CreateCooldownViewerSettings(parentContainer, viewerType)
         layoutContainer:AddChild(frameStrataDropdown)
     end
 
-    if viewerType ~= "Trinket" then
-        CreateCooldownViewerTextSettings(ScrollFrame, viewerType)
-    end
+    CreateCooldownViewerTextSettings(ScrollFrame, viewerType)
 
     if viewerType == "Custom" or viewerType == "AdditionalCustom" then
         local spellContainer = AG:Create("InlineGroup")
@@ -2148,6 +2216,27 @@ local function CreatePowerBarTextSettings(parentContainer)
     toggleCheckbox:SetRelativeWidth(1)
     textContainer:AddChild(toggleCheckbox)
 
+    local fontDropdown = AG:Create("LSM30_Font")
+    fontDropdown:SetLabel(LL("Font"))
+    fontDropdown:SetList(LSM:HashTable("font"))
+    fontDropdown:SetValue(BCDM.db.profile.PowerBar.Text.Font or BCDM.db.profile.General.Fonts.Font)
+    fontDropdown:SetCallback("OnValueChanged", function(widget, _, value) widget:SetValue(value) BCDM.db.profile.PowerBar.Text.Font = value BCDM:UpdatePowerBar() end)
+    fontDropdown:SetRelativeWidth(0.5)
+    textContainer:AddChild(fontDropdown)
+
+    local fontFlagDropdown = AG:Create("Dropdown")
+    fontFlagDropdown:SetLabel(LL("Font Flag"))
+    fontFlagDropdown:SetList({
+        ["NONE"] = "NONE",
+        ["OUTLINE"] = "Outline",
+        ["THICKOUTLINE"] = "Thick Outline",
+        ["MONOCHROME"] = "Monochrome",
+    })
+    fontFlagDropdown:SetValue(BCDM.db.profile.PowerBar.Text.FontFlag or BCDM.db.profile.General.Fonts.FontFlag)
+    fontFlagDropdown:SetCallback("OnValueChanged", function(_, _, value) BCDM.db.profile.PowerBar.Text.FontFlag = value BCDM:UpdatePowerBar() end)
+    fontFlagDropdown:SetRelativeWidth(0.5)
+    textContainer:AddChild(fontFlagDropdown)
+
     local anchorFromDropdown = AG:Create("Dropdown")
     anchorFromDropdown:SetLabel(LL("Anchor From"))
     anchorFromDropdown:SetList(AnchorPoints[1], AnchorPoints[2])
@@ -2169,7 +2258,7 @@ local function CreatePowerBarTextSettings(parentContainer)
     xOffsetSlider:SetValue(BCDM.db.profile.PowerBar.Text.Layout[3])
     xOffsetSlider:SetSliderValues(-500, 500, 0.1)
     xOffsetSlider:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.PowerBar.Text.Layout[3] = value BCDM:UpdatePowerBar() end)
-    xOffsetSlider:SetRelativeWidth(0.33)
+    xOffsetSlider:SetRelativeWidth(0.25)
     textContainer:AddChild(xOffsetSlider)
 
     local yOffsetSlider = AG:Create("Slider")
@@ -2177,7 +2266,7 @@ local function CreatePowerBarTextSettings(parentContainer)
     yOffsetSlider:SetValue(BCDM.db.profile.PowerBar.Text.Layout[4])
     yOffsetSlider:SetSliderValues(-500, 500, 0.1)
     yOffsetSlider:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.PowerBar.Text.Layout[4] = value BCDM:UpdatePowerBar() end)
-    yOffsetSlider:SetRelativeWidth(0.33)
+    yOffsetSlider:SetRelativeWidth(0.25)
     textContainer:AddChild(yOffsetSlider)
 
     local fontSizeSlider = AG:Create("Slider")
@@ -2185,16 +2274,26 @@ local function CreatePowerBarTextSettings(parentContainer)
     fontSizeSlider:SetValue(BCDM.db.profile.PowerBar.Text.FontSize)
     fontSizeSlider:SetSliderValues(6, 72, 1)
     fontSizeSlider:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.PowerBar.Text.FontSize = value BCDM:UpdatePowerBar() end)
-    fontSizeSlider:SetRelativeWidth(0.33)
+    fontSizeSlider:SetRelativeWidth(0.25)
     textContainer:AddChild(fontSizeSlider)
+
+    local colourPicker = AG:Create("ColorPicker")
+    colourPicker:SetLabel(LL("Font Colour"))
+    colourPicker:SetColor(unpack(BCDM.db.profile.PowerBar.Text.Colour))
+    colourPicker:SetCallback("OnValueChanged", function(_, _, r, g, b) BCDM.db.profile.PowerBar.Text.Colour = {r, g, b} BCDM:UpdatePowerBar() end)
+    colourPicker:SetRelativeWidth(0.25)
+    textContainer:AddChild(colourPicker)
 
     function RefreshPowerBarTextGUISettings()
         local enabled = BCDM.db.profile.PowerBar.Text.Enabled
+        fontDropdown:SetDisabled(not enabled)
+        fontFlagDropdown:SetDisabled(not enabled)
         anchorFromDropdown:SetDisabled(not enabled)
         anchorToDropdown:SetDisabled(not enabled)
         xOffsetSlider:SetDisabled(not enabled)
         yOffsetSlider:SetDisabled(not enabled)
         fontSizeSlider:SetDisabled(not enabled)
+        colourPicker:SetDisabled(not enabled)
     end
 
     RefreshPowerBarTextGUISettings()
@@ -2411,6 +2510,27 @@ local function CreateSecondaryPowerBarTextSettings(parentContainer)
     enabledCheckbox:SetRelativeWidth(1)
     textContainer:AddChild(enabledCheckbox)
 
+    local fontDropdown = AG:Create("LSM30_Font")
+    fontDropdown:SetLabel(LL("Font"))
+    fontDropdown:SetList(LSM:HashTable("font"))
+    fontDropdown:SetValue(BCDM.db.profile.SecondaryPowerBar.Text.Font or BCDM.db.profile.General.Fonts.Font)
+    fontDropdown:SetCallback("OnValueChanged", function(widget, _, value) widget:SetValue(value) BCDM.db.profile.SecondaryPowerBar.Text.Font = value BCDM:UpdateSecondaryPowerBar() end)
+    fontDropdown:SetRelativeWidth(0.5)
+    textContainer:AddChild(fontDropdown)
+
+    local fontFlagDropdown = AG:Create("Dropdown")
+    fontFlagDropdown:SetLabel(LL("Font Flag"))
+    fontFlagDropdown:SetList({
+        ["NONE"] = "NONE",
+        ["OUTLINE"] = "Outline",
+        ["THICKOUTLINE"] = "Thick Outline",
+        ["MONOCHROME"] = "Monochrome",
+    })
+    fontFlagDropdown:SetValue(BCDM.db.profile.SecondaryPowerBar.Text.FontFlag or BCDM.db.profile.General.Fonts.FontFlag)
+    fontFlagDropdown:SetCallback("OnValueChanged", function(_, _, value) BCDM.db.profile.SecondaryPowerBar.Text.FontFlag = value BCDM:UpdateSecondaryPowerBar() end)
+    fontFlagDropdown:SetRelativeWidth(0.5)
+    textContainer:AddChild(fontFlagDropdown)
+
     local anchorFromDropdown = AG:Create("Dropdown")
     anchorFromDropdown:SetLabel(LL("Anchor From"))
     anchorFromDropdown:SetList(AnchorPoints[1], AnchorPoints[2])
@@ -2432,7 +2552,7 @@ local function CreateSecondaryPowerBarTextSettings(parentContainer)
     xOffsetSlider:SetValue(BCDM.db.profile.SecondaryPowerBar.Text.Layout[3])
     xOffsetSlider:SetSliderValues(-500, 500, 0.1)
     xOffsetSlider:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.SecondaryPowerBar.Text.Layout[3] = value BCDM:UpdateSecondaryPowerBar() end)
-    xOffsetSlider:SetRelativeWidth(0.33)
+    xOffsetSlider:SetRelativeWidth(0.25)
     textContainer:AddChild(xOffsetSlider)
 
     local yOffsetSlider = AG:Create("Slider")
@@ -2440,7 +2560,7 @@ local function CreateSecondaryPowerBarTextSettings(parentContainer)
     yOffsetSlider:SetValue(BCDM.db.profile.SecondaryPowerBar.Text.Layout[4])
     yOffsetSlider:SetSliderValues(-500, 500, 0.1)
     yOffsetSlider:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.SecondaryPowerBar.Text.Layout[4] = value BCDM:UpdateSecondaryPowerBar() end)
-    yOffsetSlider:SetRelativeWidth(0.33)
+    yOffsetSlider:SetRelativeWidth(0.25)
     textContainer:AddChild(yOffsetSlider)
 
     local fontSizeSlider = AG:Create("Slider")
@@ -2448,16 +2568,26 @@ local function CreateSecondaryPowerBarTextSettings(parentContainer)
     fontSizeSlider:SetValue(BCDM.db.profile.SecondaryPowerBar.Text.FontSize)
     fontSizeSlider:SetSliderValues(6, 72, 1)
     fontSizeSlider:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.SecondaryPowerBar.Text.FontSize = value BCDM:UpdateSecondaryPowerBar() end)
-    fontSizeSlider:SetRelativeWidth(0.33)
+    fontSizeSlider:SetRelativeWidth(0.25)
     textContainer:AddChild(fontSizeSlider)
+
+    local colourPicker = AG:Create("ColorPicker")
+    colourPicker:SetLabel(LL("Font Colour"))
+    colourPicker:SetColor(unpack(BCDM.db.profile.SecondaryPowerBar.Text.Colour))
+    colourPicker:SetCallback("OnValueChanged", function(_, _, r, g, b) BCDM.db.profile.SecondaryPowerBar.Text.Colour = {r, g, b} BCDM:UpdateSecondaryPowerBar() end)
+    colourPicker:SetRelativeWidth(0.25)
+    textContainer:AddChild(colourPicker)
 
     function RefreshSecondaryPowerBarTextGUISettings()
         local enabled = BCDM.db.profile.SecondaryPowerBar.Text.Enabled
+        fontDropdown:SetDisabled(not enabled)
+        fontFlagDropdown:SetDisabled(not enabled)
         anchorFromDropdown:SetDisabled(not enabled)
         anchorToDropdown:SetDisabled(not enabled)
         xOffsetSlider:SetDisabled(not enabled)
         yOffsetSlider:SetDisabled(not enabled)
         fontSizeSlider:SetDisabled(not enabled)
+        colourPicker:SetDisabled(not enabled)
     end
 
     RefreshSecondaryPowerBarTextGUISettings()
@@ -2722,6 +2852,27 @@ local function CreateCastBarTextSettings(parentContainer)
     spellNameContainer:SetLayout("Flow")
     textContainer:AddChild(spellNameContainer)
 
+    local spellName_FontDropdown = AG:Create("LSM30_Font")
+    spellName_FontDropdown:SetLabel(LL("Font"))
+    spellName_FontDropdown:SetList(LSM:HashTable("font"))
+    spellName_FontDropdown:SetValue(BCDM.db.profile.CastBar.Text.SpellName.Font or BCDM.db.profile.General.Fonts.Font)
+    spellName_FontDropdown:SetCallback("OnValueChanged", function(widget, _, value) widget:SetValue(value) BCDM.db.profile.CastBar.Text.SpellName.Font = value BCDM:UpdateCastBar() end)
+    spellName_FontDropdown:SetRelativeWidth(0.5)
+    spellNameContainer:AddChild(spellName_FontDropdown)
+
+    local spellName_FontFlagDropdown = AG:Create("Dropdown")
+    spellName_FontFlagDropdown:SetLabel(LL("Font Flag"))
+    spellName_FontFlagDropdown:SetList({
+        ["NONE"] = "NONE",
+        ["OUTLINE"] = "Outline",
+        ["THICKOUTLINE"] = "Thick Outline",
+        ["MONOCHROME"] = "Monochrome",
+    })
+    spellName_FontFlagDropdown:SetValue(BCDM.db.profile.CastBar.Text.SpellName.FontFlag or BCDM.db.profile.General.Fonts.FontFlag)
+    spellName_FontFlagDropdown:SetCallback("OnValueChanged", function(_, _, value) BCDM.db.profile.CastBar.Text.SpellName.FontFlag = value BCDM:UpdateCastBar() end)
+    spellName_FontFlagDropdown:SetRelativeWidth(0.5)
+    spellNameContainer:AddChild(spellName_FontFlagDropdown)
+
     local spellName_AnchorFromDropdown = AG:Create("Dropdown")
     spellName_AnchorFromDropdown:SetLabel(LL("Anchor From"))
     spellName_AnchorFromDropdown:SetList(AnchorPoints[1], AnchorPoints[2])
@@ -2770,11 +2921,39 @@ local function CreateCastBarTextSettings(parentContainer)
     spellName_MaxCharactersSlider:SetRelativeWidth(0.25)
     spellNameContainer:AddChild(spellName_MaxCharactersSlider)
 
+    local spellName_ColourPicker = AG:Create("ColorPicker")
+    spellName_ColourPicker:SetLabel(LL("Font Colour"))
+    spellName_ColourPicker:SetColor(unpack(BCDM.db.profile.CastBar.Text.SpellName.Colour))
+    spellName_ColourPicker:SetCallback("OnValueChanged", function(_, _, r, g, b) BCDM.db.profile.CastBar.Text.SpellName.Colour = {r, g, b} BCDM:UpdateCastBar() end)
+    spellName_ColourPicker:SetRelativeWidth(0.25)
+    spellNameContainer:AddChild(spellName_ColourPicker)
+
     local castTimeContainer = AG:Create("InlineGroup")
     castTimeContainer:SetTitle(LL("Cast Time Settings"))
     castTimeContainer:SetFullWidth(true)
     castTimeContainer:SetLayout("Flow")
     textContainer:AddChild(castTimeContainer)
+
+    local castTime_FontDropdown = AG:Create("LSM30_Font")
+    castTime_FontDropdown:SetLabel(LL("Font"))
+    castTime_FontDropdown:SetList(LSM:HashTable("font"))
+    castTime_FontDropdown:SetValue(BCDM.db.profile.CastBar.Text.CastTime.Font or BCDM.db.profile.General.Fonts.Font)
+    castTime_FontDropdown:SetCallback("OnValueChanged", function(widget, _, value) widget:SetValue(value) BCDM.db.profile.CastBar.Text.CastTime.Font = value BCDM:UpdateCastBar() end)
+    castTime_FontDropdown:SetRelativeWidth(0.5)
+    castTimeContainer:AddChild(castTime_FontDropdown)
+
+    local castTime_FontFlagDropdown = AG:Create("Dropdown")
+    castTime_FontFlagDropdown:SetLabel(LL("Font Flag"))
+    castTime_FontFlagDropdown:SetList({
+        ["NONE"] = "NONE",
+        ["OUTLINE"] = "Outline",
+        ["THICKOUTLINE"] = "Thick Outline",
+        ["MONOCHROME"] = "Monochrome",
+    })
+    castTime_FontFlagDropdown:SetValue(BCDM.db.profile.CastBar.Text.CastTime.FontFlag or BCDM.db.profile.General.Fonts.FontFlag)
+    castTime_FontFlagDropdown:SetCallback("OnValueChanged", function(_, _, value) BCDM.db.profile.CastBar.Text.CastTime.FontFlag = value BCDM:UpdateCastBar() end)
+    castTime_FontFlagDropdown:SetRelativeWidth(0.5)
+    castTimeContainer:AddChild(castTime_FontFlagDropdown)
 
     local castTime_AnchorFromDropdown = AG:Create("Dropdown")
     castTime_AnchorFromDropdown:SetLabel(LL("Anchor From"))
@@ -2797,7 +2976,7 @@ local function CreateCastBarTextSettings(parentContainer)
     castTime_XOffsetSlider:SetValue(BCDM.db.profile.CastBar.Text.CastTime.Layout[3])
     castTime_XOffsetSlider:SetSliderValues(-500, 500, 0.1)
     castTime_XOffsetSlider:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.CastBar.Text.CastTime.Layout[3] = value BCDM:UpdateCastBar() end)
-    castTime_XOffsetSlider:SetRelativeWidth(0.33)
+    castTime_XOffsetSlider:SetRelativeWidth(0.25)
     castTimeContainer:AddChild(castTime_XOffsetSlider)
 
     local castTime_YOffsetSlider = AG:Create("Slider")
@@ -2805,7 +2984,7 @@ local function CreateCastBarTextSettings(parentContainer)
     castTime_YOffsetSlider:SetValue(BCDM.db.profile.CastBar.Text.CastTime.Layout[4])
     castTime_YOffsetSlider:SetSliderValues(-500, 500, 0.1)
     castTime_YOffsetSlider:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.CastBar.Text.CastTime.Layout[4] = value BCDM:UpdateCastBar() end)
-    castTime_YOffsetSlider:SetRelativeWidth(0.33)
+    castTime_YOffsetSlider:SetRelativeWidth(0.25)
     castTimeContainer:AddChild(castTime_YOffsetSlider)
 
     local castTime_FontSizeSlider = AG:Create("Slider")
@@ -2813,8 +2992,15 @@ local function CreateCastBarTextSettings(parentContainer)
     castTime_FontSizeSlider:SetValue(BCDM.db.profile.CastBar.Text.CastTime.FontSize)
     castTime_FontSizeSlider:SetSliderValues(6, 72, 1)
     castTime_FontSizeSlider:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.CastBar.Text.CastTime.FontSize = value BCDM:UpdateCastBar() end)
-    castTime_FontSizeSlider:SetRelativeWidth(0.33)
+    castTime_FontSizeSlider:SetRelativeWidth(0.25)
     castTimeContainer:AddChild(castTime_FontSizeSlider)
+
+    local castTime_ColourPicker = AG:Create("ColorPicker")
+    castTime_ColourPicker:SetLabel(LL("Font Colour"))
+    castTime_ColourPicker:SetColor(unpack(BCDM.db.profile.CastBar.Text.CastTime.Colour))
+    castTime_ColourPicker:SetCallback("OnValueChanged", function(_, _, r, g, b) BCDM.db.profile.CastBar.Text.CastTime.Colour = {r, g, b} BCDM:UpdateCastBar() end)
+    castTime_ColourPicker:SetRelativeWidth(0.25)
+    castTimeContainer:AddChild(castTime_ColourPicker)
 
     return textContainer
 end
