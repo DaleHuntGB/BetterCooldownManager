@@ -1,5 +1,7 @@
 local _, BCDM = ...
 
+local customIconPool
+
 local function FetchCooldownTextRegion(cooldown)
     if not cooldown then return end
     for _, region in ipairs({ cooldown:GetRegions() }) do
@@ -84,8 +86,16 @@ local function CreateCustomIcon(itemId, slotID)
     if not itemId then return end
     if not C_Item.GetItemInfo(itemId) then return end
 
-    local uniqueFrameId = slotID or itemId
-    local customIcon = CreateFrame("Button", "BCDM_Custom_Trinket_" .. uniqueFrameId, UIParent, "BackdropTemplate")
+    if not customIconPool then
+        customIconPool = CreateFramePool("Button", UIParent, "BackdropTemplate", function(pool, frame)
+            frame:UnregisterAllEvents()
+            frame:SetScript("OnEvent", nil)
+            frame:Hide()
+            frame:ClearAllPoints()
+        end)
+    end
+
+    local customIcon = customIconPool:Acquire()
     customIcon:SetBackdrop({ edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = BCDM.db.profile.CooldownManager.General.BorderSize, insets = { left = 0, right = 0, top = 0, bottom = 0 } })
     customIcon:SetBackdropColor(0, 0, 0, 0)
     if BCDM.db.profile.CooldownManager.General.BorderSize <= 0 then
@@ -95,26 +105,28 @@ local function CreateCustomIcon(itemId, slotID)
     end
     local iconWidth, iconHeight = BCDM:GetIconDimensions(CustomDB)
     customIcon:SetSize(iconWidth, iconHeight)
-    local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]]
-    customIcon:SetPoint(CustomDB.Layout[1], anchorParent, CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
-    customIcon:RegisterEvent("SPELL_UPDATE_COOLDOWN")
-    customIcon:RegisterEvent("PLAYER_ENTERING_WORLD")
     customIcon:EnableMouse(false)
     customIcon:SetFrameStrata(CustomDB.FrameStrata or "LOW")
+    customIcon:RegisterEvent("SPELL_UPDATE_COOLDOWN")
+    customIcon:RegisterEvent("PLAYER_ENTERING_WORLD")
 
-    local HighLevelContainer = CreateFrame("Frame", nil, customIcon)
-    HighLevelContainer:SetAllPoints(customIcon)
-    HighLevelContainer:SetFrameLevel(customIcon:GetFrameLevel() + 999)
+    if not customIcon.Cooldown then
+        local HighLevelContainer = CreateFrame("Frame", nil, customIcon)
+        HighLevelContainer:SetAllPoints(customIcon)
+        HighLevelContainer:SetFrameLevel(customIcon:GetFrameLevel() + 999)
 
-    customIcon.Cooldown = CreateFrame("Cooldown", nil, customIcon, "CooldownFrameTemplate")
-    customIcon.Cooldown:SetAllPoints(customIcon)
-    customIcon.Cooldown:SetDrawEdge(false)
-    customIcon.Cooldown:SetDrawSwipe(true)
-    customIcon.Cooldown:SetSwipeColor(0, 0, 0, 0.8)
-    customIcon.Cooldown:SetHideCountdownNumbers(false)
-    customIcon.Cooldown:SetReverse(false)
+        customIcon.Cooldown = CreateFrame("Cooldown", nil, customIcon, "CooldownFrameTemplate")
+        customIcon.Cooldown:SetAllPoints(customIcon)
+        customIcon.Cooldown:SetDrawEdge(false)
+        customIcon.Cooldown:SetDrawSwipe(true)
+        customIcon.Cooldown:SetSwipeColor(0, 0, 0, 0.8)
+        customIcon.Cooldown:SetHideCountdownNumbers(false)
+        customIcon.Cooldown:SetReverse(false)
 
-    customIcon:HookScript("OnEvent", function(self, event, ...)
+        customIcon.Icon = customIcon:CreateTexture(nil, "BACKGROUND")
+    end
+
+    customIcon:SetScript("OnEvent", function(self, event, ...)
         if event == "SPELL_UPDATE_COOLDOWN" or event == "PLAYER_ENTERING_WORLD" then
             local startTime, durationTime = FetchItemData(itemId)
             if startTime then
@@ -123,8 +135,8 @@ local function CreateCustomIcon(itemId, slotID)
         end
     end)
 
-    customIcon.Icon = customIcon:CreateTexture(nil, "BACKGROUND")
     local borderSize = BCDM.db.profile.CooldownManager.General.BorderSize
+    customIcon.Icon:ClearAllPoints()
     customIcon.Icon:SetPoint("TOPLEFT", customIcon, "TOPLEFT", borderSize, -borderSize)
     customIcon.Icon:SetPoint("BOTTOMRIGHT", customIcon, "BOTTOMRIGHT", -borderSize, borderSize)
     local iconZoom = BCDM.db.profile.CooldownManager.General.IconZoom * 0.5
@@ -176,7 +188,7 @@ local function LayoutTrinketBar()
     local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]]
     BCDM.TrinketBarContainer:SetPoint(containerAnchorFrom, anchorParent, CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
 
-    for _, child in ipairs({BCDM.TrinketBarContainer:GetChildren()}) do child:UnregisterAllEvents() child:Hide() child:SetParent(nil) end
+    if customIconPool then customIconPool:ReleaseAll() end
 
     CreateCustomIcons(customTrinketIcons)
 

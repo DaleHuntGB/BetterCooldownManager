@@ -1,5 +1,7 @@
 local _, BCDM = ...
 
+local customIconPool
+
 local function FetchCooldownTextRegion(cooldown)
     if not cooldown then return end
     for _, region in ipairs({ cooldown:GetRegions() }) do
@@ -302,7 +304,17 @@ local function CreateCustomIcon(itemId)
     if not itemId then return end
     if not C_Item.GetItemInfo(itemId) then return end
 
-    local customIcon = CreateFrame("Button", "BCDM_Custom_" .. itemId, UIParent, "BackdropTemplate")
+    if not customIconPool then
+        customIconPool = CreateFramePool("Button", UIParent, "BackdropTemplate", function(pool, frame)
+            frame:UnregisterAllEvents()
+            frame:SetScript("OnEvent", nil)
+            frame:Hide()
+            frame:ClearAllPoints()
+            if frame.Cooldown then frame.Cooldown:SetCooldown(0, 0) end
+        end)
+    end
+
+    local customIcon = customIconPool:Acquire()
     customIcon:SetBackdrop({ edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = BCDM.db.profile.CooldownManager.General.BorderSize, insets = { left = 0, right = 0, top = 0, bottom = 0 } })
     customIcon:SetBackdropColor(0, 0, 0, 0)
     if BCDM.db.profile.CooldownManager.General.BorderSize <= 0 then
@@ -312,20 +324,35 @@ local function CreateCustomIcon(itemId)
     end
     local iconWidth, iconHeight = BCDM:GetIconDimensions(CustomDB)
     customIcon:SetSize(iconWidth, iconHeight)
-    local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]]
-    customIcon:SetPoint(CustomDB.Layout[1], anchorParent, CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
+    customIcon:EnableMouse(false)
+    customIcon:SetFrameStrata(CustomDB.FrameStrata or "LOW")
     customIcon:RegisterEvent("SPELL_UPDATE_COOLDOWN")
     customIcon:RegisterEvent("PLAYER_ENTERING_WORLD")
     customIcon:RegisterEvent("ITEM_COUNT_CHANGED")
     customIcon:RegisterEvent("ITEM_PUSH")
-    customIcon:EnableMouse(false)
-    customIcon:SetFrameStrata(CustomDB.FrameStrata or "LOW")
 
-    local HighLevelContainer = CreateFrame("Frame", nil, customIcon)
-    HighLevelContainer:SetAllPoints(customIcon)
-    HighLevelContainer:SetFrameLevel(customIcon:GetFrameLevel() + 999)
+    if not customIcon.Cooldown then
+        local HighLevelContainer = CreateFrame("Frame", nil, customIcon)
+        HighLevelContainer:SetAllPoints(customIcon)
+        HighLevelContainer:SetFrameLevel(customIcon:GetFrameLevel() + 999)
 
-    customIcon.Charges = HighLevelContainer:CreateFontString(nil, "OVERLAY")
+        customIcon.Charges = HighLevelContainer:CreateFontString(nil, "OVERLAY")
+
+        customIcon.Cooldown = CreateFrame("Cooldown", nil, customIcon, "CooldownFrameTemplate")
+        customIcon.Cooldown:SetAllPoints(customIcon)
+        customIcon.Cooldown:SetDrawEdge(false)
+        customIcon.Cooldown:SetDrawSwipe(true)
+        customIcon.Cooldown:SetDrawBling(false)
+        customIcon.Cooldown:SetSwipeColor(0, 0, 0, 0.8)
+        customIcon.Cooldown:SetHideCountdownNumbers(false)
+        customIcon.Cooldown:SetReverse(false)
+
+        customIcon.QualityAtlas = HighLevelContainer:CreateTexture(nil, "OVERLAY")
+
+        customIcon.Icon = customIcon:CreateTexture(nil, "BACKGROUND")
+    end
+
+    customIcon.Charges:ClearAllPoints()
     customIcon.Charges:SetFont(BCDM.Media.Font, CustomDB.Text.FontSize, GeneralDB.Fonts.FontFlag)
     customIcon.Charges:SetPoint(CustomDB.Text.Layout[1], customIcon, CustomDB.Text.Layout[2], CustomDB.Text.Layout[3], CustomDB.Text.Layout[4])
     customIcon.Charges:SetTextColor(CustomDB.Text.Colour[1], CustomDB.Text.Colour[2], CustomDB.Text.Colour[3], 1)
@@ -338,16 +365,6 @@ local function CreateCustomIcon(itemId)
         customIcon.Charges:SetShadowOffset(0, 0)
     end
 
-    customIcon.Cooldown = CreateFrame("Cooldown", nil, customIcon, "CooldownFrameTemplate")
-    customIcon.Cooldown:SetAllPoints(customIcon)
-    customIcon.Cooldown:SetDrawEdge(false)
-    customIcon.Cooldown:SetDrawSwipe(true)
-    customIcon.Cooldown:SetDrawBling(false)
-    customIcon.Cooldown:SetSwipeColor(0, 0, 0, 0.8)
-    customIcon.Cooldown:SetHideCountdownNumbers(false)
-    customIcon.Cooldown:SetReverse(false)
-
-    customIcon.QualityAtlas = HighLevelContainer:CreateTexture(nil, "OVERLAY")
     customIcon.QualityAtlas:Hide()
     ApplyItemQualityAtlas(customIcon, itemId, CustomDB, iconWidth, iconHeight)
 
@@ -384,8 +401,8 @@ local function CreateCustomIcon(itemId)
         end
     end)
 
-    customIcon.Icon = customIcon:CreateTexture(nil, "BACKGROUND")
     local borderSize = BCDM.db.profile.CooldownManager.General.BorderSize
+    customIcon.Icon:ClearAllPoints()
     customIcon.Icon:SetPoint("TOPLEFT", customIcon, "TOPLEFT", borderSize, -borderSize)
     customIcon.Icon:SetPoint("BOTTOMRIGHT", customIcon, "BOTTOMRIGHT", -borderSize, borderSize)
     local iconZoom = BCDM.db.profile.CooldownManager.General.IconZoom * 0.5
@@ -592,7 +609,7 @@ local function LayoutCustomItemBar()
         BCDM.CustomItemBarContainer:UnregisterEvent("PLAYER_ENTERING_WORLD")
     end
 
-    for _, child in ipairs({BCDM.CustomItemBarContainer:GetChildren()}) do child:UnregisterAllEvents() child:Hide() child:SetParent(nil) end
+    if customIconPool then customIconPool:ReleaseAll() end
 
     CreateCustomIcons(customItemBarIcons, visibleItemIds)
     BCDM.CustomItemBarContainer.VisibleItemIds = visibleItemIds
