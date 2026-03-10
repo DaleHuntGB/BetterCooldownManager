@@ -390,12 +390,6 @@ local function ParseProfessionAtlasFromItemLink(itemLink)
         or string.match(itemLink, "(Professions%-Icon%-Quality%-Tier%d+)")
 end
 
-local function ParseProfessionRankFromItemLink(itemLink)
-    local atlasName = ParseProfessionAtlasFromItemLink(itemLink)
-    local rank = atlasName and string.match(atlasName, "Tier(%d+)")
-    return rank and tonumber(rank) or nil
-end
-
 local function BuildProfessionAtlasFromRank(itemId, rank)
     if not rank or rank <= 0 then return end
 
@@ -409,7 +403,8 @@ end
 local function FetchPotionProfessionRank(itemId)
     if not itemId then return 0 end
     local _, itemLink = C_Item.GetItemInfo(itemId)
-    local parsedRank = ParseProfessionRankFromItemLink(itemLink)
+    local atlasName = ParseProfessionAtlasFromItemLink(itemLink)
+    local parsedRank = atlasName and tonumber(string.match(atlasName, "Tier(%d+)"))
     if parsedRank then return parsedRank end
 
     local itemInfo = itemLink or itemId
@@ -578,12 +573,18 @@ local function AcquireIconFrame()
     return customIcon
 end
 
-local function CreateCustomItemIcon(itemId, customDB)
+local function CreateCustomIcon(entryId, entryType, customDB)
     local CooldownManagerDB = BCDM.db.profile
     local GeneralDB = CooldownManagerDB.General
     local CustomDB = customDB or GetCustomViewerDB()
-    if not itemId then return end
-    if not C_Item.GetItemInfo(itemId) then return end
+    if not entryId then return end
+
+    local isItem = entryType == "item"
+    if isItem then
+        if not C_Item.GetItemInfo(entryId) then return end
+    else
+        if not C_SpellBook.IsSpellInSpellBook(entryId) then return end
+    end
 
     local customIcon = AcquireIconFrame()
     customIcon:SetBackdrop({ edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = BCDM.db.profile.CooldownManager.General.BorderSize, insets = { left = 0, right = 0, top = 0, bottom = 0 } })
@@ -599,7 +600,12 @@ local function CreateCustomItemIcon(itemId, customDB)
     customIcon:SetFrameStrata(CustomDB.FrameStrata or "LOW")
     customIcon:RegisterEvent("SPELL_UPDATE_COOLDOWN")
     customIcon:RegisterEvent("PLAYER_ENTERING_WORLD")
-    customIcon:RegisterEvent("ITEM_COUNT_CHANGED")
+    if isItem then
+        customIcon:RegisterEvent("ITEM_COUNT_CHANGED")
+    else
+        customIcon:RegisterEvent("SPELL_UPDATE_CHARGES")
+        customIcon:RegisterEvent("ITEM_PUSH")
+    end
 
     customIcon.Cooldown:SetDrawBling(false)
 
@@ -607,7 +613,9 @@ local function CreateCustomItemIcon(itemId, customDB)
     customIcon.Charges:SetFont(BCDM.Media.Font, CustomDB.Text.FontSize, GeneralDB.Fonts.FontFlag)
     customIcon.Charges:SetPoint(CustomDB.Text.Layout[1], customIcon, CustomDB.Text.Layout[2], CustomDB.Text.Layout[3], CustomDB.Text.Layout[4])
     customIcon.Charges:SetTextColor(CustomDB.Text.Colour[1], CustomDB.Text.Colour[2], CustomDB.Text.Colour[3], 1)
-    customIcon.Charges:SetText(tostring(select(1, FetchItemData(itemId)) or ""))
+    if isItem then
+        customIcon.Charges:SetText(tostring(select(1, FetchItemData(entryId)) or ""))
+    end
     if GeneralDB.Fonts.Shadow.Enabled then
         customIcon.Charges:SetShadowColor(GeneralDB.Fonts.Shadow.Colour[1], GeneralDB.Fonts.Shadow.Colour[2], GeneralDB.Fonts.Shadow.Colour[3], GeneralDB.Fonts.Shadow.Colour[4])
         customIcon.Charges:SetShadowOffset(GeneralDB.Fonts.Shadow.OffsetX, GeneralDB.Fonts.Shadow.OffsetY)
@@ -617,39 +625,58 @@ local function CreateCustomItemIcon(itemId, customDB)
     end
 
     customIcon.QualityAtlas:Hide()
-    ApplyItemQualityAtlas(customIcon, itemId, CustomDB, iconWidth, iconHeight)
+    if isItem then
+        ApplyItemQualityAtlas(customIcon, entryId, CustomDB, iconWidth, iconHeight)
+    end
 
-    customIcon:SetScript("OnEvent", function(self, event, ...)
-        if event == "SPELL_UPDATE_COOLDOWN" or event == "PLAYER_ENTERING_WORLD" or event == "ITEM_COUNT_CHANGED" then
-            local itemCount, startTime, durationTime = FetchItemData(itemId)
-            if itemCount then
-                local hasActiveCooldown = (startTime and durationTime and startTime > 0 and durationTime > 0) or false
-                customIcon.Charges:SetText(tostring(itemCount))
-                if C_Item.IsUsableItem(itemId) then
-                    local shouldRefreshCooldown = ShouldRefreshItemCooldownFrame(customIcon.Cooldown, hasActiveCooldown, startTime, durationTime)
-                    if hasActiveCooldown and shouldRefreshCooldown then
-                        customIcon.Cooldown:SetCooldown(startTime, durationTime)
-                    elseif not hasActiveCooldown and event ~= "ITEM_COUNT_CHANGED" and shouldRefreshCooldown then
-                        customIcon.Cooldown:SetCooldown(0, 0)
-                    end
-                end
-                if itemCount <= 0 then
-                    customIcon.Charges:SetText("")
-                else
+    if isItem then
+        customIcon:SetScript("OnEvent", function(self, event, ...)
+            if event == "SPELL_UPDATE_COOLDOWN" or event == "PLAYER_ENTERING_WORLD" or event == "ITEM_COUNT_CHANGED" then
+                local itemCount, startTime, durationTime = FetchItemData(entryId)
+                if itemCount then
+                    local hasActiveCooldown = (startTime and durationTime and startTime > 0 and durationTime > 0) or false
                     customIcon.Charges:SetText(tostring(itemCount))
+                    if C_Item.IsUsableItem(entryId) then
+                        local shouldRefreshCooldown = ShouldRefreshItemCooldownFrame(customIcon.Cooldown, hasActiveCooldown, startTime, durationTime)
+                        if hasActiveCooldown and shouldRefreshCooldown then
+                            customIcon.Cooldown:SetCooldown(startTime, durationTime)
+                        elseif not hasActiveCooldown and event ~= "ITEM_COUNT_CHANGED" and shouldRefreshCooldown then
+                            customIcon.Cooldown:SetCooldown(0, 0)
+                        end
+                    end
+                    if itemCount <= 0 then
+                        customIcon.Charges:SetText("")
+                    else
+                        customIcon.Charges:SetText(tostring(itemCount))
+                    end
+                    if BCDM:IsSecretValue(startTime) or BCDM:IsSecretValue(durationTime) then
+                        SetIconDesaturation(customIcon.Icon, 0)
+                    elseif hasActiveCooldown then
+                        SetIconDesaturation(customIcon.Icon, CalculateFallbackDesaturation(startTime, durationTime))
+                    else
+                        SetIconDesaturation(customIcon.Icon, 0)
+                    end
+                    if not C_Item.IsUsableItem(entryId) then customIcon.Icon:SetVertexColor(0.5, 0.5, 0.5) else customIcon.Icon:SetVertexColor(1, 1, 1) end
+                    customIcon.Charges:SetAlphaFromBoolean(itemCount > 1, 1, 0)
                 end
-                if BCDM:IsSecretValue(startTime) or BCDM:IsSecretValue(durationTime) then
-                    SetIconDesaturation(customIcon.Icon, 0)
-                elseif hasActiveCooldown then
-                    SetIconDesaturation(customIcon.Icon, CalculateFallbackDesaturation(startTime, durationTime))
+            end
+        end)
+    else
+        customIcon:SetScript("OnEvent", function(self, event, ...)
+            if event == "SPELL_UPDATE_COOLDOWN" or event == "PLAYER_ENTERING_WORLD" or event == "SPELL_UPDATE_CHARGES" then
+                local spellCharges = C_Spell.GetSpellCharges(entryId)
+                if spellCharges then
+                    customIcon.Charges:SetText(C_Spell.GetSpellDisplayCount(entryId) or "")
+                    customIcon.Cooldown:SetCooldown(spellCharges.cooldownStartTime, spellCharges.cooldownDuration)
                 else
-                    SetIconDesaturation(customIcon.Icon, 0)
+                    local cooldownData = C_Spell.GetSpellCooldown(entryId)
+                    customIcon.Cooldown:SetCooldown(cooldownData.startTime, cooldownData.duration)
+                    customIcon.Charges:SetText("")
                 end
-                if not C_Item.IsUsableItem(itemId) then customIcon.Icon:SetVertexColor(0.5, 0.5, 0.5) else customIcon.Icon:SetVertexColor(1, 1, 1) end
-                customIcon.Charges:SetAlphaFromBoolean(itemCount > 1, 1, 0)
+                UpdateSpellIconDesaturation(self, entryId)
             end
-        end
-    end)
+        end)
+    end
 
     local borderSize = BCDM.db.profile.CooldownManager.General.BorderSize
     customIcon.Icon:ClearAllPoints()
@@ -657,76 +684,11 @@ local function CreateCustomItemIcon(itemId, customDB)
     customIcon.Icon:SetPoint("BOTTOMRIGHT", customIcon, "BOTTOMRIGHT", -borderSize, borderSize)
     local iconZoom = BCDM.db.profile.CooldownManager.General.IconZoom * 0.5
     BCDM:ApplyIconTexCoord(customIcon.Icon, iconWidth, iconHeight, iconZoom)
-    customIcon.Icon:SetTexture(select(10, C_Item.GetItemInfo(itemId)))
-
-    local onEvent = customIcon:GetScript("OnEvent")
-    if onEvent then onEvent(customIcon, "PLAYER_ENTERING_WORLD") end
-
-    return customIcon
-end
-
-local function CreateCustomSpellIcon(spellId, customDB)
-    local CooldownManagerDB = BCDM.db.profile
-    local GeneralDB = CooldownManagerDB.General
-    local CustomDB = customDB or GetCustomViewerDB()
-    if not spellId then return end
-    if not C_SpellBook.IsSpellInSpellBook(spellId) then return end
-
-    local customIcon = AcquireIconFrame()
-    customIcon:SetBackdrop({ edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = BCDM.db.profile.CooldownManager.General.BorderSize, insets = { left = 0, right = 0, top = 0, bottom = 0 } })
-    customIcon:SetBackdropColor(0, 0, 0, 0)
-    if BCDM.db.profile.CooldownManager.General.BorderSize <= 0 then
-        customIcon:SetBackdropBorderColor(0, 0, 0, 0)
+    if isItem then
+        customIcon.Icon:SetTexture(select(10, C_Item.GetItemInfo(entryId)))
     else
-        customIcon:SetBackdropBorderColor(0, 0, 0, 1)
+        customIcon.Icon:SetTexture(C_Spell.GetSpellInfo(entryId).iconID)
     end
-    local iconWidth, iconHeight = BCDM:GetIconDimensions(CustomDB)
-    customIcon:SetSize(iconWidth, iconHeight)
-    customIcon:EnableMouse(false)
-    customIcon:SetFrameStrata(CustomDB.FrameStrata or "LOW")
-    customIcon:RegisterEvent("SPELL_UPDATE_COOLDOWN")
-    customIcon:RegisterEvent("PLAYER_ENTERING_WORLD")
-    customIcon:RegisterEvent("SPELL_UPDATE_CHARGES")
-    customIcon:RegisterEvent("ITEM_PUSH")
-
-    customIcon.Cooldown:SetDrawBling(false)
-
-    customIcon.Charges:ClearAllPoints()
-    customIcon.Charges:SetFont(BCDM.Media.Font, CustomDB.Text.FontSize, GeneralDB.Fonts.FontFlag)
-    customIcon.Charges:SetPoint(CustomDB.Text.Layout[1], customIcon, CustomDB.Text.Layout[2], CustomDB.Text.Layout[3], CustomDB.Text.Layout[4])
-    customIcon.Charges:SetTextColor(CustomDB.Text.Colour[1], CustomDB.Text.Colour[2], CustomDB.Text.Colour[3], 1)
-    if GeneralDB.Fonts.Shadow.Enabled then
-        customIcon.Charges:SetShadowColor(GeneralDB.Fonts.Shadow.Colour[1], GeneralDB.Fonts.Shadow.Colour[2], GeneralDB.Fonts.Shadow.Colour[3], GeneralDB.Fonts.Shadow.Colour[4])
-        customIcon.Charges:SetShadowOffset(GeneralDB.Fonts.Shadow.OffsetX, GeneralDB.Fonts.Shadow.OffsetY)
-    else
-        customIcon.Charges:SetShadowColor(0, 0, 0, 0)
-        customIcon.Charges:SetShadowOffset(0, 0)
-    end
-
-    customIcon.QualityAtlas:Hide()
-
-    customIcon:SetScript("OnEvent", function(self, event, ...)
-        if event == "SPELL_UPDATE_COOLDOWN" or event == "PLAYER_ENTERING_WORLD" or event == "SPELL_UPDATE_CHARGES" then
-            local spellCharges = C_Spell.GetSpellCharges(spellId)
-            if spellCharges then
-                customIcon.Charges:SetText(C_Spell.GetSpellDisplayCount(spellId) or "")
-                customIcon.Cooldown:SetCooldown(spellCharges.cooldownStartTime, spellCharges.cooldownDuration)
-            else
-                local cooldownData = C_Spell.GetSpellCooldown(spellId)
-                customIcon.Cooldown:SetCooldown(cooldownData.startTime, cooldownData.duration)
-                customIcon.Charges:SetText("")
-            end
-            UpdateSpellIconDesaturation(self, spellId)
-        end
-    end)
-
-    local borderSize = BCDM.db.profile.CooldownManager.General.BorderSize
-    customIcon.Icon:ClearAllPoints()
-    customIcon.Icon:SetPoint("TOPLEFT", customIcon, "TOPLEFT", borderSize, -borderSize)
-    customIcon.Icon:SetPoint("BOTTOMRIGHT", customIcon, "BOTTOMRIGHT", -borderSize, borderSize)
-    local iconZoom = BCDM.db.profile.CooldownManager.General.IconZoom * 0.5
-    BCDM:ApplyIconTexCoord(customIcon.Icon, iconWidth, iconHeight, iconZoom)
-    customIcon.Icon:SetTexture(C_Spell.GetSpellInfo(spellId).iconID)
 
     local onEvent = customIcon:GetScript("OnEvent")
     if onEvent then onEvent(customIcon, "PLAYER_ENTERING_WORLD") end
@@ -807,12 +769,7 @@ local function CreateCustomIcons(iconTable, visibleItemIds, customDB)
     end)
 
     for _, entry in ipairs(sortedEntries) do
-        local customItem
-        if entry.entryType == "spell" then
-            customItem = CreateCustomSpellIcon(entry.id, CustomDB)
-        else
-            customItem = CreateCustomItemIcon(entry.id, CustomDB)
-        end
+        local customItem = CreateCustomIcon(entry.id, entry.entryType, CustomDB)
 
         if customItem then
             table.insert(iconTable, customItem)
@@ -829,7 +786,7 @@ local function CreateCustomIcons(iconTable, visibleItemIds, customDB)
 
     for _, trinketEntry in ipairs(FetchEquippedOnUseTrinkets()) do
         if not addedItemIds[trinketEntry.itemId] then
-            local customItem = CreateCustomItemIcon(trinketEntry.itemId, CustomDB)
+            local customItem = CreateCustomIcon(trinketEntry.itemId, "item", CustomDB)
             if customItem then
                 table.insert(iconTable, customItem)
                 addedItemIds[trinketEntry.itemId] = true
@@ -1114,6 +1071,7 @@ LayoutCustomViewer = function()
     HideUnusedCustomViewerContainers(activeFrameNames)
     RefreshCustomViewerAnchors()
 end
+
 BCDM.SetupCustomViewer = LayoutCustomViewer
 BCDM.UpdateCustomViewer = LayoutCustomViewer
 
