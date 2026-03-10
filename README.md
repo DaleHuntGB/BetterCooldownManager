@@ -15,10 +15,9 @@
 - Custom Cooldown Text & Tweaks.
 - Custom Power & Secondary Power Colours.
 - Power Bar, Secondary Power Bar & Cast Bar with Anchoring & Auto Adjustment for Width.
-- Custom Spell Bar: Add any known spell to this bar.
-- Custom Item Bar: Add any item or trinket to this bar.
+- Custom Viewer: Add spells, items, and optional auto-detected on-use trinkets to a single configurable bar.
 - Custom Trinket Bar: This bar will automatically create trackers for equipped & usable trinkets.
-- API for AddOns to add their own anchors to Utility, Buffs, Custom, Item & Trinket Bars.
+- API for AddOns to add their own anchors to Utility, Buffs, Custom Viewer & Trinket Bars.
 
 ## Libraries
 - [Ace3](https://www.curseforge.com/wow/addons/ace3): Database & Configuration Windows are all handled by Ace3 & Ace3 GUI.

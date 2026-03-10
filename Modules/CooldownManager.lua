@@ -306,11 +306,11 @@ function BCDM:UpdateCooldownViewer(viewerType)
     local cooldownViewerFrame = _G[BCDM.DBViewerToCooldownManagerViewer[viewerType]]
     local viewerSettings = cooldownManagerSettings[viewerType]
     local iconWidth, iconHeight = BCDM:GetIconDimensions(viewerSettings)
-    if viewerType == "Custom" then BCDM:UpdateCustomCooldownViewer() return end
-    if viewerType == "AdditionalCustom" then BCDM:UpdateAdditionalCustomCooldownViewer() return end
-    if viewerType == "Item" then BCDM:UpdateCustomItemBar() return end
+    if viewerType == "CustomViewer" or viewerType == "Custom" or viewerType == "AdditionalCustom" or viewerType == "Item" or viewerType == "ItemSpell" then
+        BCDM:UpdateCustomViewer()
+        return
+    end
     if viewerType == "Trinket" then BCDM:UpdateTrinketBar() return end
-    if viewerType == "ItemSpell" then BCDM:UpdateCustomItemsSpellsBar() return end
     if viewerType == "Buffs" then SetupCenterBuffs() end
 
     for _, childFrame in ipairs({cooldownViewerFrame:GetChildren()}) do
@@ -350,10 +350,7 @@ function BCDM:UpdateCooldownViewers()
     BCDM:UpdateCooldownViewer("Essential")
     BCDM:UpdateCooldownViewer("Utility")
     BCDM:UpdateCooldownViewer("Buffs")
-    BCDM:UpdateCustomCooldownViewer()
-    BCDM:UpdateAdditionalCustomCooldownViewer()
-    BCDM:UpdateCustomItemBar()
-    BCDM:UpdateCustomItemsSpellsBar()
+    BCDM:UpdateCustomViewer()
     BCDM:UpdateTrinketBar()
     BCDM:UpdatePowerBar()
     BCDM:UpdateSecondaryPowerBar()

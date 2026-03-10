@@ -185,7 +185,7 @@ local function LayoutTrinketBar()
 
     BCDM.TrinketBarContainer:ClearAllPoints()
     BCDM.TrinketBarContainer:SetFrameStrata(CustomDB.FrameStrata or "LOW")
-    local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]]
+    local anchorParent = (CustomDB.Layout[2] == "NONE" or not _G[CustomDB.Layout[2]]) and UIParent or _G[CustomDB.Layout[2]]
     BCDM.TrinketBarContainer:SetPoint(containerAnchorFrom, anchorParent, CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
 
     if customIconPool then customIconPool:ReleaseAll() end
@@ -284,7 +284,7 @@ function BCDM:UpdateTrinketBar()
     local isEnabled = CustomDB.Enabled
     if BCDM.TrinketBarContainer and isEnabled then
         BCDM.TrinketBarContainer:ClearAllPoints()
-        local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]]
+        local anchorParent = (CustomDB.Layout[2] == "NONE" or not _G[CustomDB.Layout[2]]) and UIParent or _G[CustomDB.Layout[2]]
         BCDM.TrinketBarContainer:SetPoint(CustomDB.Layout[1], anchorParent, CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
         LayoutTrinketBar()
     else
