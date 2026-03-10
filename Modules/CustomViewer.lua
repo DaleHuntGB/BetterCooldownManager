@@ -326,24 +326,16 @@ local function UpdateSpellIconDesaturation(customIcon, spellId)
 end
 
 local function ShouldRefreshItemCooldownFrame(cooldownFrame, hasActiveCooldown, startTime, durationTime)
-    if not cooldownFrame then
-        return false
-    end
-
+    if not cooldownFrame then return false end
     local oldStart, oldDuration = cooldownFrame:GetCooldownTimes()
     oldStart = tonumber(oldStart) or 0
     oldDuration = tonumber(oldDuration) or 0
-
     if hasActiveCooldown then
-        if oldStart <= 0 or oldDuration <= 0 then
-            return true
-        end
-        -- GetCooldownTimes returns milliseconds, SetCooldown uses seconds.
+        if oldStart <= 0 or oldDuration <= 0 then return true end
         local oldEnd = (oldStart + oldDuration) / 1000
         local newEnd = (startTime or 0) + (durationTime or 0)
         return math.abs(oldEnd - newEnd) > 0.01
     end
-
     return oldStart > 0 and oldDuration > 0
 end
 
@@ -368,20 +360,19 @@ local function IsOnUseTrinket(itemId)
 end
 
 local function FetchEquippedOnUseTrinkets()
-    local equipped = {}
-
+    local equippedTrinkets = {}
     for _, slotID in ipairs(TRINKET_SLOTS) do
         local itemId = GetInventoryItemID("player", slotID)
         if itemId and IsOnUseTrinket(itemId) then
-            equipped[#equipped + 1] = { itemId = itemId, slotID = slotID }
+            equippedTrinkets[#equippedTrinkets + 1] = { itemId = itemId, slotID = slotID }
         end
     end
 
-    return equipped
+    return equippedTrinkets
 end
 
-local POTION_CLASS_ID = (Enum and Enum.ItemClass and Enum.ItemClass.Consumable) or 0
-local POTION_SUBCLASS_ID = (Enum and Enum.ItemConsumableSubclass and Enum.ItemConsumableSubclass.Potion) or 1
+local POTION_CLASS_ID = (Enum.ItemClass.Consumable) or 0
+local POTION_SUBCLASS_ID = (Enum.ItemConsumableSubclass.Potion) or 1
 
 local function IsPotionItem(itemId)
     if not itemId then return false end
@@ -416,19 +407,10 @@ local function BuildProfessionAtlasFromRank(itemId, rank)
 end
 
 local function FetchPotionProfessionRank(itemId)
-    if not itemId then
-        return 0
-    end
-
+    if not itemId then return 0 end
     local _, itemLink = C_Item.GetItemInfo(itemId)
     local parsedRank = ParseProfessionRankFromItemLink(itemLink)
-    if parsedRank then
-        return parsedRank
-    end
-
-    if not C_TradeSkillUI then
-        return 0
-    end
+    if parsedRank then return parsedRank end
 
     local itemInfo = itemLink or itemId
 
@@ -449,8 +431,7 @@ local function FetchPotionProfessionRank(itemId)
             if reagentRank then return reagentRank end
         end
     end
-
-    return 0
+    return
 end
 
 local function ResolveItemQualityAtlas(itemId)
@@ -458,23 +439,16 @@ local function ResolveItemQualityAtlas(itemId)
 
     local _, itemLink = C_Item.GetItemInfo(itemId)
     local atlasFromLink = ParseProfessionAtlasFromItemLink(itemLink)
-    if atlasFromLink then
-        return atlasFromLink
-    end
-
+    if atlasFromLink then return atlasFromLink end
     local rank = FetchPotionProfessionRank(itemId)
     return BuildProfessionAtlasFromRank(itemId, rank)
 end
 
 local function SelectPotionRankCandidate(potionGroups, itemId, layoutIndex)
-    if not IsPotionItem(itemId) then
-        return false
-    end
+    if not IsPotionItem(itemId) then return end
 
     local itemName = C_Item.GetItemInfo(itemId)
-    if not itemName then
-        return false
-    end
+    if not itemName then return end
 
     local itemCount = select(1, FetchItemData(itemId)) or 0
     local group = potionGroups[itemName]
@@ -656,7 +630,6 @@ local function CreateCustomItemIcon(itemId, customDB)
                     if hasActiveCooldown and shouldRefreshCooldown then
                         customIcon.Cooldown:SetCooldown(startTime, durationTime)
                     elseif not hasActiveCooldown and event ~= "ITEM_COUNT_CHANGED" and shouldRefreshCooldown then
-                        -- Avoid cooldown flicker from transient ITEM_COUNT_CHANGED updates.
                         customIcon.Cooldown:SetCooldown(0, 0)
                     end
                 end
@@ -687,9 +660,7 @@ local function CreateCustomItemIcon(itemId, customDB)
     customIcon.Icon:SetTexture(select(10, C_Item.GetItemInfo(itemId)))
 
     local onEvent = customIcon:GetScript("OnEvent")
-    if onEvent then
-        onEvent(customIcon, "PLAYER_ENTERING_WORLD")
-    end
+    if onEvent then onEvent(customIcon, "PLAYER_ENTERING_WORLD") end
 
     return customIcon
 end
@@ -738,7 +709,7 @@ local function CreateCustomSpellIcon(spellId, customDB)
         if event == "SPELL_UPDATE_COOLDOWN" or event == "PLAYER_ENTERING_WORLD" or event == "SPELL_UPDATE_CHARGES" then
             local spellCharges = C_Spell.GetSpellCharges(spellId)
             if spellCharges then
-                customIcon.Charges:SetText(C_Spell.GetSpellDisplayCount and C_Spell.GetSpellDisplayCount(spellId) or "")
+                customIcon.Charges:SetText(C_Spell.GetSpellDisplayCount(spellId) or "")
                 customIcon.Cooldown:SetCooldown(spellCharges.cooldownStartTime, spellCharges.cooldownDuration)
             else
                 local cooldownData = C_Spell.GetSpellCooldown(spellId)
@@ -758,23 +729,15 @@ local function CreateCustomSpellIcon(spellId, customDB)
     customIcon.Icon:SetTexture(C_Spell.GetSpellInfo(spellId).iconID)
 
     local onEvent = customIcon:GetScript("OnEvent")
-    if onEvent then
-        onEvent(customIcon, "PLAYER_ENTERING_WORLD")
-    end
+    if onEvent then onEvent(customIcon, "PLAYER_ENTERING_WORLD") end
 
     return customIcon
 end
 
 local function ResolveItemSpellEntryType(entryId, entryData)
-    if entryData and entryData.entryType then
-        return entryData.entryType
-    end
-    if C_Item.GetItemInfo(entryId) then
-        return "item"
-    end
-    if C_Spell.GetSpellInfo(entryId) then
-        return "spell"
-    end
+    if entryData and entryData.entryType then return entryData.entryType end
+    if C_Item.GetItemInfo(entryId) then return "item" end
+    if C_Spell.GetSpellInfo(entryId) then return "spell" end
 end
 
 local function HasTrackedPotionEntries(items)
@@ -862,9 +825,7 @@ local function CreateCustomIcons(iconTable, visibleItemIds, customDB)
         end
     end
 
-    if not CustomDB.AutoDetectUsableTrinkets then
-        return
-    end
+    if not CustomDB.AutoDetectUsableTrinkets then return end
 
     for _, trinketEntry in ipairs(FetchEquippedOnUseTrinkets()) do
         if not addedItemIds[trinketEntry.itemId] then
