@@ -5,5 +5,7 @@
     <Script file="EventManager.lua"/>
     <Script file="Share.lua"/>
     <Script file="API.lua"/>
+    <Script file="Data.lua"/>
+    <Script file="AddOnCheck.lua"/>
     <Script file="Core.lua"/>
 </Ui>

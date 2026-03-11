@@ -19,5 +19,8 @@ Locales/koKR.lua
 # Load Modules
 Modules/Init.xml
 
+# Load Custom Viewers
+CustomViewers/Init.xml
+
 # Load Core
 Core/Init.xml

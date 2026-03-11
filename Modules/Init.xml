@@ -3,12 +3,6 @@
 	<Script file="CooldownManager.lua"/>
 	<Script file="CustomGlows.lua"/>
 	<Script file="DisableAuraOverlay.lua"/>
-	<Script file="Data.lua"/>
-	<Script file="AdditionalCustomCooldownViewer.lua"/>
-	<Script file="CustomCooldownViewer.lua"/>
-	<Script file="CustomItemViewer.lua"/>
-	<Script file="CustomItemSpellViewer.lua"/>
-	<Script file="TrinketBar.lua"/>
 	<Script file="PowerBar.lua"/>
 	<Script file="SecondaryPowerBar.lua"/>
 	<Script file="EditMode.lua"/>
