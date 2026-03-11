@@ -270,7 +270,7 @@ local function BuildMainNavigationTree()
         { text = LL("Essential"), value = "Essential" },
         { text = LL("Utility"), value = "Utility" },
         { text = LL("Buffs"), value = "Buffs" },
-        { text = LL("Custom Viewer"), value = "CustomViewer" },
+        { text = LL("Custom Viewers"), value = "CustomViewer" },
         { text = LL("Trinkets"), value = "Trinket" },
         { text = LL("Power Bar"), value = "PowerBar" },
         { text = LL("Secondary Power Bar"), value = "SecondaryPowerBar" },
