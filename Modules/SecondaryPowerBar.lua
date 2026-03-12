@@ -60,7 +60,8 @@ local function DetectSecondaryPower()
     elseif class == "DEATHKNIGHT" then
         return Enum.PowerType.Runes
     elseif class == "DEMONHUNTER" then
-        if specID == SPEC_VENGEANCE or specID == SPEC_DEVOURER then return "SOUL" end
+        if specID == SPEC_VENGEANCE then return "SOUL" end
+        if specID == SPEC_DEVOURER then return "DEVOURER_SOUL" end
     elseif class == "SHAMAN" then
         if specID == SPEC_ENHANCEMENT then return Enum.PowerType.Maelstrom end
         if specID == SPEC_ELEMENTAL and showMana then return Enum.PowerType.Mana end
@@ -510,10 +511,18 @@ local function UpdatePowerValues()
         secondaryPowerBar.Text:SetText(tostring(powerCurrent))
         secondaryPowerBar.Status:Show()
     elseif powerType == "SOUL" then
+        powerCurrent = GetSpellCharges(228477) -- Soul Cleave cast count (Vengeance)
+        secondaryPowerBar.Status:SetMinMaxValues(0, 6)
+        secondaryPowerBar.Status:SetValue(powerCurrent)
+        secondaryPowerBar.Text:SetText(tostring(powerCurrent))
+        secondaryPowerBar.Status:Show()
+    elseif powerType == "DEVOURER_SOUL" then
         local hasSoulGlutton = C_SpellBook.IsSpellKnown(1247534)
         local isInMeta = IsInMetamorphosis(1217607)
-        powerCurrent = GetSpellCharges(1217605)
-        secondaryPowerBar.Status:SetMinMaxValues(0, (isInMeta and 40) or (hasSoulGlutton and 35 or 50))
+        local trackedAuraSpellID = isInMeta and 1227702 or 1225789
+        local auraData = C_UnitAuras.GetPlayerAuraBySpellID(trackedAuraSpellID)
+        powerCurrent = auraData and auraData.applications or 0
+        secondaryPowerBar.Status:SetMinMaxValues(0, hasSoulGlutton and 35 or 50)
         secondaryPowerBar.Status:SetValue(powerCurrent)
         secondaryPowerBar.Text:SetText(tostring(powerCurrent))
         secondaryPowerBar.Status:Show()
@@ -613,6 +622,11 @@ local function CreateTicksBasedOnPowerType()
     end
 
     if secondaryPowerResource == "SOUL" then
+        BCDM:CreateTicks(6)
+        return
+    end
+
+    if secondaryPowerResource == "DEVOURER_SOUL" then
         local hasSoulGlutton = C_SpellBook.IsSpellKnown(1247534)
         BCDM:CreateTicks(hasSoulGlutton and 7 or 10)
         return

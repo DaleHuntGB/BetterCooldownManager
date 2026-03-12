@@ -38,6 +38,8 @@ L["Fury"] = "Fury"
 L["Pain"] = "Pain"
 L["Essence"] = "Essence"
 L["Stagger"] = "Stagger"
+L["Soul Fragments"] = "Soul Fragments"
+L["Devourer Souls"] = "Devourer Souls"
 
 -- [[ Class Names ]]
 L["DEATHKNIGHT"] = "Death Knight"
