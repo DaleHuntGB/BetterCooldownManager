@@ -14,9 +14,6 @@ local function RefreshAppendedAnchorDependents()
     if BCDM.UpdateCastBar then
         BCDM:UpdateCastBar()
     end
-    if BCDM.UpdateCustomViewer then
-        BCDM:UpdateCustomViewer()
-    end
 end
 
 local function RefreshTrinketAnchorConsumers()
@@ -29,7 +26,78 @@ local function RefreshTrinketAnchorConsumers()
     if BCDM.RefreshCooldownViewerOverlays then
         BCDM:RefreshCooldownViewerOverlays()
     end
-    RefreshAppendedAnchorDependents()
+end
+
+local function RefreshTrinketCustomViewerAnchors()
+    if BCDM.UpdateCustomViewer then
+        BCDM:UpdateCustomViewer()
+    end
+end
+
+local function GetAppendTarget()
+    local CustomDB = BCDM.db.profile.CooldownManager.Trinket
+    return CustomDB and CustomDB.AppendTo or "NONE"
+end
+
+local function GetAppendSide()
+    local CustomDB = BCDM.db.profile.CooldownManager.Trinket
+    return (CustomDB and CustomDB.AppendSide) or "RIGHT"
+end
+
+local function BuildTrinketAnchorRefreshKey(customDB, effectiveLayout, visibleCount)
+    local appendTargetViewer = BCDM:GetTrinketAppendTargetViewerName()
+    if appendTargetViewer and visibleCount > 0 then
+        return table.concat({
+            "append",
+            appendTargetViewer,
+            GetAppendSide(),
+            visibleCount,
+            effectiveLayout.iconWidth,
+            effectiveLayout.iconHeight,
+            effectiveLayout.iconSpacing,
+        }, ":")
+    end
+
+    return table.concat({
+        "standalone",
+        customDB.Layout[1] or "TOPLEFT",
+        customDB.Layout[2] or "NONE",
+        customDB.Layout[3] or "TOPLEFT",
+        customDB.Layout[4] or 0,
+        customDB.Layout[5] or 0,
+        effectiveLayout.growthDirection or "RIGHT",
+        visibleCount,
+        effectiveLayout.iconWidth,
+        effectiveLayout.iconHeight,
+        effectiveLayout.iconSpacing,
+    }, ":")
+end
+
+local function BuildTrinketAppendStateKey(visibleCount)
+    local appendTargetViewer = BCDM:GetTrinketAppendTargetViewerName()
+    if appendTargetViewer and visibleCount > 0 then
+        return appendTargetViewer
+    end
+    return "NONE"
+end
+
+local function RefreshTrinketDependents(container, anchorRefreshKey, appendStateKey)
+    if not container then return end
+
+    local anchorChanged = container.LastAnchorRefreshKey ~= anchorRefreshKey
+    local appendStateChanged = container.LastAppendStateKey ~= appendStateKey
+
+    container.LastAnchorRefreshKey = anchorRefreshKey
+    container.LastAppendStateKey = appendStateKey
+
+    if anchorChanged then
+        RefreshTrinketAnchorConsumers()
+        RefreshAppendedAnchorDependents()
+    end
+
+    if appendStateChanged then
+        RefreshTrinketCustomViewerAnchors()
+    end
 end
 
 local function ShouldShowPassiveTrinkets()
@@ -42,16 +110,6 @@ local function ResolveTrinketAnchorParent(layoutParent)
         return UIParent
     end
     return _G[layoutParent]
-end
-
-local function GetAppendTarget()
-    local CustomDB = BCDM.db.profile.CooldownManager.Trinket
-    return CustomDB and CustomDB.AppendTo or "NONE"
-end
-
-local function GetAppendSide()
-    local CustomDB = BCDM.db.profile.CooldownManager.Trinket
-    return (CustomDB and CustomDB.AppendSide) or "RIGHT"
 end
 
 function BCDM:GetTrinketAppendTargetViewerName()
@@ -331,6 +389,8 @@ local function LayoutTrinketBar()
     local container = EnsureTrinketContainer()
     local frames = EnsureTrinketIcons()
     local visibleIcons = {}
+    local anchorRefreshKey
+    local appendStateKey
 
     local containerAnchorFrom = CustomDB.Layout[1]
     if growthDirection == "UP" then
@@ -373,7 +433,9 @@ local function LayoutTrinketBar()
     if #visibleIcons == 0 then
         container:SetSize(1, 1)
         container:Hide()
-        RefreshTrinketAnchorConsumers()
+        anchorRefreshKey = "hidden"
+        appendStateKey = "NONE"
+        RefreshTrinketDependents(container, anchorRefreshKey, appendStateKey)
         return
     end
 
@@ -430,7 +492,9 @@ local function LayoutTrinketBar()
     BCDM:ApplyCooldownText("BCDM_TrinketBar")
     UpdateVisibleTrinketCooldowns()
     container:Show()
-    RefreshTrinketAnchorConsumers()
+    anchorRefreshKey = BuildTrinketAnchorRefreshKey(CustomDB, effectiveLayout, #visibleIcons)
+    appendStateKey = BuildTrinketAppendStateKey(#visibleIcons)
+    RefreshTrinketDependents(container, anchorRefreshKey, appendStateKey)
 end
 
 function BCDM:SetupTrinketBar()
@@ -443,21 +507,11 @@ function BCDM:UpdateTrinketBar()
     if not CustomDB or not CustomDB.Enabled then
         if BCDM.TrinketBarContainer then
             BCDM.TrinketBarContainer:Hide()
+            RefreshTrinketDependents(BCDM.TrinketBarContainer, "hidden", "NONE")
         end
-        RefreshTrinketAnchorConsumers()
         return
     end
 
     EnsureTrinketBarEventFrame()
     LayoutTrinketBar()
-end
-
-function BCDM:AdjustTrinketLayoutIndex(_direction, _itemId)
-    -- Legacy compatibility: trinket order is now driven by equipment slot (13, 14).
-    BCDM:UpdateTrinketBar()
-end
-
-function BCDM:AdjustTrinketList(_itemId, _adjustingHow)
-    -- Legacy compatibility: trinket list is now driven by equipped trinket slots.
-    BCDM:UpdateTrinketBar()
 end

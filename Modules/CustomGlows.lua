@@ -96,10 +96,6 @@ function BCDM:GetGlowSettingsWithDefaults()
     return glow
 end
 
-function BCDM:NormalizeGlowSettings()
-    return self:GetGlowSettingsWithDefaults()
-end
-
 function BCDM:GetCustomGlowSettings()
     return self:GetGlowSettingsWithDefaults()
 end

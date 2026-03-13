@@ -1,5 +1,6 @@
 local _, BCDM = ...
 BCDMG = BCDMG or {}
+local pendingExternalAnchorRefresh
 
 BCDM.IS_DEATHKNIGHT = select(2, UnitClass("player")) == "DEATHKNIGHT"
 BCDM.IS_MONK = select(2, UnitClass("player")) == "MONK"
@@ -527,11 +528,6 @@ function BCDM:RefreshAppendedViewerPosition(viewerType)
     viewerFrame:SetPoint(baseAnchor.point, appendAnchor, baseAnchor.point, extraX - 0.1, 0)
 end
 
-function BCDM:RefreshAppendedViewerPositions()
-    BCDM:RefreshAppendedViewerPosition("Essential")
-    BCDM:RefreshAppendedViewerPosition("Utility")
-end
-
 function BCDM:SetupExternalAnchorHooks()
     if self.uufAnchorHookInstalled then
         return true
@@ -551,6 +547,18 @@ end
 
 function BCDM:RefreshExternalCDMAnchors()
     BCDM:SetupExternalAnchorHooks()
+
+    if InCombatLockdown() then
+        if pendingExternalAnchorRefresh then return end
+        pendingExternalAnchorRefresh = CreateFrame("Frame")
+        pendingExternalAnchorRefresh:RegisterEvent("PLAYER_REGEN_ENABLED")
+        pendingExternalAnchorRefresh:SetScript("OnEvent", function(self)
+            self:UnregisterEvent("PLAYER_REGEN_ENABLED")
+            pendingExternalAnchorRefresh = nil
+            BCDM:RefreshExternalCDMAnchors()
+        end)
+        return
+    end
 
     local uufAnchor = _G["UUF_CDMAnchor"]
     if not uufAnchor then return end

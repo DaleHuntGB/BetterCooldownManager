@@ -267,10 +267,6 @@ local function ScanCooldownFrames()
     end
 end
 
-local function EnsureEventFrame()
-    eventFrame:SetScript("OnEvent", function(_, event, addon) if event == "ADDON_LOADED" then if addon == "Blizzard_CooldownViewer" then C_Timer.After(0.5, ScanCooldownFrames) end return end C_Timer.After(0.1, ScanCooldownFrames) end)
-end
-
 local function EnableAuraOverlayRemoval()
     EnsureCurves()
     local eventFrame = CreateFrame("Frame")

@@ -6,9 +6,6 @@ local VIEWER_FRAME_NAME = "BCDM_CustomViewer"
 local LEGACY_MIGRATION_VERSION = 1
 local VIEWER_SCHEMA_VERSION = 1
 local TRINKET_SLOTS = { 13, 14 }
-local LayoutCustomViewer
-local ReindexCustomViewerEntries
-local RefreshCustomViewerAnchors
 local CUSTOM_VIEWER_SETTING_KEYS = {
     "IconSize",
     "IconWidth",
@@ -289,6 +286,70 @@ local function ShouldShowItem(customDB, itemId)
     return itemCount > 0
 end
 
+local function UpdateCustomItemIcon(customIcon)
+    local entryId = customIcon and customIcon.EntryID
+    if not customIcon or not customIcon.Cooldown or not customIcon.Icon or not entryId then return end
+
+    local itemCount, startTime, durationTime = FetchItemData(entryId)
+    if itemCount == nil then return end
+
+    local hasActiveCooldown = (startTime and durationTime and startTime > 0 and durationTime > 0) or false
+    if C_Item.IsUsableItem(entryId) then
+        local shouldRefreshCooldown = BCDM:ShouldRefreshCooldownFrame(customIcon.Cooldown, hasActiveCooldown, startTime, durationTime)
+        if hasActiveCooldown and shouldRefreshCooldown then
+            customIcon.Cooldown:SetCooldown(startTime, durationTime)
+        elseif not hasActiveCooldown and shouldRefreshCooldown then
+            customIcon.Cooldown:SetCooldown(0, 0)
+        end
+    end
+
+    customIcon.Charges:SetText(itemCount > 0 and tostring(itemCount) or "")
+    if BCDM:IsSecretValue(startTime) or BCDM:IsSecretValue(durationTime) then
+        BCDM:SetIconDesaturation(customIcon.Icon, 0)
+    elseif hasActiveCooldown then
+        BCDM:SetIconDesaturation(customIcon.Icon, CalculateFallbackDesaturation(startTime, durationTime))
+    else
+        BCDM:SetIconDesaturation(customIcon.Icon, 0)
+    end
+
+    if not C_Item.IsUsableItem(entryId) then
+        customIcon.Icon:SetVertexColor(0.5, 0.5, 0.5)
+    else
+        customIcon.Icon:SetVertexColor(1, 1, 1)
+    end
+    customIcon.Charges:SetAlphaFromBoolean(itemCount > 1, 1, 0)
+end
+
+local function UpdateCustomSpellIcon(customIcon)
+    local entryId = customIcon and customIcon.EntryID
+    if not customIcon or not customIcon.Cooldown or not entryId then return end
+
+    local spellCharges = C_Spell.GetSpellCharges(entryId)
+    if spellCharges then
+        customIcon.Charges:SetText(C_Spell.GetSpellDisplayCount(entryId) or "")
+        customIcon.Cooldown:SetCooldown(spellCharges.cooldownStartTime, spellCharges.cooldownDuration)
+    else
+        local cooldownData = C_Spell.GetSpellCooldown(entryId)
+        customIcon.Cooldown:SetCooldown(cooldownData.startTime, cooldownData.duration)
+        customIcon.Charges:SetText("")
+    end
+    UpdateSpellIconDesaturation(customIcon, entryId)
+end
+
+local function RefreshCustomViewerContainerIcons(container)
+    if not container then return end
+
+    local childCount = container:GetNumChildren()
+    for i = 1, childCount do
+        local customIcon = select(i, container:GetChildren())
+        if customIcon and customIcon.EntryType == "item" then
+            UpdateCustomItemIcon(customIcon)
+        elseif customIcon and customIcon.EntryType == "spell" then
+            UpdateCustomSpellIcon(customIcon)
+        end
+    end
+end
+
 local function FetchEquippedOnUseTrinkets()
     local equippedTrinkets = {}
     for _, slotID in ipairs(TRINKET_SLOTS) do
@@ -474,6 +535,8 @@ local function AcquireIconFrame()
         customIconPool = CreateFramePool("Button", UIParent, "BackdropTemplate", function(pool, frame)
             frame:UnregisterAllEvents()
             frame:SetScript("OnEvent", nil)
+            frame.EntryID = nil
+            frame.EntryType = nil
             frame:Hide()
             frame:ClearAllPoints()
             if frame.Cooldown then frame.Cooldown:SetCooldown(0, 0) end
@@ -528,14 +591,8 @@ local function CreateCustomIcon(entryId, entryType, customDB)
     customIcon:SetSize(iconWidth, iconHeight)
     customIcon:EnableMouse(false)
     customIcon:SetFrameStrata(CustomDB.FrameStrata or "LOW")
-    customIcon:RegisterEvent("SPELL_UPDATE_COOLDOWN")
-    customIcon:RegisterEvent("PLAYER_ENTERING_WORLD")
-    if isItem then
-        customIcon:RegisterEvent("ITEM_COUNT_CHANGED")
-    else
-        customIcon:RegisterEvent("SPELL_UPDATE_CHARGES")
-        customIcon:RegisterEvent("ITEM_PUSH")
-    end
+    customIcon.EntryID = entryId
+    customIcon.EntryType = entryType
 
     customIcon.Cooldown:SetDrawBling(false)
 
@@ -559,50 +616,6 @@ local function CreateCustomIcon(entryId, entryType, customDB)
         ApplyItemQualityAtlas(customIcon, entryId, CustomDB, iconWidth, iconHeight)
     end
 
-    if isItem then
-        customIcon:SetScript("OnEvent", function(self, event, ...)
-            if event == "SPELL_UPDATE_COOLDOWN" or event == "PLAYER_ENTERING_WORLD" or event == "ITEM_COUNT_CHANGED" then
-                local itemCount, startTime, durationTime = FetchItemData(entryId)
-                if itemCount then
-                    local hasActiveCooldown = (startTime and durationTime and startTime > 0 and durationTime > 0) or false
-                    if C_Item.IsUsableItem(entryId) then
-                        local shouldRefreshCooldown = BCDM:ShouldRefreshCooldownFrame(customIcon.Cooldown, hasActiveCooldown, startTime, durationTime)
-                        if hasActiveCooldown and shouldRefreshCooldown then
-                            customIcon.Cooldown:SetCooldown(startTime, durationTime)
-                        elseif not hasActiveCooldown and event ~= "ITEM_COUNT_CHANGED" and shouldRefreshCooldown then
-                            customIcon.Cooldown:SetCooldown(0, 0)
-                        end
-                    end
-                    customIcon.Charges:SetText(itemCount > 0 and tostring(itemCount) or "")
-                    if BCDM:IsSecretValue(startTime) or BCDM:IsSecretValue(durationTime) then
-                        BCDM:SetIconDesaturation(customIcon.Icon, 0)
-                    elseif hasActiveCooldown then
-                        BCDM:SetIconDesaturation(customIcon.Icon, CalculateFallbackDesaturation(startTime, durationTime))
-                    else
-                        BCDM:SetIconDesaturation(customIcon.Icon, 0)
-                    end
-                    if not C_Item.IsUsableItem(entryId) then customIcon.Icon:SetVertexColor(0.5, 0.5, 0.5) else customIcon.Icon:SetVertexColor(1, 1, 1) end
-                    customIcon.Charges:SetAlphaFromBoolean(itemCount > 1, 1, 0)
-                end
-            end
-        end)
-    else
-        customIcon:SetScript("OnEvent", function(self, event, ...)
-            if event == "SPELL_UPDATE_COOLDOWN" or event == "PLAYER_ENTERING_WORLD" or event == "SPELL_UPDATE_CHARGES" then
-                local spellCharges = C_Spell.GetSpellCharges(entryId)
-                if spellCharges then
-                    customIcon.Charges:SetText(C_Spell.GetSpellDisplayCount(entryId) or "")
-                    customIcon.Cooldown:SetCooldown(spellCharges.cooldownStartTime, spellCharges.cooldownDuration)
-                else
-                    local cooldownData = C_Spell.GetSpellCooldown(entryId)
-                    customIcon.Cooldown:SetCooldown(cooldownData.startTime, cooldownData.duration)
-                    customIcon.Charges:SetText("")
-                end
-                UpdateSpellIconDesaturation(self, entryId)
-            end
-        end)
-    end
-
     local borderSize = BCDM.db.profile.CooldownManager.General.BorderSize
     customIcon.Icon:ClearAllPoints()
     customIcon.Icon:SetPoint("TOPLEFT", customIcon, "TOPLEFT", borderSize, -borderSize)
@@ -611,12 +624,11 @@ local function CreateCustomIcon(entryId, entryType, customDB)
     BCDM:ApplyIconTexCoord(customIcon.Icon, iconWidth, iconHeight, iconZoom)
     if isItem then
         customIcon.Icon:SetTexture(select(10, C_Item.GetItemInfo(entryId)))
+        UpdateCustomItemIcon(customIcon)
     else
         customIcon.Icon:SetTexture(C_Spell.GetSpellInfo(entryId).iconID)
+        UpdateCustomSpellIcon(customIcon)
     end
-
-    local onEvent = customIcon:GetScript("OnEvent")
-    if onEvent then onEvent(customIcon, "PLAYER_ENTERING_WORLD") end
 
     return customIcon
 end
@@ -637,8 +649,28 @@ local function HasTrackedPotionEntries(items)
     return false
 end
 
+local function HasTrackedItemEntries(items)
+    if not items then return false end
+    for entryId, data in pairs(items) do
+        if data and data.isActive and ResolveItemSpellEntryType(entryId, data) == "item" then
+            return true
+        end
+    end
+    return false
+end
+
+local function HasTrackedSpellEntries(items)
+    if not items then return false end
+    for entryId, data in pairs(items) do
+        if data and data.isActive and ResolveItemSpellEntryType(entryId, data) == "spell" then
+            return true
+        end
+    end
+    return false
+end
+
 local function CreateCustomIcons(iconTable, visibleItemIds, customDB)
-    local CustomDB = customDB or GetCustomDB()
+    local CustomDB = customDB or GetCustomViewerDB()
     local Items = CustomDB.ItemsSpells
     local playerClass = select(2, UnitClass("player"))
     local specIndex = GetSpecialization()
@@ -731,7 +763,9 @@ local function RequestDeferredContainerUpdate(container)
     container.PendingRefresh = true
     C_Timer.After(0, function()
         container.PendingRefresh = false
-        LayoutCustomViewer()
+        if BCDM.UpdateCustomViewer then
+            BCDM:UpdateCustomViewer()
+        end
     end)
 end
 
@@ -747,7 +781,12 @@ local function HandleCustomViewerContainerEvent(self, event, itemId)
         return
     end
 
-    if event == "PLAYER_ENTERING_WORLD" or event == "BAG_UPDATE_DELAYED" then
+    if event == "SPELL_UPDATE_COOLDOWN" or event == "SPELL_UPDATE_CHARGES" or event == "PLAYER_ENTERING_WORLD" then
+        RefreshCustomViewerContainerIcons(self)
+        return
+    end
+
+    if event == "BAG_UPDATE_DELAYED" then
         RequestDeferredContainerUpdate(self)
         return
     end
@@ -759,18 +798,27 @@ local function HandleCustomViewerContainerEvent(self, event, itemId)
             return
         end
         local entry = items[itemId]
-        if not (entry and entry.isActive) then return end
-        local entryType = ResolveItemSpellEntryType(itemId, entry)
-        if entryType ~= "item" then return end
-        if IsPotionItem(itemId) then
+        if not (entry and entry.isActive) then
+            if self.AutoDetectUsableTrinkets and (itemId == GetInventoryItemID("player", 13) or itemId == GetInventoryItemID("player", 14)) then
+                RequestDeferredContainerUpdate(self)
+            end
+            return
+        end
+        if ResolveItemSpellEntryType(itemId, entry) ~= "item" then return end
+        if IsPotionItem(itemId) or self.HasPotionEntries then
             RequestDeferredContainerUpdate(self)
             return
         end
-        if not customDB.HideZeroCharges then return end
+        if not customDB.HideZeroCharges then
+            RefreshCustomViewerContainerIcons(self)
+            return
+        end
         local visible = self.VisibleItemIds and self.VisibleItemIds[itemId] or false
         local shouldShow = ShouldShowItem(customDB, itemId)
         if visible ~= shouldShow then
             RequestDeferredContainerUpdate(self)
+        else
+            RefreshCustomViewerContainerIcons(self)
         end
     end
 end
@@ -793,25 +841,53 @@ local function AcquireCustomViewerContainer(viewerData)
 end
 
 local function UpdateCustomViewerContainerEvents(container, customDB)
-    local shouldTrackItemCountChanges = customDB.HideZeroCharges or HasTrackedPotionEntries(customDB.ItemsSpells)
+    local hasTrackedItems = HasTrackedItemEntries(customDB.ItemsSpells) or customDB.AutoDetectUsableTrinkets
+    local hasPotionEntries = HasTrackedPotionEntries(customDB.ItemsSpells)
+    local hasTrackedSpells = HasTrackedSpellEntries(customDB.ItemsSpells)
+    local shouldTrackItemCountChanges = hasTrackedItems
+    local shouldTrackBagRefresh = customDB.HideZeroCharges or hasPotionEntries or customDB.AutoDetectUsableTrinkets
     local shouldTrackEquipmentChanges = customDB.AutoDetectUsableTrinkets
+    local shouldTrackCooldownUpdates = hasTrackedItems or hasTrackedSpells
+
+    container.HasPotionEntries = hasPotionEntries
+    container.AutoDetectUsableTrinkets = customDB.AutoDetectUsableTrinkets
 
     if shouldTrackItemCountChanges then
         container:RegisterEvent("ITEM_COUNT_CHANGED")
         container:RegisterEvent("ITEM_PUSH")
-        container:RegisterEvent("BAG_UPDATE_DELAYED")
-        container:RegisterEvent("PLAYER_ENTERING_WORLD")
     else
         container:UnregisterEvent("ITEM_COUNT_CHANGED")
         container:UnregisterEvent("ITEM_PUSH")
+    end
+
+    if shouldTrackBagRefresh then
+        container:RegisterEvent("BAG_UPDATE_DELAYED")
+    else
         container:UnregisterEvent("BAG_UPDATE_DELAYED")
-        container:UnregisterEvent("PLAYER_ENTERING_WORLD")
     end
 
     if shouldTrackEquipmentChanges then
         container:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
     else
         container:UnregisterEvent("PLAYER_EQUIPMENT_CHANGED")
+    end
+
+    if shouldTrackCooldownUpdates then
+        container:RegisterEvent("SPELL_UPDATE_COOLDOWN")
+    else
+        container:UnregisterEvent("SPELL_UPDATE_COOLDOWN")
+    end
+
+    if hasTrackedSpells then
+        container:RegisterEvent("SPELL_UPDATE_CHARGES")
+    else
+        container:UnregisterEvent("SPELL_UPDATE_CHARGES")
+    end
+
+    if shouldTrackItemCountChanges or shouldTrackEquipmentChanges or shouldTrackCooldownUpdates then
+        container:RegisterEvent("PLAYER_ENTERING_WORLD")
+    else
+        container:UnregisterEvent("PLAYER_ENTERING_WORLD")
     end
 end
 
@@ -953,6 +1029,7 @@ local function LayoutCustomViewerContainer(container, customDB)
     end
 
     BCDM:ApplyCooldownText(container)
+    RefreshCustomViewerContainerIcons(container)
     container:Show()
 end
 
@@ -966,13 +1043,58 @@ local function HideUnusedCustomViewerContainers(activeFrameNames)
             container:UnregisterEvent("BAG_UPDATE_DELAYED")
             container:UnregisterEvent("PLAYER_ENTERING_WORLD")
             container:UnregisterEvent("PLAYER_EQUIPMENT_CHANGED")
+            container:UnregisterEvent("SPELL_UPDATE_COOLDOWN")
+            container:UnregisterEvent("SPELL_UPDATE_CHARGES")
             container.VisibleItemIds = nil
             container:Hide()
         end
     end
 end
 
-LayoutCustomViewer = function()
+local function RefreshCustomViewerAnchors()
+    if not BCDM.AnchorParents then return end
+
+    BCDM.DynamicCustomViewerAnchors = BCDM.DynamicCustomViewerAnchors or {}
+
+    for _, anchorType in ipairs({ "CustomViewer", "Trinket" }) do
+        local anchorData = BCDM.AnchorParents[anchorType]
+        if anchorData then
+            local displayNames = anchorData[1]
+            local keyList = anchorData[2]
+            for anchorKey in pairs(BCDM.DynamicCustomViewerAnchors) do
+                displayNames[anchorKey] = nil
+                for index = #keyList, 1, -1 do
+                    if keyList[index] == anchorKey then
+                        table.remove(keyList, index)
+                    end
+                end
+            end
+        end
+    end
+
+    wipe(BCDM.DynamicCustomViewerAnchors)
+
+    for _, viewerData in ipairs(GetCustomViewerEntries()) do
+        local frameName = viewerData.FrameName
+        if frameName then
+            BCDM.DynamicCustomViewerAnchors[frameName] = true
+            local displayName = "|cFF8080FFBCDM|r: " .. (viewerData.Name or BuildCustomViewerName(viewerData.ViewerID))
+            for _, anchorType in ipairs({ "CustomViewer", "Trinket" }) do
+                local anchorData = BCDM.AnchorParents[anchorType]
+                if anchorData then
+                    local displayNames = anchorData[1]
+                    local keyList = anchorData[2]
+                    displayNames[frameName] = displayName
+                    if not tContains(keyList, frameName) then
+                        table.insert(keyList, frameName)
+                    end
+                end
+            end
+        end
+    end
+end
+
+local function LayoutCustomViewer()
     local viewers = GetCustomViewerEntries()
     local activeFrameNames = {}
 
@@ -1000,6 +1122,35 @@ end
 BCDM.SetupCustomViewer = LayoutCustomViewer
 BCDM.UpdateCustomViewer = LayoutCustomViewer
 
+-- Rebuild the stored layout order after inserts, removals, or manual moves so
+-- every entry ends up with a compact 1..N layoutIndex again.
+local function ReindexCustomViewerEntries(viewerID, methodViewerID)
+    local CustomDB = GetCustomViewerDB(viewerID, methodViewerID)
+    local Items = CustomDB.ItemsSpells
+
+    if not Items then return end
+
+    local ordered = {}
+    for itemId, data in pairs(Items) do
+        ordered[#ordered + 1] = {
+            itemId = itemId,
+            data = data,
+            sortIndex = data.layoutIndex or math.huge,
+        }
+    end
+
+    table.sort(ordered, function(a, b)
+        if a.sortIndex == b.sortIndex then
+            return tostring(a.itemId) < tostring(b.itemId)
+        end
+        return a.sortIndex < b.sortIndex
+    end)
+
+    for index, entry in ipairs(ordered) do
+        entry.data.layoutIndex = index
+    end
+end
+
 function BCDM:AdjustCustomViewerLayoutIndex(direction, itemId, viewerID)
     local CustomDB = GetCustomViewerDB(viewerID)
     local Items = CustomDB.ItemsSpells
@@ -1026,35 +1177,6 @@ function BCDM:AdjustCustomViewerLayoutIndex(direction, itemId, viewerID)
     ReindexCustomViewerEntries(viewerID)
 
     LayoutCustomViewer()
-end
-
--- Rebuild the stored layout order after inserts, removals, or manual moves so
--- every entry ends up with a compact 1..N layoutIndex again.
-ReindexCustomViewerEntries = function(viewerID, methodViewerID)
-    local CustomDB = GetCustomViewerDB(viewerID, methodViewerID)
-    local Items = CustomDB.ItemsSpells
-
-    if not Items then return end
-
-    local ordered = {}
-    for itemId, data in pairs(Items) do
-        ordered[#ordered + 1] = {
-            itemId = itemId,
-            data = data,
-            sortIndex = data.layoutIndex or math.huge,
-        }
-    end
-
-    table.sort(ordered, function(a, b)
-        if a.sortIndex == b.sortIndex then
-            return tostring(a.itemId) < tostring(b.itemId)
-        end
-        return a.sortIndex < b.sortIndex
-    end)
-
-    for index, entry in ipairs(ordered) do
-        entry.data.layoutIndex = index
-    end
 end
 
 function BCDM:AdjustCustomViewerList(itemId, adjustingHow, entryType, viewerID)
@@ -1240,6 +1362,8 @@ function BCDM:RemoveCustomViewer(viewerID)
         removedContainer:UnregisterEvent("BAG_UPDATE_DELAYED")
         removedContainer:UnregisterEvent("PLAYER_ENTERING_WORLD")
         removedContainer:UnregisterEvent("PLAYER_EQUIPMENT_CHANGED")
+        removedContainer:UnregisterEvent("SPELL_UPDATE_COOLDOWN")
+        removedContainer:UnregisterEvent("SPELL_UPDATE_CHARGES")
         removedContainer:Hide()
     end
 
@@ -1252,49 +1376,6 @@ function BCDM:RemoveCustomViewer(viewerID)
     RefreshCustomViewerAnchors()
     LayoutCustomViewer()
     return true
-end
-
-RefreshCustomViewerAnchors = function()
-    if not BCDM.AnchorParents then return end
-
-    BCDM.DynamicCustomViewerAnchors = BCDM.DynamicCustomViewerAnchors or {}
-
-    for _, anchorType in ipairs({ "CustomViewer", "Trinket" }) do
-        local anchorData = BCDM.AnchorParents[anchorType]
-        if anchorData then
-            local displayNames = anchorData[1]
-            local keyList = anchorData[2]
-            for anchorKey in pairs(BCDM.DynamicCustomViewerAnchors) do
-                displayNames[anchorKey] = nil
-                for index = #keyList, 1, -1 do
-                    if keyList[index] == anchorKey then
-                        table.remove(keyList, index)
-                    end
-                end
-            end
-        end
-    end
-
-    wipe(BCDM.DynamicCustomViewerAnchors)
-
-    for _, viewerData in ipairs(GetCustomViewerEntries()) do
-        local frameName = viewerData.FrameName
-        if frameName then
-            BCDM.DynamicCustomViewerAnchors[frameName] = true
-            local displayName = "|cFF8080FFBCDM|r: " .. (viewerData.Name or BuildCustomViewerName(viewerData.ViewerID))
-            for _, anchorType in ipairs({ "CustomViewer", "Trinket" }) do
-                local anchorData = BCDM.AnchorParents[anchorType]
-                if anchorData then
-                    local displayNames = anchorData[1]
-                    local keyList = anchorData[2]
-                    displayNames[frameName] = displayName
-                    if not tContains(keyList, frameName) then
-                        table.insert(keyList, frameName)
-                    end
-                end
-            end
-        end
-    end
 end
 
 function BCDM:MigrateCustomViewerData()
