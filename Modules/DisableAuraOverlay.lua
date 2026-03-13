@@ -131,16 +131,6 @@ local function ApplyCooldownStyle(cooldown)
     if cooldown.SetHideCountdownNumbers then cooldown:SetHideCountdownNumbers(false) end
 end
 
-local function FetchCooldownTextRegion(cooldown)
-    if not cooldown then return nil end
-
-    for _, region in ipairs({ cooldown:GetRegions() }) do
-        if region and region.GetObjectType and region:GetObjectType() == "FontString" then return region end
-    end
-
-    return nil
-end
-
 local function ApplyCooldownTextStyle(parentFrame, cooldown)
     if not (parentFrame and cooldown) then return end
     if not BCDM.db.profile.CooldownManager then return end
@@ -148,7 +138,7 @@ local function ApplyCooldownTextStyle(parentFrame, cooldown)
     local profileDB = BCDM.db.profile
     local generalDB = profileDB.General
     local cooldownTextDB = profileDB.CooldownManager.General and profileDB.CooldownManager.General.CooldownText
-    local textRegion = FetchCooldownTextRegion(cooldown)
+    local textRegion = BCDM:GetFrameRegionByType(cooldown, "FontString")
 
     if not (generalDB and cooldownTextDB and textRegion) then return end
 
@@ -272,7 +262,9 @@ local function ScanCooldownFrames()
     for _, viewerName in ipairs(VIEWERS) do
         local viewer = _G[viewerName]
         if viewer then
-            for _, child in ipairs({ viewer:GetChildren() }) do
+            local childCount = viewer:GetNumChildren()
+            for i = 1, childCount do
+                local child = select(i, viewer:GetChildren())
                 if child and child.Cooldown and child.cooldownInfo then
                     HookCooldownFrame(child.Cooldown, child)
                     ProcessCooldownFrame(child)

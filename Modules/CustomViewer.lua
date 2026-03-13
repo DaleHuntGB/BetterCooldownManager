@@ -221,48 +221,7 @@ local function ResolveAnchorParent(anchorName)
         return UIParent
     end
 
-    return _G[anchorName] or UIParent
-end
-
-local function FetchCooldownTextRegion(cooldown)
-    if not cooldown then return end
-    for _, region in ipairs({ cooldown:GetRegions() }) do
-        if region:GetObjectType() == "FontString" then
-            return region
-        end
-    end
-end
-
-local function ApplyCooldownText(container)
-    local CooldownManagerDB = BCDM.db.profile
-    local GeneralDB = CooldownManagerDB.General
-    local CooldownTextDB = CooldownManagerDB.CooldownManager.General.CooldownText
-    local Viewer = container or _G[VIEWER_FRAME_NAME]
-    if not Viewer then return end
-    for _, icon in ipairs({ Viewer:GetChildren() }) do
-        if icon and icon.Cooldown then
-            local textRegion = FetchCooldownTextRegion(icon.Cooldown)
-            if textRegion then
-                if CooldownTextDB.ScaleByIconSize then
-                    local iconWidth = icon:GetWidth()
-                    local scaleFactor = iconWidth / 36
-                    textRegion:SetFont(BCDM.Media.Font, CooldownTextDB.FontSize * scaleFactor, GeneralDB.Fonts.FontFlag)
-                else
-                    textRegion:SetFont(BCDM.Media.Font, CooldownTextDB.FontSize, GeneralDB.Fonts.FontFlag)
-                end
-                textRegion:SetTextColor(CooldownTextDB.Colour[1], CooldownTextDB.Colour[2], CooldownTextDB.Colour[3], 1)
-                textRegion:ClearAllPoints()
-                textRegion:SetPoint(CooldownTextDB.Layout[1], icon, CooldownTextDB.Layout[2], CooldownTextDB.Layout[3], CooldownTextDB.Layout[4])
-                if GeneralDB.Fonts.Shadow.Enabled then
-                    textRegion:SetShadowColor(GeneralDB.Fonts.Shadow.Colour[1], GeneralDB.Fonts.Shadow.Colour[2], GeneralDB.Fonts.Shadow.Colour[3], GeneralDB.Fonts.Shadow.Colour[4])
-                    textRegion:SetShadowOffset(GeneralDB.Fonts.Shadow.OffsetX, GeneralDB.Fonts.Shadow.OffsetY)
-                else
-                    textRegion:SetShadowColor(0, 0, 0, 0)
-                    textRegion:SetShadowOffset(0, 0)
-                end
-            end
-        end
-    end
+    return (BCDM.GetEffectiveAnchorFrame and BCDM:GetEffectiveAnchorFrame(anchorName)) or _G[anchorName] or UIParent
 end
 
 local function SetIconDesaturation(icon, value)
@@ -1027,7 +986,7 @@ local function LayoutCustomViewerContainer(container, customDB)
         end
     end
 
-    ApplyCooldownText(container)
+    BCDM:ApplyCooldownText(container)
     container:Show()
 end
 

@@ -221,6 +221,9 @@ local Defaults = {
             },
             Trinket = {
                 Enabled = true,
+                ShowPassive = true,
+                AppendTo = "NONE",
+                AppendSide = "RIGHT",
                 IconSize = 38,
                 IconWidth = 38,
                 IconHeight = 38,

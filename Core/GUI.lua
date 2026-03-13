@@ -1936,6 +1936,7 @@ local function CreateCooldownViewerSettings(parentContainer, viewerType)
     local isCustomViewer = viewerType == "CustomViewer" or viewerType == "Trinket"
     local supportsColumnWrap = viewerType == "CustomViewer"
     local ViewerDB = GetCooldownViewerDB(viewerType)
+    local isAppendedTrinket = viewerType == "Trinket" and (ViewerDB.AppendTo or "NONE") ~= "NONE"
 
     local function RefreshViewerSettings()
         parentContainer:ReleaseChildren()
@@ -2012,6 +2013,50 @@ local function CreateCooldownViewerSettings(parentContainer, viewerType)
         enabledCheckbox:SetCallback("OnValueChanged", function(_, _, value) BCDM.db.profile.CooldownManager.Trinket.Enabled = value BCDM:UpdateCooldownViewer("Trinket") end)
         enabledCheckbox:SetRelativeWidth(1)
         ScrollFrame:AddChild(enabledCheckbox)
+
+        local showPassiveCheckbox = AG:Create("CheckBox")
+        showPassiveCheckbox:SetLabel(LL("Show Passive Trinkets"))
+        showPassiveCheckbox:SetValue(BCDM.db.profile.CooldownManager.Trinket.ShowPassive ~= false)
+        showPassiveCheckbox:SetCallback("OnValueChanged", function(_, _, value)
+            BCDM.db.profile.CooldownManager.Trinket.ShowPassive = value
+            BCDM:UpdateCooldownViewer("Trinket")
+        end)
+        showPassiveCheckbox:SetRelativeWidth(1)
+        ScrollFrame:AddChild(showPassiveCheckbox)
+
+        local appendDropdown = AG:Create("Dropdown")
+        appendDropdown:SetLabel(LL("Append To"))
+        appendDropdown:SetList({
+            ["NONE"] = LL("Standalone"),
+            ["Essential"] = LL("Essential"),
+            ["Utility"] = LL("Utility"),
+        }, { "NONE", "Essential", "Utility" })
+        appendDropdown:SetValue(BCDM.db.profile.CooldownManager.Trinket.AppendTo or "NONE")
+        appendDropdown:SetCallback("OnValueChanged", function(_, _, value)
+            BCDM.db.profile.CooldownManager.Trinket.AppendTo = value
+            RefreshViewerSettings()
+            BCDM:UpdateCooldownViewer("Trinket")
+        end)
+        appendDropdown:SetRelativeWidth(1)
+        ScrollFrame:AddChild(appendDropdown)
+
+        if isAppendedTrinket then
+            local appendSideDropdown = AG:Create("Dropdown")
+            appendSideDropdown:SetLabel(LL("Append Side"))
+            appendSideDropdown:SetList({
+                ["LEFT"] = LL("Left"),
+                ["RIGHT"] = LL("Right"),
+            }, { "LEFT", "RIGHT" })
+            appendSideDropdown:SetValue(BCDM.db.profile.CooldownManager.Trinket.AppendSide or "RIGHT")
+            appendSideDropdown:SetCallback("OnValueChanged", function(_, _, value)
+                BCDM.db.profile.CooldownManager.Trinket.AppendSide = value
+                BCDM:UpdateCooldownViewer("Trinket")
+            end)
+            appendSideDropdown:SetRelativeWidth(1)
+            ScrollFrame:AddChild(appendSideDropdown)
+
+            CreateInformationTag(ScrollFrame, LL("Appended trinkets inherit the target viewer's sizing and spacing."))
+        end
     end
 
     if viewerType == "CustomViewer" then
@@ -2074,206 +2119,208 @@ local function CreateCooldownViewerSettings(parentContainer, viewerType)
         ScrollFrame:AddChild(trinketToggle)
     end
 
-    local layoutContainer = AG:Create("InlineGroup")
-    layoutContainer:SetTitle(LL("Layout & Positioning"))
-    layoutContainer:SetFullWidth(true)
-    layoutContainer:SetLayout("Flow")
-    ScrollFrame:AddChild(layoutContainer)
+    if not isAppendedTrinket then
+        local layoutContainer = AG:Create("InlineGroup")
+        layoutContainer:SetTitle(LL("Layout & Positioning"))
+        layoutContainer:SetFullWidth(true)
+        layoutContainer:SetLayout("Flow")
+        ScrollFrame:AddChild(layoutContainer)
 
-    if viewerType ~= "CustomViewer" and viewerType ~= "Trinket" then
-        CreateInformationTag(layoutContainer, LL("|cFFFFCC00Padding|r is handled by |cFF00B0F7Blizzard|r, not |cFF8080FFBetter|rCooldownManager."))
-    end
+        if viewerType ~= "CustomViewer" and viewerType ~= "Trinket" then
+            CreateInformationTag(layoutContainer, LL("|cFFFFCC00Padding|r is handled by |cFF00B0F7Blizzard|r, not |cFF8080FFBetter|rCooldownManager."))
+        end
 
-    local anchorFromDropdown = AG:Create("Dropdown")
-    anchorFromDropdown:SetLabel(LL("Anchor From"))
-    anchorFromDropdown:SetList(AnchorPoints[1], AnchorPoints[2])
-    anchorFromDropdown:SetValue(ViewerDB.Layout[1])
-    anchorFromDropdown:SetCallback("OnValueChanged", function(self, _, value) ViewerDB.Layout[1] = value BCDM:UpdateCooldownViewer(viewerType) end)
-    anchorFromDropdown:SetRelativeWidth(hasAnchorParent and 0.33 or 0.5)
-    layoutContainer:AddChild(anchorFromDropdown)
+        local anchorFromDropdown = AG:Create("Dropdown")
+        anchorFromDropdown:SetLabel(LL("Anchor From"))
+        anchorFromDropdown:SetList(AnchorPoints[1], AnchorPoints[2])
+        anchorFromDropdown:SetValue(ViewerDB.Layout[1])
+        anchorFromDropdown:SetCallback("OnValueChanged", function(self, _, value) ViewerDB.Layout[1] = value BCDM:UpdateCooldownViewer(viewerType) end)
+        anchorFromDropdown:SetRelativeWidth(hasAnchorParent and 0.33 or 0.5)
+        layoutContainer:AddChild(anchorFromDropdown)
 
-    if hasAnchorParent then
-        BCDMG:AddAnchors("ElvUI", {"Utility", "CustomViewer", "Trinket"}, { ["ElvUF_Player"] = "|cff1784d1ElvUI|r: Player Frame", ["ElvUF_Target"] = "|cff1784d1ElvUI|r: Target Frame", })
-        local anchorParentList, anchorParentOrder = BuildAnchorParentListForViewer(viewerType, ViewerDB)
-        local anchorToParentDropdown = AG:Create("Dropdown")
-        anchorToParentDropdown:SetLabel(LL("Anchor To Parent"))
-        anchorToParentDropdown:SetList(anchorParentList, anchorParentOrder)
-        anchorToParentDropdown:SetValue(ViewerDB.Layout[2])
-        anchorToParentDropdown:SetCallback("OnValueChanged", function(self, _, value) ViewerDB.Layout[2] = value BCDM:UpdateCooldownViewer(viewerType) end)
-        anchorToParentDropdown:SetRelativeWidth(0.33)
-        layoutContainer:AddChild(anchorToParentDropdown)
-    end
+        if hasAnchorParent then
+            BCDMG:AddAnchors("ElvUI", {"Utility", "CustomViewer", "Trinket"}, { ["ElvUF_Player"] = "|cff1784d1ElvUI|r: Player Frame", ["ElvUF_Target"] = "|cff1784d1ElvUI|r: Target Frame", })
+            local anchorParentList, anchorParentOrder = BuildAnchorParentListForViewer(viewerType, ViewerDB)
+            local anchorToParentDropdown = AG:Create("Dropdown")
+            anchorToParentDropdown:SetLabel(LL("Anchor To Parent"))
+            anchorToParentDropdown:SetList(anchorParentList, anchorParentOrder)
+            anchorToParentDropdown:SetValue(ViewerDB.Layout[2])
+            anchorToParentDropdown:SetCallback("OnValueChanged", function(self, _, value) ViewerDB.Layout[2] = value BCDM:UpdateCooldownViewer(viewerType) end)
+            anchorToParentDropdown:SetRelativeWidth(0.33)
+            layoutContainer:AddChild(anchorToParentDropdown)
+        end
 
-    local anchorToDropdown = AG:Create("Dropdown")
-    anchorToDropdown:SetLabel(LL("Anchor To"))
-    anchorToDropdown:SetList(AnchorPoints[1], AnchorPoints[2])
-    anchorToDropdown:SetValue(ViewerDB.Layout[hasAnchorParent and 3 or 2])
-    anchorToDropdown:SetCallback("OnValueChanged", function(self, _, value) ViewerDB.Layout[hasAnchorParent and 3 or 2] = value BCDM:UpdateCooldownViewer(viewerType) end)
-    anchorToDropdown:SetRelativeWidth(hasAnchorParent and 0.33 or 0.5)
-    layoutContainer:AddChild(anchorToDropdown)
+        local anchorToDropdown = AG:Create("Dropdown")
+        anchorToDropdown:SetLabel(LL("Anchor To"))
+        anchorToDropdown:SetList(AnchorPoints[1], AnchorPoints[2])
+        anchorToDropdown:SetValue(ViewerDB.Layout[hasAnchorParent and 3 or 2])
+        anchorToDropdown:SetCallback("OnValueChanged", function(self, _, value) ViewerDB.Layout[hasAnchorParent and 3 or 2] = value BCDM:UpdateCooldownViewer(viewerType) end)
+        anchorToDropdown:SetRelativeWidth(hasAnchorParent and 0.33 or 0.5)
+        layoutContainer:AddChild(anchorToDropdown)
 
-    if isCustomViewer then
-        local growthControlWidth = supportsColumnWrap and 0.3333 or 0.5
+        if isCustomViewer then
+            local growthControlWidth = supportsColumnWrap and 0.3333 or 0.5
 
-        local growthDirectionDropdown = AG:Create("Dropdown")
-        growthDirectionDropdown:SetLabel(LL("Growth Direction"))
-        growthDirectionDropdown:SetList({["LEFT"] = "Left", ["RIGHT"] = "Right", ["UP"] = "Up", ["DOWN"] = "Down"}, {"UP", "DOWN", "LEFT", "RIGHT"})
-        growthDirectionDropdown:SetValue(ViewerDB.GrowthDirection)
-        growthDirectionDropdown:SetCallback("OnValueChanged", function(self, _, value) ViewerDB.GrowthDirection = value BCDM:UpdateCooldownViewer(viewerType) end)
-        growthDirectionDropdown:SetRelativeWidth(growthControlWidth)
-        layoutContainer:AddChild(growthDirectionDropdown)
+            local growthDirectionDropdown = AG:Create("Dropdown")
+            growthDirectionDropdown:SetLabel(LL("Growth Direction"))
+            growthDirectionDropdown:SetList({["LEFT"] = "Left", ["RIGHT"] = "Right", ["UP"] = "Up", ["DOWN"] = "Down"}, {"UP", "DOWN", "LEFT", "RIGHT"})
+            growthDirectionDropdown:SetValue(ViewerDB.GrowthDirection)
+            growthDirectionDropdown:SetCallback("OnValueChanged", function(self, _, value) ViewerDB.GrowthDirection = value BCDM:UpdateCooldownViewer(viewerType) end)
+            growthDirectionDropdown:SetRelativeWidth(growthControlWidth)
+            layoutContainer:AddChild(growthDirectionDropdown)
 
-        local spacingSlider = AG:Create("Slider")
-        spacingSlider:SetLabel(LL("Icon Spacing"))
-        spacingSlider:SetValue(ViewerDB.Spacing)
-        spacingSlider:SetSliderValues(-1, 32, 0.1)
-        spacingSlider:SetCallback("OnValueChanged", function(self, _, value) ViewerDB.Spacing = value BCDM:UpdateCooldownViewer(viewerType) end)
-        spacingSlider:SetRelativeWidth(growthControlWidth)
-        layoutContainer:AddChild(spacingSlider)
+            local spacingSlider = AG:Create("Slider")
+            spacingSlider:SetLabel(LL("Icon Spacing"))
+            spacingSlider:SetValue(ViewerDB.Spacing)
+            spacingSlider:SetSliderValues(-1, 32, 0.1)
+            spacingSlider:SetCallback("OnValueChanged", function(self, _, value) ViewerDB.Spacing = value BCDM:UpdateCooldownViewer(viewerType) end)
+            spacingSlider:SetRelativeWidth(growthControlWidth)
+            layoutContainer:AddChild(spacingSlider)
 
-        if supportsColumnWrap then
-            local columnsSlider = AG:Create("Slider")
-            columnsSlider:SetLabel(LL("Wrap After"))
-            columnsSlider:SetValue(ViewerDB.Columns or 0)
-            columnsSlider:SetSliderValues(0, 24, 1)
-            columnsSlider:SetCallback("OnValueChanged", function(self, _, value)
-                ViewerDB.Columns = math.max(0, math.floor(value or 0))
+            if supportsColumnWrap then
+                local columnsSlider = AG:Create("Slider")
+                columnsSlider:SetLabel(LL("Wrap After"))
+                columnsSlider:SetValue(ViewerDB.Columns or 0)
+                columnsSlider:SetSliderValues(0, 24, 1)
+                columnsSlider:SetCallback("OnValueChanged", function(self, _, value)
+                    ViewerDB.Columns = math.max(0, math.floor(value or 0))
+                    BCDM:UpdateCooldownViewer(viewerType)
+                end)
+                columnsSlider:SetRelativeWidth(0.3333)
+                layoutContainer:AddChild(columnsSlider)
+            end
+        end
+
+        local isPrimaryViewer = viewerType == "Essential" or viewerType == "Utility" or viewerType == "Buffs"
+
+        local xOffsetSlider = AG:Create("Slider")
+        xOffsetSlider:SetLabel(LL("X Offset"))
+        xOffsetSlider:SetValue(ViewerDB.Layout[hasAnchorParent and 4 or 3])
+        xOffsetSlider:SetSliderValues(-3000, 3000, 0.1)
+        xOffsetSlider:SetCallback("OnValueChanged", function(self, _, value) ViewerDB.Layout[hasAnchorParent and 4 or 3] = value BCDM:UpdateCooldownViewer(viewerType) end)
+        xOffsetSlider:SetRelativeWidth(isPrimaryViewer and 0.5 or 0.33)
+        layoutContainer:AddChild(xOffsetSlider)
+
+        local yOffsetSlider = AG:Create("Slider")
+        yOffsetSlider:SetLabel(LL("Y Offset"))
+        yOffsetSlider:SetValue(ViewerDB.Layout[hasAnchorParent and 5 or 4])
+        yOffsetSlider:SetSliderValues(-3000, 3000, 0.1)
+        yOffsetSlider:SetCallback("OnValueChanged", function(self, _, value) ViewerDB.Layout[hasAnchorParent and 5 or 4] = value BCDM:UpdateCooldownViewer(viewerType) end)
+        yOffsetSlider:SetRelativeWidth(isPrimaryViewer and 0.5 or 0.33)
+        layoutContainer:AddChild(yOffsetSlider)
+
+        local iconContainer = AG:Create("InlineGroup")
+        iconContainer:SetTitle(LL("Icon Settings"))
+        iconContainer:SetFullWidth(true)
+        iconContainer:SetLayout("Flow")
+        ScrollFrame:AddChild(iconContainer)
+
+        local isItemViewer = viewerType == "CustomViewer"
+
+        local keepAspectCheckbox = AG:Create("CheckBox")
+        keepAspectCheckbox:SetLabel(LL("Keep Aspect Ratio"))
+        keepAspectCheckbox:SetValue(ViewerDB.KeepAspectRatio ~= false)
+        keepAspectCheckbox:SetRelativeWidth(isItemViewer and 0.3333 or 1)
+        iconContainer:AddChild(keepAspectCheckbox)
+
+        if isItemViewer then
+            local hideZeroChargesCheckbox = AG:Create("CheckBox")
+            hideZeroChargesCheckbox:SetLabel(LL("Hide Items with Zero Charges/Uses"))
+            hideZeroChargesCheckbox:SetValue(ViewerDB.HideZeroCharges)
+            hideZeroChargesCheckbox:SetCallback("OnValueChanged", function(_, _, value)
+                ViewerDB.HideZeroCharges = value
                 BCDM:UpdateCooldownViewer(viewerType)
             end)
-            columnsSlider:SetRelativeWidth(0.3333)
-            layoutContainer:AddChild(columnsSlider)
+            hideZeroChargesCheckbox:SetRelativeWidth(0.3333)
+            iconContainer:AddChild(hideZeroChargesCheckbox)
+
+            local showItemQualityCheckbox = AG:Create("CheckBox")
+            showItemQualityCheckbox:SetLabel(LL("Show Item Quality"))
+            showItemQualityCheckbox:SetValue(ViewerDB.ShowItemQualityBorder ~= false)
+            showItemQualityCheckbox:SetCallback("OnValueChanged", function(_, _, value)
+                ViewerDB.ShowItemQualityBorder = value
+                BCDM:UpdateCooldownViewer(viewerType)
+            end)
+            showItemQualityCheckbox:SetRelativeWidth(0.3333)
+            iconContainer:AddChild(showItemQualityCheckbox)
         end
-    end
 
-    local isPrimaryViewer = viewerType == "Essential" or viewerType == "Utility" or viewerType == "Buffs"
-
-    local xOffsetSlider = AG:Create("Slider")
-    xOffsetSlider:SetLabel(LL("X Offset"))
-    xOffsetSlider:SetValue(ViewerDB.Layout[hasAnchorParent and 4 or 3])
-    xOffsetSlider:SetSliderValues(-3000, 3000, 0.1)
-    xOffsetSlider:SetCallback("OnValueChanged", function(self, _, value) ViewerDB.Layout[hasAnchorParent and 4 or 3] = value BCDM:UpdateCooldownViewer(viewerType) end)
-    xOffsetSlider:SetRelativeWidth(isPrimaryViewer and 0.5 or 0.33)
-    layoutContainer:AddChild(xOffsetSlider)
-
-    local yOffsetSlider = AG:Create("Slider")
-    yOffsetSlider:SetLabel(LL("Y Offset"))
-    yOffsetSlider:SetValue(ViewerDB.Layout[hasAnchorParent and 5 or 4])
-    yOffsetSlider:SetSliderValues(-3000, 3000, 0.1)
-    yOffsetSlider:SetCallback("OnValueChanged", function(self, _, value) ViewerDB.Layout[hasAnchorParent and 5 or 4] = value BCDM:UpdateCooldownViewer(viewerType) end)
-    yOffsetSlider:SetRelativeWidth(isPrimaryViewer and 0.5 or 0.33)
-    layoutContainer:AddChild(yOffsetSlider)
-
-    local iconContainer = AG:Create("InlineGroup")
-    iconContainer:SetTitle(LL("Icon Settings"))
-    iconContainer:SetFullWidth(true)
-    iconContainer:SetLayout("Flow")
-    ScrollFrame:AddChild(iconContainer)
-
-    local isItemViewer = viewerType == "CustomViewer"
-
-    local keepAspectCheckbox = AG:Create("CheckBox")
-    keepAspectCheckbox:SetLabel(LL("Keep Aspect Ratio"))
-    keepAspectCheckbox:SetValue(ViewerDB.KeepAspectRatio ~= false)
-    keepAspectCheckbox:SetRelativeWidth(isItemViewer and 0.3333 or 1)
-    iconContainer:AddChild(keepAspectCheckbox)
-
-    if isItemViewer then
-        local hideZeroChargesCheckbox = AG:Create("CheckBox")
-        hideZeroChargesCheckbox:SetLabel(LL("Hide Items with Zero Charges/Uses"))
-        hideZeroChargesCheckbox:SetValue(ViewerDB.HideZeroCharges)
-        hideZeroChargesCheckbox:SetCallback("OnValueChanged", function(_, _, value)
-            ViewerDB.HideZeroCharges = value
+        local iconSizeSlider = AG:Create("Slider")
+        iconSizeSlider:SetLabel(LL("Icon Size"))
+        iconSizeSlider:SetValue(ViewerDB.IconSize)
+        iconSizeSlider:SetSliderValues(16, 128, 0.1)
+        iconSizeSlider:SetCallback("OnValueChanged", function(self, _, value)
+            ViewerDB.IconSize = value
             BCDM:UpdateCooldownViewer(viewerType)
         end)
-        hideZeroChargesCheckbox:SetRelativeWidth(0.3333)
-        iconContainer:AddChild(hideZeroChargesCheckbox)
+        iconSizeSlider:SetRelativeWidth(0.3333)
+        iconContainer:AddChild(iconSizeSlider)
 
-        local showItemQualityCheckbox = AG:Create("CheckBox")
-        showItemQualityCheckbox:SetLabel(LL("Show Item Quality"))
-        showItemQualityCheckbox:SetValue(ViewerDB.ShowItemQualityBorder ~= false)
-        showItemQualityCheckbox:SetCallback("OnValueChanged", function(_, _, value)
-            ViewerDB.ShowItemQualityBorder = value
+        local iconWidthSlider = AG:Create("Slider")
+        iconWidthSlider:SetLabel(LL("Icon Width"))
+        iconWidthSlider:SetValue(ViewerDB.IconWidth or ViewerDB.IconSize)
+        iconWidthSlider:SetSliderValues(16, 128, 0.1)
+        iconWidthSlider:SetCallback("OnValueChanged", function(self, _, value)
+            ViewerDB.IconWidth = value
             BCDM:UpdateCooldownViewer(viewerType)
         end)
-        showItemQualityCheckbox:SetRelativeWidth(0.3333)
-        iconContainer:AddChild(showItemQualityCheckbox)
-    end
+        iconWidthSlider:SetRelativeWidth(0.3333)
+        iconContainer:AddChild(iconWidthSlider)
 
-    local iconSizeSlider = AG:Create("Slider")
-    iconSizeSlider:SetLabel(LL("Icon Size"))
-    iconSizeSlider:SetValue(ViewerDB.IconSize)
-    iconSizeSlider:SetSliderValues(16, 128, 0.1)
-    iconSizeSlider:SetCallback("OnValueChanged", function(self, _, value)
-        ViewerDB.IconSize = value
-        BCDM:UpdateCooldownViewer(viewerType)
-    end)
-    iconSizeSlider:SetRelativeWidth(0.3333)
-    iconContainer:AddChild(iconSizeSlider)
-
-    local iconWidthSlider = AG:Create("Slider")
-    iconWidthSlider:SetLabel(LL("Icon Width"))
-    iconWidthSlider:SetValue(ViewerDB.IconWidth or ViewerDB.IconSize)
-    iconWidthSlider:SetSliderValues(16, 128, 0.1)
-    iconWidthSlider:SetCallback("OnValueChanged", function(self, _, value)
-        ViewerDB.IconWidth = value
-        BCDM:UpdateCooldownViewer(viewerType)
-    end)
-    iconWidthSlider:SetRelativeWidth(0.3333)
-    iconContainer:AddChild(iconWidthSlider)
-
-    local iconHeightSlider = AG:Create("Slider")
-    iconHeightSlider:SetLabel(LL("Icon Height"))
-    iconHeightSlider:SetValue(ViewerDB.IconHeight or ViewerDB.IconSize)
-    iconHeightSlider:SetSliderValues(16, 128, 0.1)
-    iconHeightSlider:SetCallback("OnValueChanged", function(self, _, value)
-        ViewerDB.IconHeight = value
-        BCDM:UpdateCooldownViewer(viewerType)
-    end)
-    iconHeightSlider:SetRelativeWidth(0.3333)
-    iconContainer:AddChild(iconHeightSlider)
+        local iconHeightSlider = AG:Create("Slider")
+        iconHeightSlider:SetLabel(LL("Icon Height"))
+        iconHeightSlider:SetValue(ViewerDB.IconHeight or ViewerDB.IconSize)
+        iconHeightSlider:SetSliderValues(16, 128, 0.1)
+        iconHeightSlider:SetCallback("OnValueChanged", function(self, _, value)
+            ViewerDB.IconHeight = value
+            BCDM:UpdateCooldownViewer(viewerType)
+        end)
+        iconHeightSlider:SetRelativeWidth(0.3333)
+        iconContainer:AddChild(iconHeightSlider)
 
 
-    if viewerType == "Essential" or viewerType == "Utility" or viewerType == "Buffs" then
-        local infoTag = CreateInformationTag(iconContainer, LL("Size changes will be applied on closing the |cFF8080FFBetter|rCooldownManager Configuration Window."), "LEFT")
-        infoTag:SetRelativeWidth(0.7)
-        local forceUpdateButton = AG:Create("Button")
-        forceUpdateButton:SetText(LL("Update"))
-        forceUpdateButton:SetRelativeWidth(0.3)
-        forceUpdateButton:SetCallback("OnClick", function() LEMO:ApplyChanges() end)
-        iconContainer:AddChild(forceUpdateButton)
-    end
-
-    local function UpdateIconSizeControlState()
-        local keepAspect = ViewerDB.KeepAspectRatio ~= false
-        DeepDisable(iconSizeSlider, not keepAspect)
-        DeepDisable(iconWidthSlider, keepAspect)
-        DeepDisable(iconHeightSlider, keepAspect)
-    end
-
-    keepAspectCheckbox:SetCallback("OnValueChanged", function(self, _, value)
-        ViewerDB.KeepAspectRatio = value
-        local fallbackSize = ViewerDB.IconSize or ViewerDB.IconWidth or ViewerDB.IconHeight or 32
-        if value then
-            ViewerDB.IconSize = ViewerDB.IconWidth or ViewerDB.IconHeight or fallbackSize
-        else
-            ViewerDB.IconWidth = ViewerDB.IconWidth or fallbackSize
-            ViewerDB.IconHeight = ViewerDB.IconHeight or fallbackSize
+        if viewerType == "Essential" or viewerType == "Utility" or viewerType == "Buffs" then
+            local infoTag = CreateInformationTag(iconContainer, LL("Size changes will be applied on closing the |cFF8080FFBetter|rCooldownManager Configuration Window."), "LEFT")
+            infoTag:SetRelativeWidth(0.7)
+            local forceUpdateButton = AG:Create("Button")
+            forceUpdateButton:SetText(LL("Update"))
+            forceUpdateButton:SetRelativeWidth(0.3)
+            forceUpdateButton:SetCallback("OnClick", function() LEMO:ApplyChanges() end)
+            iconContainer:AddChild(forceUpdateButton)
         end
+
+        local function UpdateIconSizeControlState()
+            local keepAspect = ViewerDB.KeepAspectRatio ~= false
+            DeepDisable(iconSizeSlider, not keepAspect)
+            DeepDisable(iconWidthSlider, keepAspect)
+            DeepDisable(iconHeightSlider, keepAspect)
+        end
+
+        keepAspectCheckbox:SetCallback("OnValueChanged", function(self, _, value)
+            ViewerDB.KeepAspectRatio = value
+            local fallbackSize = ViewerDB.IconSize or ViewerDB.IconWidth or ViewerDB.IconHeight or 32
+            if value then
+                ViewerDB.IconSize = ViewerDB.IconWidth or ViewerDB.IconHeight or fallbackSize
+            else
+                ViewerDB.IconWidth = ViewerDB.IconWidth or fallbackSize
+                ViewerDB.IconHeight = ViewerDB.IconHeight or fallbackSize
+            end
+            UpdateIconSizeControlState()
+            BCDM:UpdateCooldownViewer(viewerType)
+            LEMO:ApplyChanges()
+        end)
+
         UpdateIconSizeControlState()
-        BCDM:UpdateCooldownViewer(viewerType)
-        LEMO:ApplyChanges()
-    end)
 
-    UpdateIconSizeControlState()
-
-    if isCustomViewer then
-        local frameStrataDropdown = AG:Create("Dropdown")
-        frameStrataDropdown:SetLabel(LL("Frame Strata"))
-        frameStrataDropdown:SetList({["BACKGROUND"] = "Background", ["LOW"] = "Low", ["MEDIUM"] = "Medium", ["HIGH"] = "High", ["DIALOG"] = "Dialog", ["FULLSCREEN"] = "Fullscreen", ["FULLSCREEN_DIALOG"] = "Fullscreen Dialog", ["TOOLTIP"] = "Tooltip"}, {"BACKGROUND", "LOW", "MEDIUM", "HIGH", "DIALOG", "FULLSCREEN", "FULLSCREEN_DIALOG", "TOOLTIP"})
-        frameStrataDropdown:SetValue(ViewerDB.FrameStrata)
-        frameStrataDropdown:SetCallback("OnValueChanged", function(self, _, value) ViewerDB.FrameStrata = value BCDM:UpdateCooldownViewer(viewerType) end)
-        frameStrataDropdown:SetRelativeWidth(0.33)
-        layoutContainer:AddChild(frameStrataDropdown)
+        if isCustomViewer then
+            local frameStrataDropdown = AG:Create("Dropdown")
+            frameStrataDropdown:SetLabel(LL("Frame Strata"))
+            frameStrataDropdown:SetList({["BACKGROUND"] = "Background", ["LOW"] = "Low", ["MEDIUM"] = "Medium", ["HIGH"] = "High", ["DIALOG"] = "Dialog", ["FULLSCREEN"] = "Fullscreen", ["FULLSCREEN_DIALOG"] = "Fullscreen Dialog", ["TOOLTIP"] = "Tooltip"}, {"BACKGROUND", "LOW", "MEDIUM", "HIGH", "DIALOG", "FULLSCREEN", "FULLSCREEN_DIALOG", "TOOLTIP"})
+            frameStrataDropdown:SetValue(ViewerDB.FrameStrata)
+            frameStrataDropdown:SetCallback("OnValueChanged", function(self, _, value) ViewerDB.FrameStrata = value BCDM:UpdateCooldownViewer(viewerType) end)
+            frameStrataDropdown:SetRelativeWidth(0.33)
+            layoutContainer:AddChild(frameStrataDropdown)
+        end
     end
 
     if viewerType ~= "Trinket" then
