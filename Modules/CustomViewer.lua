@@ -224,17 +224,6 @@ local function ResolveAnchorParent(anchorName)
     return (BCDM.GetEffectiveAnchorFrame and BCDM:GetEffectiveAnchorFrame(anchorName)) or _G[anchorName] or UIParent
 end
 
-local function SetIconDesaturation(icon, value)
-    if not icon then return end
-    if icon.SetDesaturation then
-        icon:SetDesaturation(value)
-        return
-    end
-    if icon.SetDesaturated then
-        icon:SetDesaturated(value > 0)
-    end
-end
-
 local function CalculateFallbackDesaturation(startTime, duration)
     if not startTime or not duration then return 0 end
     if BCDM:IsSecretValue(startTime) or BCDM:IsSecretValue(duration) then return 0 end
@@ -248,7 +237,7 @@ local function UpdateSpellIconDesaturation(customIcon, spellId)
 
     local cooldownData = C_Spell.GetSpellCooldown(spellId)
     if cooldownData and cooldownData.isOnGCD then
-        SetIconDesaturation(customIcon.Icon, 0)
+        BCDM:SetIconDesaturation(customIcon.Icon, 0)
         return
     end
 
@@ -259,14 +248,14 @@ local function UpdateSpellIconDesaturation(customIcon, spellId)
     end
     if currentCharges then
         if currentCharges > 0 then
-            SetIconDesaturation(customIcon.Icon, 0)
+            BCDM:SetIconDesaturation(customIcon.Icon, 0)
             return
         end
         local chargeDuration = C_Spell.GetSpellChargeDuration and C_Spell.GetSpellChargeDuration(spellId)
         if chargeDuration and type(chargeDuration.EvaluateRemainingDuration) == "function" then
-            SetIconDesaturation(customIcon.Icon, (desaturationCurve and chargeDuration:EvaluateRemainingDuration(desaturationCurve, 0)) or CalculateFallbackDesaturation(spellCharges.cooldownStartTime, spellCharges.cooldownDuration))
+            BCDM:SetIconDesaturation(customIcon.Icon, (desaturationCurve and chargeDuration:EvaluateRemainingDuration(desaturationCurve, 0)) or CalculateFallbackDesaturation(spellCharges.cooldownStartTime, spellCharges.cooldownDuration))
         else
-            SetIconDesaturation(customIcon.Icon, CalculateFallbackDesaturation(spellCharges.cooldownStartTime, spellCharges.cooldownDuration))
+            BCDM:SetIconDesaturation(customIcon.Icon, CalculateFallbackDesaturation(spellCharges.cooldownStartTime, spellCharges.cooldownDuration))
         end
         return
     end
@@ -274,28 +263,14 @@ local function UpdateSpellIconDesaturation(customIcon, spellId)
     local durationObject = C_Spell.GetSpellCooldownDuration and C_Spell.GetSpellCooldownDuration(spellId)
     if durationObject and type(durationObject.EvaluateRemainingDuration) == "function" then
         local curve = (cooldownData and cooldownData.isOnGCD) and gcdFilterCurve or desaturationCurve
-        SetIconDesaturation(customIcon.Icon, (curve and durationObject:EvaluateRemainingDuration(curve, 0)) or 0)
+        BCDM:SetIconDesaturation(customIcon.Icon, (curve and durationObject:EvaluateRemainingDuration(curve, 0)) or 0)
     else
         if not cooldownData then
-            SetIconDesaturation(customIcon.Icon, 0)
+            BCDM:SetIconDesaturation(customIcon.Icon, 0)
         else
-            SetIconDesaturation(customIcon.Icon, CalculateFallbackDesaturation(cooldownData.startTime, cooldownData.duration))
+            BCDM:SetIconDesaturation(customIcon.Icon, CalculateFallbackDesaturation(cooldownData.startTime, cooldownData.duration))
         end
     end
-end
-
-local function ShouldRefreshItemCooldownFrame(cooldownFrame, hasActiveCooldown, startTime, durationTime)
-    if not cooldownFrame then return false end
-    local oldStart, oldDuration = cooldownFrame:GetCooldownTimes()
-    oldStart = tonumber(oldStart) or 0
-    oldDuration = tonumber(oldDuration) or 0
-    if hasActiveCooldown then
-        if oldStart <= 0 or oldDuration <= 0 then return true end
-        local oldEnd = (oldStart + oldDuration) / 1000
-        local newEnd = (startTime or 0) + (durationTime or 0)
-        return math.abs(oldEnd - newEnd) > 0.01
-    end
-    return oldStart > 0 and oldDuration > 0
 end
 
 local function FetchItemData(itemId)
@@ -312,17 +287,11 @@ local function ShouldShowItem(customDB, itemId)
     return itemCount > 0
 end
 
-local function IsOnUseTrinket(itemId)
-    if not itemId then return false end
-    local spellName, spellID = C_Item.GetItemSpell(itemId)
-    return (spellID and spellID > 0) or (spellName and spellName ~= "")
-end
-
 local function FetchEquippedOnUseTrinkets()
     local equippedTrinkets = {}
     for _, slotID in ipairs(TRINKET_SLOTS) do
         local itemId = GetInventoryItemID("player", slotID)
-        if itemId and IsOnUseTrinket(itemId) then
+        if itemId and BCDM:IsOnUseTrinket(itemId) then
             equippedTrinkets[#equippedTrinkets + 1] = { itemId = itemId, slotID = slotID }
         end
     end
@@ -594,26 +563,21 @@ local function CreateCustomIcon(entryId, entryType, customDB)
                 local itemCount, startTime, durationTime = FetchItemData(entryId)
                 if itemCount then
                     local hasActiveCooldown = (startTime and durationTime and startTime > 0 and durationTime > 0) or false
-                    customIcon.Charges:SetText(tostring(itemCount))
                     if C_Item.IsUsableItem(entryId) then
-                        local shouldRefreshCooldown = ShouldRefreshItemCooldownFrame(customIcon.Cooldown, hasActiveCooldown, startTime, durationTime)
+                        local shouldRefreshCooldown = BCDM:ShouldRefreshCooldownFrame(customIcon.Cooldown, hasActiveCooldown, startTime, durationTime)
                         if hasActiveCooldown and shouldRefreshCooldown then
                             customIcon.Cooldown:SetCooldown(startTime, durationTime)
                         elseif not hasActiveCooldown and event ~= "ITEM_COUNT_CHANGED" and shouldRefreshCooldown then
                             customIcon.Cooldown:SetCooldown(0, 0)
                         end
                     end
-                    if itemCount <= 0 then
-                        customIcon.Charges:SetText("")
-                    else
-                        customIcon.Charges:SetText(tostring(itemCount))
-                    end
+                    customIcon.Charges:SetText(itemCount > 0 and tostring(itemCount) or "")
                     if BCDM:IsSecretValue(startTime) or BCDM:IsSecretValue(durationTime) then
-                        SetIconDesaturation(customIcon.Icon, 0)
+                        BCDM:SetIconDesaturation(customIcon.Icon, 0)
                     elseif hasActiveCooldown then
-                        SetIconDesaturation(customIcon.Icon, CalculateFallbackDesaturation(startTime, durationTime))
+                        BCDM:SetIconDesaturation(customIcon.Icon, CalculateFallbackDesaturation(startTime, durationTime))
                     else
-                        SetIconDesaturation(customIcon.Icon, 0)
+                        BCDM:SetIconDesaturation(customIcon.Icon, 0)
                     end
                     if not C_Item.IsUsableItem(entryId) then customIcon.Icon:SetVertexColor(0.5, 0.5, 0.5) else customIcon.Icon:SetVertexColor(1, 1, 1) end
                     customIcon.Charges:SetAlphaFromBoolean(itemCount > 1, 1, 0)

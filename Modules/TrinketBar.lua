@@ -32,49 +32,9 @@ local function RefreshTrinketAnchorConsumers()
     RefreshAppendedAnchorDependents()
 end
 
-local function SetIconDesaturation(icon, value)
-    if not icon then return end
-    if icon.SetDesaturation then
-        icon:SetDesaturation(value)
-        return
-    end
-    if icon.SetDesaturated then
-        icon:SetDesaturated(value > 0)
-    end
-end
-
-local function ShouldRefreshItemCooldownFrame(cooldownFrame, hasActiveCooldown, startTime, durationTime)
-    if not cooldownFrame then return false end
-
-    local oldStart, oldDuration = cooldownFrame:GetCooldownTimes()
-    oldStart = tonumber(oldStart) or 0
-    oldDuration = tonumber(oldDuration) or 0
-
-    if hasActiveCooldown then
-        if oldStart <= 0 or oldDuration <= 0 then
-            return true
-        end
-
-        local oldEnd = (oldStart + oldDuration) / 1000
-        local newEnd = (startTime or 0) + (durationTime or 0)
-        return math.abs(oldEnd - newEnd) > 0.01
-    end
-
-    return oldStart > 0 and oldDuration > 0
-end
-
-local function IsOnUseTrinket(itemId)
-    if not itemId then return false end
-    local spellName, spellID = C_Item.GetItemSpell(itemId)
-    return (spellID and spellID > 0) or (spellName and spellName ~= "")
-end
-
 local function ShouldShowPassiveTrinkets()
     local CustomDB = BCDM.db.profile.CooldownManager.Trinket
-    if CustomDB.ShowPassive == nil then
-        return true
-    end
-    return CustomDB.ShowPassive
+    return CustomDB.ShowPassive ~= false
 end
 
 local function ResolveTrinketAnchorParent(layoutParent)
@@ -249,7 +209,7 @@ local function UpdateTrinketData(frame)
     end
 
     frame.Icon:SetTexture(C_Item.GetItemIconByID(itemId))
-    frame.isOnUse = IsOnUseTrinket(itemId)
+    frame.isOnUse = BCDM:IsOnUseTrinket(itemId)
 end
 
 local function ApplyTrinketFrameStyle(frame, frameStrata, iconWidth, iconHeight)
@@ -291,7 +251,7 @@ local function UpdateTrinketCooldown(frame)
         hasActiveCooldown = startTime and durationTime and durationTime > 1.5 and enable == 1
     end
 
-    local shouldRefresh = ShouldRefreshItemCooldownFrame(frame.Cooldown, hasActiveCooldown, startTime, durationTime)
+    local shouldRefresh = BCDM:ShouldRefreshCooldownFrame(frame.Cooldown, hasActiveCooldown, startTime, durationTime)
     if shouldRefresh then
         if hasActiveCooldown then
             frame.Cooldown:SetCooldown(startTime, durationTime)
@@ -300,7 +260,7 @@ local function UpdateTrinketCooldown(frame)
         end
     end
 
-    SetIconDesaturation(frame.Icon, hasActiveCooldown and 1 or 0)
+    BCDM:SetIconDesaturation(frame.Icon, hasActiveCooldown and 1 or 0)
 end
 
 local function UpdateVisibleTrinketCooldowns()
@@ -406,7 +366,7 @@ local function LayoutTrinketBar()
         else
             frame:Hide()
             frame.Cooldown:SetCooldown(0, 0)
-            SetIconDesaturation(frame.Icon, 0)
+            BCDM:SetIconDesaturation(frame.Icon, 0)
         end
     end
 
@@ -492,12 +452,12 @@ function BCDM:UpdateTrinketBar()
     LayoutTrinketBar()
 end
 
-function BCDM:AdjustTrinketLayoutIndex(direction, itemId)
+function BCDM:AdjustTrinketLayoutIndex(_direction, _itemId)
     -- Legacy compatibility: trinket order is now driven by equipment slot (13, 14).
     BCDM:UpdateTrinketBar()
 end
 
-function BCDM:AdjustTrinketList(itemId, adjustingHow)
+function BCDM:AdjustTrinketList(_itemId, _adjustingHow)
     -- Legacy compatibility: trinket list is now driven by equipped trinket slots.
     BCDM:UpdateTrinketBar()
 end

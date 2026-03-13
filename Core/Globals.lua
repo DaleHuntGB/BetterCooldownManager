@@ -140,6 +140,43 @@ function BCDM:GetFrameRegionByType(parentFrame, regionType)
     end
 end
 
+function BCDM:SetIconDesaturation(icon, value)
+    if not icon then return end
+    if icon.SetDesaturation then
+        icon:SetDesaturation(value)
+        return
+    end
+    if icon.SetDesaturated then
+        icon:SetDesaturated(value > 0)
+    end
+end
+
+function BCDM:ShouldRefreshCooldownFrame(cooldownFrame, hasActiveCooldown, startTime, durationTime)
+    if not cooldownFrame then return false end
+
+    local oldStart, oldDuration = cooldownFrame:GetCooldownTimes()
+    oldStart = tonumber(oldStart) or 0
+    oldDuration = tonumber(oldDuration) or 0
+
+    if hasActiveCooldown then
+        if oldStart <= 0 or oldDuration <= 0 then
+            return true
+        end
+
+        local oldEnd = (oldStart + oldDuration) / 1000
+        local newEnd = (startTime or 0) + (durationTime or 0)
+        return math.abs(oldEnd - newEnd) > 0.01
+    end
+
+    return oldStart > 0 and oldDuration > 0
+end
+
+function BCDM:IsOnUseTrinket(itemId)
+    if not itemId then return false end
+    local spellName, spellID = C_Item.GetItemSpell(itemId)
+    return (spellID and spellID > 0) or (spellName and spellName ~= "")
+end
+
 function BCDM:ApplyCooldownText(viewer)
     local Viewer = type(viewer) == "string" and _G[viewer] or viewer
     if not Viewer then return end
