@@ -7,7 +7,7 @@ local LEGACY_MIGRATION_VERSION = 1
 local VIEWER_SCHEMA_VERSION = 1
 local TRINKET_SLOTS = { 13, 14 }
 local LayoutCustomViewer
-local NormalizeCustomViewerLayoutIndices
+local ReindexCustomViewerEntries
 local RefreshCustomViewerAnchors
 local CUSTOM_VIEWER_SETTING_KEYS = {
     "IconSize",
@@ -81,13 +81,13 @@ local function ApplyMissingDefaults(targetTable, defaultTable)
     end
 end
 
-local function NormalizeNumericField(container, key, defaultValue)
+local function ApplyNumericDefault(container, key, defaultValue)
     if type(container) ~= "table" then return end
     local value = tonumber(container[key])
     container[key] = value or defaultValue
 end
 
-local function NormalizeCustomViewerLayout(layout, defaultLayout)
+local function EnsureCustomViewerLayoutDefaults(layout, defaultLayout)
     if type(layout) ~= "table" then
         return BCDM:CopyTable(defaultLayout)
     end
@@ -107,7 +107,7 @@ local function NormalizeCustomViewerLayout(layout, defaultLayout)
     return layout
 end
 
-local function NormalizeColourField(colour, defaultColour)
+local function EnsureColourDefaults(colour, defaultColour)
     if type(colour) ~= "table" then
         return BCDM:CopyTable(defaultColour)
     end
@@ -120,20 +120,20 @@ local function NormalizeColourField(colour, defaultColour)
     return colour
 end
 
-local function NormalizeCustomViewerText(textData, defaultTextData)
+local function EnsureCustomViewerTextDefaults(textData, defaultTextData)
     if type(textData) ~= "table" then
         return BCDM:CopyTable(defaultTextData)
     end
 
     ApplyMissingDefaults(textData, defaultTextData)
-    NormalizeNumericField(textData, "FontSize", defaultTextData.FontSize)
-    textData.Colour = NormalizeColourField(textData.Colour, defaultTextData.Colour)
-    textData.Layout = NormalizeCustomViewerLayout(textData.Layout, defaultTextData.Layout)
+    ApplyNumericDefault(textData, "FontSize", defaultTextData.FontSize)
+    textData.Colour = EnsureColourDefaults(textData.Colour, defaultTextData.Colour)
+    textData.Layout = EnsureCustomViewerLayoutDefaults(textData.Layout, defaultTextData.Layout)
 
     return textData
 end
 
-local function NormalizeCustomViewerSettings(viewerData)
+local function EnsureCustomViewerDefaults(viewerData)
     if type(viewerData) ~= "table" then
         viewerData = {}
     end
@@ -141,19 +141,21 @@ local function NormalizeCustomViewerSettings(viewerData)
     local defaultViewer = GetDefaultCustomViewerDB()
     ApplyMissingDefaults(viewerData, defaultViewer)
 
-    viewerData.Layout = NormalizeCustomViewerLayout(viewerData.Layout, defaultViewer.Layout)
-    viewerData.Text = NormalizeCustomViewerText(viewerData.Text, defaultViewer.Text)
+    viewerData.Layout = EnsureCustomViewerLayoutDefaults(viewerData.Layout, defaultViewer.Layout)
+    viewerData.Text = EnsureCustomViewerTextDefaults(viewerData.Text, defaultViewer.Text)
 
-    NormalizeNumericField(viewerData, "IconSize", defaultViewer.IconSize)
-    NormalizeNumericField(viewerData, "IconWidth", defaultViewer.IconWidth)
-    NormalizeNumericField(viewerData, "IconHeight", defaultViewer.IconHeight)
-    NormalizeNumericField(viewerData, "Spacing", defaultViewer.Spacing)
-    NormalizeNumericField(viewerData, "Columns", defaultViewer.Columns)
+    ApplyNumericDefault(viewerData, "IconSize", defaultViewer.IconSize)
+    ApplyNumericDefault(viewerData, "IconWidth", defaultViewer.IconWidth)
+    ApplyNumericDefault(viewerData, "IconHeight", defaultViewer.IconHeight)
+    ApplyNumericDefault(viewerData, "Spacing", defaultViewer.Spacing)
+    ApplyNumericDefault(viewerData, "Columns", defaultViewer.Columns)
 
     return viewerData
 end
 
-local function NormalizeCustomViewerCollection(customRootDB)
+-- Keep custom viewer data in one predictable shape so the layout code only has
+-- to handle the current schema, not every older saved-variable variant.
+local function EnsureCustomViewerCollectionDefaults(customRootDB)
     if type(customRootDB) ~= "table" then return end
 
     customRootDB.Viewers = customRootDB.Viewers or {}
@@ -165,7 +167,7 @@ local function NormalizeCustomViewerCollection(customRootDB)
     local nextGeneratedID = 1
 
     for index, viewerData in ipairs(customRootDB.Viewers) do
-        viewerData = NormalizeCustomViewerSettings(viewerData)
+        viewerData = EnsureCustomViewerDefaults(viewerData)
         customRootDB.Viewers[index] = viewerData
 
         local viewerID = tonumber(viewerData.ViewerID)
@@ -199,7 +201,7 @@ end
 
 local function GetCustomViewerEntries()
     local customRootDB = GetCustomRootDB()
-    NormalizeCustomViewerCollection(customRootDB)
+    EnsureCustomViewerCollectionDefaults(customRootDB)
     return customRootDB.Viewers
 end
 
@@ -1021,12 +1023,14 @@ function BCDM:AdjustCustomViewerLayoutIndex(direction, itemId, viewerID)
     end
 
     Items[itemId].layoutIndex = newIndex
-    NormalizeCustomViewerLayoutIndices(viewerID)
+    ReindexCustomViewerEntries(viewerID)
 
     LayoutCustomViewer()
 end
 
-NormalizeCustomViewerLayoutIndices = function(viewerID, methodViewerID)
+-- Rebuild the stored layout order after inserts, removals, or manual moves so
+-- every entry ends up with a compact 1..N layoutIndex again.
+ReindexCustomViewerEntries = function(viewerID, methodViewerID)
     local CustomDB = GetCustomViewerDB(viewerID, methodViewerID)
     local Items = CustomDB.ItemsSpells
 
@@ -1090,7 +1094,7 @@ function BCDM:AdjustCustomViewerList(itemId, adjustingHow, entryType, viewerID)
         Items[itemId] = nil
     end
 
-    NormalizeCustomViewerLayoutIndices(viewerID)
+    ReindexCustomViewerEntries(viewerID)
     LayoutCustomViewer()
 end
 
@@ -1197,7 +1201,7 @@ function BCDM:AddCustomViewer()
     newViewer.FrameName = BuildCustomViewerFrameName(nextViewerID)
 
     viewers[#viewers + 1] = newViewer
-    NormalizeCustomViewerCollection(GetCustomRootDB())
+    EnsureCustomViewerCollectionDefaults(GetCustomRootDB())
     self.SelectedCustomViewerID = nextViewerID
     RefreshCustomViewerAnchors()
     LayoutCustomViewer()
@@ -1240,7 +1244,7 @@ function BCDM:RemoveCustomViewer(viewerID)
     end
 
     local fallbackViewer = viewers[math.max(1, viewerIndexToRemove - 1)] or viewers[1]
-    NormalizeCustomViewerCollection(customRootDB)
+    EnsureCustomViewerCollectionDefaults(customRootDB)
     if wasSelectedViewer and fallbackViewer then
         self.SelectedCustomViewerID = fallbackViewer.ViewerID
     end
@@ -1303,6 +1307,8 @@ function BCDM:MigrateCustomViewerData()
 
     local CustomDB = CooldownManagerDB[VIEWER_KEY]
 
+    -- Older builds stored one flat custom viewer block. Convert that into the
+    -- current multi-viewer table before we try to read or mutate viewer data.
     if CustomDB.ViewerSchemaVersion ~= VIEWER_SCHEMA_VERSION or type(CustomDB.Viewers) ~= "table" or #CustomDB.Viewers == 0 then
         local primaryViewer = self:CopyTable(GetDefaultCustomViewerDB())
         CopyCustomViewerSettings(primaryViewer, CustomDB)
@@ -1312,7 +1318,7 @@ function BCDM:MigrateCustomViewerData()
         CustomDB.Viewers = { primaryViewer }
     end
 
-    NormalizeCustomViewerCollection(CustomDB)
+    EnsureCustomViewerCollectionDefaults(CustomDB)
 
     local primaryViewer = GetCustomViewerDB(CustomDB.Viewers[1].ViewerID)
 
@@ -1340,20 +1346,20 @@ function BCDM:MigrateCustomViewerData()
             ImportLegacyItemEntries(primaryViewer.ItemsSpells, CooldownManagerDB.Item and CooldownManagerDB.Item.Items)
             ImportLegacySpellEntries(primaryViewer.ItemsSpells, CooldownManagerDB.Custom and CooldownManagerDB.Custom.Spells)
             ImportLegacySpellEntries(primaryViewer.ItemsSpells, CooldownManagerDB.AdditionalCustom and CooldownManagerDB.AdditionalCustom.Spells)
-            NormalizeCustomViewerLayoutIndices(primaryViewer.ViewerID)
+            ReindexCustomViewerEntries(primaryViewer.ViewerID)
         end
 
         CustomDB.LegacyMigrationVersion = LEGACY_MIGRATION_VERSION
     end
 
-    NormalizeCustomViewerCollection(CustomDB)
+    EnsureCustomViewerCollectionDefaults(CustomDB)
     RefreshCustomViewerAnchors()
 end
 
 BCDM.SetupCustomItemsSpellsBar = LayoutCustomViewer
 BCDM.UpdateCustomItemsSpellsBar = LayoutCustomViewer
 BCDM.AdjustItemsSpellsLayoutIndex = BCDM.AdjustCustomViewerLayoutIndex
-BCDM.NormalizeItemsSpellsLayoutIndices = NormalizeCustomViewerLayoutIndices
+BCDM.NormalizeItemsSpellsLayoutIndices = ReindexCustomViewerEntries
 BCDM.AdjustItemsSpellsList = BCDM.AdjustCustomViewerList
 
 BCDM.SetupCustomCooldownViewer = LayoutCustomViewer
@@ -1363,5 +1369,5 @@ BCDM.UpdateAdditionalCustomCooldownViewer = LayoutCustomViewer
 BCDM.SetupCustomItemBar = LayoutCustomViewer
 BCDM.UpdateCustomItemBar = LayoutCustomViewer
 BCDM.AdjustItemLayoutIndex = BCDM.AdjustCustomViewerLayoutIndex
-BCDM.NormalizeItemLayoutIndices = NormalizeCustomViewerLayoutIndices
+BCDM.NormalizeItemLayoutIndices = ReindexCustomViewerEntries
 BCDM.AdjustItemList = BCDM.AdjustCustomViewerList

@@ -128,6 +128,8 @@ function BCDM:StripTextures(textureToStrip)
     end
 end
 
+-- Shared UI helpers live here so each module does not need its own copy of the
+-- same region lookup, desaturation fallback, or cooldown-change check.
 function BCDM:GetFrameRegionByType(parentFrame, regionType)
     if not parentFrame or not regionType then return end
     local regionCount = parentFrame:GetNumRegions()
@@ -177,6 +179,8 @@ function BCDM:IsOnUseTrinket(itemId)
     return (spellID and spellID > 0) or (spellName and spellName ~= "")
 end
 
+-- Reapply countdown text styling after Blizzard or another addon recreates the
+-- cooldown fontstring, or after icon sizing changes alter the desired scale.
 function BCDM:ApplyCooldownText(viewer)
     local Viewer = type(viewer) == "string" and _G[viewer] or viewer
     if not Viewer then return end
