@@ -1144,8 +1144,16 @@ local function CopyCustomViewerSettings(targetDB, sourceDB)
     end
 end
 
-BCDM.GetCustomViewerEntries    = GetCustomViewerDB
-BCDM.GetSelectedCustomViewerDB = GetCustomViewerDB
+function BCDM:GetCustomViewerEntries(viewerID)
+    if viewerID == nil then
+        return GetCustomViewerDB()
+    end
+    return GetCustomViewerDB(viewerID)
+end
+
+function BCDM:GetSelectedCustomViewerDB(viewerID)
+    return GetCustomViewerDB(viewerID or self.SelectedCustomViewerID)
+end
 
 function BCDM:SetActiveCustomViewer(viewerID)
     local selectedViewer = GetCustomViewerDB(viewerID)
