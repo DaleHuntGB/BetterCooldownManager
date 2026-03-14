@@ -2,7 +2,6 @@ local _, BCDM = ...
 
 local customIconPool
 
-
 local VIEWER_KEY               = "CustomViewer"
 local VIEWER_FRAME_NAME        = "BCDM_CustomViewer"
 local LEGACY_MIGRATION_VERSION = 1
@@ -15,7 +14,6 @@ local CUSTOM_VIEWER_SETTING_KEYS = {
     "OffsetByParentHeight", "HideZeroCharges", "ShowItemQualityBorder",
     "AutoDetectUsableTrinkets", "Text",
 }
-
 
 local function GetCustomRootDB()
     return BCDM.db.profile.CooldownManager[VIEWER_KEY]
@@ -139,13 +137,9 @@ local function GetCustomViewerDB(viewerID, methodViewerID)
 
     local viewers = customRootDB.Viewers
 
-    if viewerID == nil and methodViewerID == nil then
-        return viewers
-    end
+    if viewerID == nil and methodViewerID == nil then return viewers end
 
-    local resolvedViewerID = tonumber(methodViewerID)
-                          or tonumber(viewerID)
-                          or tonumber(BCDM.SelectedCustomViewerID)
+    local resolvedViewerID = tonumber(methodViewerID) or tonumber(viewerID) or tonumber(BCDM.SelectedCustomViewerID)
 
     for _, viewerData in ipairs(viewers) do
         if viewerData.ViewerID == resolvedViewerID then

@@ -93,7 +93,12 @@ end
 
 local function SetHooks()
     hooksecurefunc(EditModeManagerFrame, "EnterEditMode", function() if InCombatLockdown() then return end BCDM:RefreshCooldownManagerViewerPositions() end)
-    hooksecurefunc(EditModeManagerFrame, "ExitEditMode", function() if InCombatLockdown() then return end BCDM.LEMO:LoadLayouts() BCDM:RefreshCooldownManagerViewerPositions() end)
+    hooksecurefunc(EditModeManagerFrame, "ExitEditMode", function()
+        if InCombatLockdown() then return end
+        BCDM.LEMO:LoadLayouts()
+        BCDM:RefreshCooldownManagerViewerPositions()
+        BCDM:UpdateTrinketBar()
+    end)
     hooksecurefunc(CooldownViewerSettings, "RefreshLayout", function() if InCombatLockdown() then return end BCDM:UpdateBCDM() end)
 end
 
@@ -206,7 +211,7 @@ end
 local function CenterWrappedRows(viewerName)
     local viewer = _G[viewerName]
     if not viewer then return end
-    local anchorFrame = BCDM.GetEffectiveAnchorFrame and BCDM:GetEffectiveAnchorFrame(viewerName) or viewer
+    local anchorFrame = viewer
 
     local iconLimit = viewer.iconLimit
     if not iconLimit or iconLimit <= 0 then return end
@@ -299,8 +304,22 @@ function BCDM:SkinCooldownManager()
     BCDM:RefreshCooldownManagerViewerPositions()
     SetHooks()
     SetupCenterBuffs()
-    if EssentialCooldownViewer and EssentialCooldownViewer.RefreshLayout then hooksecurefunc(EssentialCooldownViewer, "RefreshLayout", function() CenterWrappedIcons() end) end
-    if UtilityCooldownViewer and UtilityCooldownViewer.RefreshLayout then hooksecurefunc(UtilityCooldownViewer, "RefreshLayout", function() CenterWrappedIcons() end) end
+    if EssentialCooldownViewer and EssentialCooldownViewer.RefreshLayout then
+        hooksecurefunc(EssentialCooldownViewer, "RefreshLayout", function()
+            CenterWrappedIcons()
+            if BCDM.IsTrinketBarAppendedToViewer and BCDM:IsTrinketBarAppendedToViewer("Essential") then
+                BCDM:UpdateTrinketBar()
+            end
+        end)
+    end
+    if UtilityCooldownViewer and UtilityCooldownViewer.RefreshLayout then
+        hooksecurefunc(UtilityCooldownViewer, "RefreshLayout", function()
+            CenterWrappedIcons()
+            if BCDM.IsTrinketBarAppendedToViewer and BCDM:IsTrinketBarAppendedToViewer("Utility") then
+                BCDM:UpdateTrinketBar()
+            end
+        end)
+    end
     for _, viewerName in ipairs(BCDM.CooldownManagerViewers) do
         C_Timer.After(0.1, function() BCDM:ApplyCooldownText(viewerName) end)
     end
