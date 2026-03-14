@@ -3,27 +3,27 @@ local LibCustomGlow = LibStub("LibCustomGlow-1.0")
 
 local activeGlows = {}
 
-local function NormalizeValue(value, defaultValue)
+local function ValueOrDefault(value, defaultValue)
     if value == nil then
         return defaultValue
     end
     return value
 end
 
-local function NormalizeColor(color, fallback)
+local function CopyColorOrDefault(color, fallback)
     if type(color) ~= "table" then
         color = fallback or { 1, 1, 1, 1 }
     end
     local fallbackColor = fallback or { 1, 1, 1, 1 }
     return {
-        NormalizeValue(color[1], fallbackColor[1]),
-        NormalizeValue(color[2], fallbackColor[2]),
-        NormalizeValue(color[3], fallbackColor[3]),
-        NormalizeValue(color[4], fallbackColor[4]),
+        ValueOrDefault(color[1], fallbackColor[1]),
+        ValueOrDefault(color[2], fallbackColor[2]),
+        ValueOrDefault(color[3], fallbackColor[3]),
+        ValueOrDefault(color[4], fallbackColor[4]),
     }
 end
 
-local function NormalizeGlowType(glowType)
+local function ResolveGlowType(glowType)
     if not glowType then
         return nil
     end
@@ -43,7 +43,9 @@ local function NormalizeGlowType(glowType)
     return nil
 end
 
-function BCDM:NormalizeGlowSettings()
+-- Fold current settings and older saved-variable shapes into one structure so
+-- the glow application code can read a single predictable table.
+function BCDM:GetGlowSettingsWithDefaults()
     if not BCDM.db or not BCDM.db.profile or not BCDM.db.profile.CooldownManager then
         return nil
     end
@@ -55,47 +57,47 @@ function BCDM:NormalizeGlowSettings()
 
     local legacyType = glow.GlowType
     if glow.Type == nil and legacyType ~= nil then
-        glow.Type = NormalizeGlowType(legacyType)
+        glow.Type = ResolveGlowType(legacyType)
     end
 
-    glow.Enabled = NormalizeValue(glow.Enabled, true)
+    glow.Enabled = ValueOrDefault(glow.Enabled, true)
     glow.Type = glow.Type or "Pixel"
 
     local legacyColor = glow.Colour
     glow.Pixel = glow.Pixel or {}
-    glow.Pixel.Color = NormalizeColor(glow.Pixel.Color or legacyColor, { 1, 1, 1, 1 })
-    glow.Pixel.Lines = NormalizeValue(glow.Pixel.Lines or glow.Lines, 5)
-    glow.Pixel.Frequency = NormalizeValue(glow.Pixel.Frequency or glow.Frequency, 0.25)
-    glow.Pixel.Length = NormalizeValue(glow.Pixel.Length, 2)
-    glow.Pixel.Thickness = NormalizeValue(glow.Pixel.Thickness or glow.Thickness, 1)
-    glow.Pixel.XOffset = NormalizeValue(glow.Pixel.XOffset or glow.XOffset, -1)
-    glow.Pixel.YOffset = NormalizeValue(glow.Pixel.YOffset or glow.YOffset, -1)
-    glow.Pixel.Border = NormalizeValue(glow.Pixel.Border, false)
+    glow.Pixel.Color = CopyColorOrDefault(glow.Pixel.Color or legacyColor, { 1, 1, 1, 1 })
+    glow.Pixel.Lines = ValueOrDefault(glow.Pixel.Lines or glow.Lines, 5)
+    glow.Pixel.Frequency = ValueOrDefault(glow.Pixel.Frequency or glow.Frequency, 0.25)
+    glow.Pixel.Length = ValueOrDefault(glow.Pixel.Length, 2)
+    glow.Pixel.Thickness = ValueOrDefault(glow.Pixel.Thickness or glow.Thickness, 1)
+    glow.Pixel.XOffset = ValueOrDefault(glow.Pixel.XOffset or glow.XOffset, -1)
+    glow.Pixel.YOffset = ValueOrDefault(glow.Pixel.YOffset or glow.YOffset, -1)
+    glow.Pixel.Border = ValueOrDefault(glow.Pixel.Border, false)
 
     glow.Autocast = glow.Autocast or {}
-    glow.Autocast.Color = NormalizeColor(glow.Autocast.Color or legacyColor, { 1, 1, 1, 1 })
-    glow.Autocast.Particles = NormalizeValue(glow.Autocast.Particles or glow.Particles, 10)
-    glow.Autocast.Frequency = NormalizeValue(glow.Autocast.Frequency or glow.Frequency, 0.25)
-    glow.Autocast.Scale = NormalizeValue(glow.Autocast.Scale or glow.Scale, 1)
-    glow.Autocast.XOffset = NormalizeValue(glow.Autocast.XOffset or glow.XOffset, -1)
-    glow.Autocast.YOffset = NormalizeValue(glow.Autocast.YOffset or glow.YOffset, -1)
+    glow.Autocast.Color = CopyColorOrDefault(glow.Autocast.Color or legacyColor, { 1, 1, 1, 1 })
+    glow.Autocast.Particles = ValueOrDefault(glow.Autocast.Particles or glow.Particles, 10)
+    glow.Autocast.Frequency = ValueOrDefault(glow.Autocast.Frequency or glow.Frequency, 0.25)
+    glow.Autocast.Scale = ValueOrDefault(glow.Autocast.Scale or glow.Scale, 1)
+    glow.Autocast.XOffset = ValueOrDefault(glow.Autocast.XOffset or glow.XOffset, -1)
+    glow.Autocast.YOffset = ValueOrDefault(glow.Autocast.YOffset or glow.YOffset, -1)
 
     glow.Proc = glow.Proc or {}
-    glow.Proc.Color = NormalizeColor(glow.Proc.Color or legacyColor, { 1, 1, 1, 1 })
-    glow.Proc.StartAnim = NormalizeValue(glow.Proc.StartAnim, true)
-    glow.Proc.Duration = NormalizeValue(glow.Proc.Duration, 1)
-    glow.Proc.XOffset = NormalizeValue(glow.Proc.XOffset, 0)
-    glow.Proc.YOffset = NormalizeValue(glow.Proc.YOffset, 0)
+    glow.Proc.Color = CopyColorOrDefault(glow.Proc.Color or legacyColor, { 1, 1, 1, 1 })
+    glow.Proc.StartAnim = ValueOrDefault(glow.Proc.StartAnim, true)
+    glow.Proc.Duration = ValueOrDefault(glow.Proc.Duration, 1)
+    glow.Proc.XOffset = ValueOrDefault(glow.Proc.XOffset, 0)
+    glow.Proc.YOffset = ValueOrDefault(glow.Proc.YOffset, 0)
 
     glow.Button = glow.Button or {}
-    glow.Button.Color = NormalizeColor(glow.Button.Color or legacyColor, { 1, 1, 1, 1 })
-    glow.Button.Frequency = NormalizeValue(glow.Button.Frequency, 0.125)
+    glow.Button.Color = CopyColorOrDefault(glow.Button.Color or legacyColor, { 1, 1, 1, 1 })
+    glow.Button.Frequency = ValueOrDefault(glow.Button.Frequency, 0.125)
 
     return glow
 end
 
 function BCDM:GetCustomGlowSettings()
-    return self:NormalizeGlowSettings()
+    return self:GetGlowSettingsWithDefaults()
 end
 
 local function GetCooldownViewerChild(frame)

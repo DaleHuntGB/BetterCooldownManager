@@ -56,7 +56,8 @@ local Defaults = {
                     [Enum.PowerType.SoulShards]    = { 0.58, 0.51, 0.79, 1.0 },
                     [Enum.PowerType.Runes]         = { 0.77, 0.12, 0.23, 1.0 },
                     [Enum.PowerType.Maelstrom]     = { 0.25, 0.50, 0.80, 1.0},
-                    SOUL                           = { 0.29, 0.42, 1.00, 1.0},
+                    SOUL                           = { 0.00, 0.80, 0.00, 1.0},
+                    DEVOURER_SOUL                  = { 0.11, 0.34, 0.71, 1.0},
                     STAGGER                        = { 0.00, 1.00, 0.59, 1.0 },
                     RUNE_RECHARGE                  = { 0.5, 0.5, 0.5, 1.0 },
                     ESSENCE_RECHARGE               = { 0.5, 0.5, 0.5, 1.0 },
@@ -188,222 +189,41 @@ local Defaults = {
                     },
                 }
             },
-            Custom = {
-                IconSize = 38,
-                IconWidth = 38,
-                IconHeight = 38,
-                KeepAspectRatio = true,
-                FrameStrata = "LOW",
-                Layout = {"CENTER", "NONE", "CENTER", 0, 0},
-                Spacing = 1,
-                GrowthDirection = "RIGHT",
-                Columns = 0,
-                Text = {
-                    FontSize = 12,
-                    Colour = {1, 1, 1},
-                    Layout = {"BOTTOMRIGHT", "BOTTOMRIGHT", 0, 2}
+            CustomViewer = {
+                ActiveViewerID = 1,
+                NextViewerID = 2,
+                Viewers = {
+                    {
+                        ViewerID = 1,
+                        Name = "Custom Viewer 1",
+                        FrameName = "BCDM_CustomViewer",
+                        IconSize = 38,
+                        IconWidth = 38,
+                        IconHeight = 38,
+                        KeepAspectRatio = true,
+                        FrameStrata = "LOW",
+                        Layout = {"CENTER", "NONE", "CENTER", 0, 0},
+                        Spacing = 1,
+                        GrowthDirection = "LEFT",
+                        Columns = 0,
+                        OffsetByParentHeight = true,
+                        HideZeroCharges = false,
+                        ShowItemQualityBorder = true,
+                        AutoDetectUsableTrinkets = false,
+                        Text = {
+                            FontSize = 12,
+                            Colour = {1, 1, 1},
+                            Layout = {"BOTTOMRIGHT", "BOTTOMRIGHT", 0, 2}
+                        },
+                        ItemsSpells = {},
+                    },
                 },
-                Spells = {
-                    -- Monk
-                    ["MONK"] = {
-                        ["BREWMASTER"] = {},
-                        ["WINDWALKER"] = {},
-                        ["MISTWEAVER"] = {},
-                    },
-                    -- Demon Hunter
-                    ["DEMONHUNTER"] = {
-                        ["HAVOC"] = {},
-                        ["VENGEANCE"] = {},
-                        ["DEVOURER"] = {},
-                    },
-                    -- Death Knight
-                    ["DEATHKNIGHT"] = {
-                        ["BLOOD"] = {},
-                        ["UNHOLY"] = {},
-                        ["FROST"] = {}
-                    },
-                    -- Mage
-                    ["MAGE"] = {
-                        ["FROST"] = {},
-                        ["FIRE"] = {},
-                        ["ARCANE"] = {},
-                    },
-                    -- Paladin
-                    ["PALADIN"] = {
-                        ["RETRIBUTION"] = {},
-                        ["HOLY"] = {},
-                        ["PROTECTION"] = {}
-                    },
-                    -- Shaman
-                    ["SHAMAN"] = {
-                        ["ELEMENTAL"] = {},
-                        ["ENHANCEMENT"] = {},
-                        ["RESTORATION"] = {}
-                    },
-                    -- Druid
-                    ["DRUID"] = {
-                        ["GUARDIAN"] = {},
-                        ["FERAL"] = {},
-                        ["RESTORATION"] = {},
-                        ["BALANCE"] = {},
-                    },
-                    -- Evoker
-                    ["EVOKER"] = {
-                        ["DEVASTATION"] = {},
-                        ["AUGMENTATION"] = {},
-                        ["PRESERVATION"] = {}
-                    },
-                    -- Warrior
-                    ["WARRIOR"] = {
-                        ["ARMS"] = {},
-                        ["FURY"] = {},
-                        ["PROTECTION"] = {},
-                    },
-                    -- Priest
-                    ["PRIEST"] = {
-                        ["SHADOW"] = {},
-                        ["DISCIPLINE"] = {},
-                        ["HOLY"] = {},
-                    },
-                    -- Warlock
-                    ["WARLOCK"] = {
-                        ["DESTRUCTION"] = {},
-                        ["AFFLICTION"] = {},
-                        ["DEMONOLOGY"] = {},
-                    },
-                    -- Hunter
-                    ["HUNTER"] = {
-                        ["SURVIVAL"] = {},
-                        ["MARKSMANSHIP"] = {},
-                        ["BEASTMASTERY"] = {},
-                    },
-                    -- Rogue
-                    ["ROGUE"] = {
-                        ["OUTLAW"] = {},
-                        ["ASSASSINATION"] = {},
-                        ["SUBTLETY"] = {},
-                    }
-                },
-            },
-            AdditionalCustom = {
-                IconSize = 38,
-                IconWidth = 38,
-                IconHeight = 38,
-                KeepAspectRatio = true,
-                FrameStrata = "LOW",
-                Layout = {"CENTER", "NONE", "CENTER", 0, 0},
-                Spacing = 1,
-                GrowthDirection = "RIGHT",
-                Columns = 0,
-                Text = {
-                    FontSize = 12,
-                    Colour = {1, 1, 1},
-                    Layout = {"BOTTOMRIGHT", "BOTTOMRIGHT", 0, 2}
-                },
-                Spells = {
-                    -- Monk
-                    ["MONK"] = {
-                        ["BREWMASTER"] = {},
-                        ["WINDWALKER"] = {},
-                        ["MISTWEAVER"] = {},
-                    },
-                    -- Demon Hunter
-                    ["DEMONHUNTER"] = {
-                        ["HAVOC"] = {},
-                        ["VENGEANCE"] = {},
-                        ["DEVOURER"] = {},
-                    },
-                    -- Death Knight
-                    ["DEATHKNIGHT"] = {
-                        ["BLOOD"] = {},
-                        ["UNHOLY"] = {},
-                        ["FROST"] = {}
-                    },
-                    -- Mage
-                    ["MAGE"] = {
-                        ["FROST"] = {},
-                        ["FIRE"] = {},
-                        ["ARCANE"] = {},
-                    },
-                    -- Paladin
-                    ["PALADIN"] = {
-                        ["RETRIBUTION"] = {},
-                        ["HOLY"] = {},
-                        ["PROTECTION"] = {}
-                    },
-                    -- Shaman
-                    ["SHAMAN"] = {
-                        ["ELEMENTAL"] = {},
-                        ["ENHANCEMENT"] = {},
-                        ["RESTORATION"] = {}
-                    },
-                    -- Druid
-                    ["DRUID"] = {
-                        ["GUARDIAN"] = {},
-                        ["FERAL"] = {},
-                        ["RESTORATION"] = {},
-                        ["BALANCE"] = {},
-                    },
-                    -- Evoker
-                    ["EVOKER"] = {
-                        ["DEVASTATION"] = {},
-                        ["AUGMENTATION"] = {},
-                        ["PRESERVATION"] = {}
-                    },
-                    -- Warrior
-                    ["WARRIOR"] = {
-                        ["ARMS"] = {},
-                        ["FURY"] = {},
-                        ["PROTECTION"] = {},
-                    },
-                    -- Priest
-                    ["PRIEST"] = {
-                        ["SHADOW"] = {},
-                        ["DISCIPLINE"] = {},
-                        ["HOLY"] = {},
-                    },
-                    -- Warlock
-                    ["WARLOCK"] = {
-                        ["DESTRUCTION"] = {},
-                        ["AFFLICTION"] = {},
-                        ["DEMONOLOGY"] = {},
-                    },
-                    -- Hunter
-                    ["HUNTER"] = {
-                        ["SURVIVAL"] = {},
-                        ["MARKSMANSHIP"] = {},
-                        ["BEASTMASTERY"] = {},
-                    },
-                    -- Rogue
-                    ["ROGUE"] = {
-                        ["OUTLAW"] = {},
-                        ["ASSASSINATION"] = {},
-                        ["SUBTLETY"] = {},
-                    }
-                },
-            },
-            Item = {
-                IconSize = 38,
-                IconWidth = 38,
-                IconHeight = 38,
-                KeepAspectRatio = true,
-                FrameStrata = "LOW",
-                Layout = {"CENTER", "NONE", "CENTER", 0, 0},
-                Spacing = 1,
-                GrowthDirection = "LEFT",
-                Columns = 0,
-                OffsetByParentHeight = true,
-                HideZeroCharges = false,
-                ShowItemQualityBorder = true,
-                Text = {
-                    FontSize = 12,
-                    Colour = {1, 1, 1},
-                    Layout = {"BOTTOMRIGHT", "BOTTOMRIGHT", 0, 2}
-                },
-                Items = {},
             },
             Trinket = {
                 Enabled = true,
+                ShowPassive = true,
+                AppendTo = "NONE",
+                AppendSide = "RIGHT",
                 IconSize = 38,
                 IconWidth = 38,
                 IconHeight = 38,
@@ -413,26 +233,6 @@ local Defaults = {
                 Spacing = 1,
                 GrowthDirection = "LEFT",
                 OffsetByParentHeight = true,
-            },
-            ItemSpell = {
-                IconSize = 38,
-                IconWidth = 38,
-                IconHeight = 38,
-                KeepAspectRatio = true,
-                FrameStrata = "LOW",
-                Layout = {"CENTER", "NONE", "CENTER", 0, 0},
-                Spacing = 1,
-                GrowthDirection = "LEFT",
-                Columns = 0,
-                OffsetByParentHeight = true,
-                HideZeroCharges = false,
-                ShowItemQualityBorder = true,
-                Text = {
-                    FontSize = 12,
-                    Colour = {1, 1, 1},
-                    Layout = {"BOTTOMRIGHT", "BOTTOMRIGHT", 0, 2}
-                },
-                ItemsSpells = {},
             },
         },
         PowerBar = {

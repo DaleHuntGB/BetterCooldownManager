@@ -564,22 +564,6 @@ local RACIALS = {
     [1237885] = { isActive = true, layoutIndex = 25 }, -- Thorn Bloom
 }
 
-function BCDM:AddRecommendedItems()
-    local CooldownManagerDB = BCDM.db.profile
-    if not CooldownManagerDB then return end
-
-    local CustomDB = CooldownManagerDB.CooldownManager.Item
-    if not ITEMS or type(ITEMS) ~= "table" then return end
-    if not CustomDB then CustomDB = {} CooldownManagerDB.CooldownManager.Item = CustomDB end
-    if not CustomDB.Items then CustomDB.Items = {} end
-
-    for itemId, data in pairs(ITEMS) do
-        if itemId and data and not CustomDB.Items[itemId] then
-            CustomDB.Items[itemId] = data
-        end
-    end
-end
-
 function BCDM:FetchData(options)
     options = options or {}
     local includeSpells = options.includeSpells
@@ -630,23 +614,6 @@ function BCDM:FetchData(options)
     return dataList
 end
 
-function BCDM:AddRecommendedSpells(customDB)
-    local CooldownManagerDB = BCDM.db.profile
-    local CustomDB = CooldownManagerDB.CooldownManager[customDB]
-    local _, playerClass = UnitClass("player")
-    local specIndex = GetSpecialization()
-    local specID, specName = specIndex and GetSpecializationInfo(specIndex)
-    local playerSpecialization = BCDM:NormalizeSpecToken(specName, specID, specIndex)
-    if DEFENSIVE_SPELLS[playerClass] and DEFENSIVE_SPELLS[playerClass][playerSpecialization] then
-        for spellId, data in pairs(DEFENSIVE_SPELLS[playerClass][playerSpecialization]) do
-            if not CustomDB.Spells[playerClass] then CustomDB.Spells[playerClass] = {} end
-            if not CustomDB.Spells[playerClass][playerSpecialization] then CustomDB.Spells[playerClass][playerSpecialization] = {} end
-            if not CustomDB.Spells[playerClass][playerSpecialization][spellId] then
-                CustomDB.Spells[playerClass][playerSpecialization][spellId] = data
-            end
-        end
-    end
-end
 
 -- Event check for equipped trinkets; trinket icons are driven directly from slots 13/14.
 local trinketCheckEvent = CreateFrame("Frame")
