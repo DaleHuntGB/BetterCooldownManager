@@ -1878,7 +1878,20 @@ local function CreateCooldownViewerItemSpellSettings(parentContainer, containerT
                 RefreshItemSpellSettings()
             end)
             parentContainer:AddChild(removeItemButton)
-
+            
+            if viewerType == "Item" or viewerType == "Custom" or viewerType == "AdditionalCustom" then
+                local barAlphaSlider = AG:Create("Slider")
+                barAlphaSlider:SetLabel(LL("Bar Opacity"))
+                barAlphaSlider:SetValue(BCDM.db.profile.CooldownManager[viewerType].BarAlpha or 1)
+                barAlphaSlider:SetSliderValues(0, 1, 0.01)
+                barAlphaSlider:SetIsPercent(true)
+                barAlphaSlider:SetCallback("OnValueChanged", function(self, _, value)
+                    BCDM.db.profile.CooldownManager[viewerType].BarAlpha = value
+                    BCDM:UpdateCooldownViewer(viewerType)
+                end)
+                barAlphaSlider:SetRelativeWidth(0.33)
+                layoutContainer:AddChild(barAlphaSlider)
+            end
             AddItemSpellClassSpecFilterEditor(parentContainer, "ItemSpell", "ItemSpell", itemId, data, RefreshItemSpellSettings)
         end
     end

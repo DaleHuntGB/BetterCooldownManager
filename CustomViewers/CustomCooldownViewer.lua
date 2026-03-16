@@ -368,7 +368,7 @@ local function LayoutCustomCooldownViewer()
             spellIcon:Show()
         end
     end
-
+    BCDM.CustomCooldownViewerContainer:SetAlpha(CustomDB.BarAlpha or 1)
     BCDM.CustomCooldownViewerContainer:Show()
 end
 

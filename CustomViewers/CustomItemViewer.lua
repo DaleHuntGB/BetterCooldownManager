@@ -702,7 +702,7 @@ local function LayoutCustomItemBar()
             spellIcon:Show()
         end
     end
-
+    BCDM.CustomItemBarContainer:SetAlpha(CustomDB.BarAlpha or 1)
     BCDM.CustomItemBarContainer:Show()
 end
 
