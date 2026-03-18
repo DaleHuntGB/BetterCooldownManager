@@ -1,5 +1,6 @@
 local _, BCDM = ...
 BCDMG = BCDMG or {}
+local pendingExternalAnchorRefresh
 
 BCDM.IS_DEATHKNIGHT = select(2, UnitClass("player")) == "DEATHKNIGHT"
 BCDM.IS_MONK = select(2, UnitClass("player")) == "MONK"
@@ -117,10 +118,105 @@ function BCDM:StripTextures(textureToStrip)
     end
     local textureParent = textureToStrip:GetParent()
     if textureParent then
-        for _, textureRegion in ipairs({ textureParent:GetRegions() }) do
+        local regionCount = textureParent:GetNumRegions()
+        for i = 1, regionCount do
+            local textureRegion = select(i, textureParent:GetRegions())
             if textureRegion:IsObjectType("Texture") and textureRegion ~= textureToStrip and textureRegion:IsShown() then
                 textureRegion:SetTexture(nil)
                 textureRegion:Hide()
+            end
+        end
+    end
+end
+
+-- Shared UI helpers live here so each module does not need its own copy of the
+-- same region lookup, desaturation fallback, or cooldown-change check.
+function BCDM:GetFrameRegionByType(parentFrame, regionType)
+    if not parentFrame or not regionType then return end
+    local regionCount = parentFrame:GetNumRegions()
+    if not regionCount or regionCount <= 0 then return end
+    for i = 1, regionCount do
+        local region = select(i, parentFrame:GetRegions())
+        if region and region:GetObjectType() == regionType then
+            return region
+        end
+    end
+end
+
+function BCDM:SetIconDesaturation(icon, value)
+    if not icon then return end
+    if icon.SetDesaturation then
+        icon:SetDesaturation(value)
+        return
+    end
+    if icon.SetDesaturated then
+        icon:SetDesaturated(value > 0)
+    end
+end
+
+function BCDM:ShouldRefreshCooldownFrame(cooldownFrame, hasActiveCooldown, startTime, durationTime)
+    if not cooldownFrame then return false end
+
+    local oldStart, oldDuration = cooldownFrame:GetCooldownTimes()
+    oldStart = tonumber(oldStart) or 0
+    oldDuration = tonumber(oldDuration) or 0
+
+    if BCDM:IsSecretValue(oldStart) or BCDM:IsSecretValue(oldDuration) then
+        return true
+    end
+
+    if hasActiveCooldown then
+        if oldStart <= 0 or oldDuration <= 0 then
+            return true
+        end
+
+        local oldEnd = (oldStart + oldDuration) / 1000
+        local newEnd = (startTime or 0) + (durationTime or 0)
+        return math.abs(oldEnd - newEnd) > 0.01
+    end
+
+    return oldStart > 0 and oldDuration > 0
+end
+
+function BCDM:IsOnUseTrinket(itemId)
+    if not itemId then return false end
+    local spellName, spellID = C_Item.GetItemSpell(itemId)
+    return (spellID and spellID > 0) or (spellName and spellName ~= "")
+end
+
+-- Reapply countdown text styling after Blizzard or another addon recreates the
+-- cooldown fontstring, or after icon sizing changes alter the desired scale.
+function BCDM:ApplyCooldownText(viewer)
+    local Viewer = type(viewer) == "string" and _G[viewer] or viewer
+    if not Viewer then return end
+
+    local CooldownManagerDB = BCDM.db.profile
+    local GeneralDB = CooldownManagerDB.General
+    local CooldownTextDB = CooldownManagerDB.CooldownManager.General.CooldownText
+    local childCount = Viewer:GetNumChildren()
+
+    for i = 1, childCount do
+        local icon = select(i, Viewer:GetChildren())
+        if icon and icon.Cooldown then
+            local textRegion = BCDM:GetFrameRegionByType(icon.Cooldown, "FontString")
+            if textRegion then
+                if CooldownTextDB.ScaleByIconSize then
+                    local iconWidth = icon:GetWidth()
+                    local scaleFactor = iconWidth / 36
+                    textRegion:SetFont(BCDM.Media.Font, CooldownTextDB.FontSize * scaleFactor, GeneralDB.Fonts.FontFlag)
+                else
+                    textRegion:SetFont(BCDM.Media.Font, CooldownTextDB.FontSize, GeneralDB.Fonts.FontFlag)
+                end
+                textRegion:SetTextColor(CooldownTextDB.Colour[1], CooldownTextDB.Colour[2], CooldownTextDB.Colour[3], 1)
+                textRegion:ClearAllPoints()
+                textRegion:SetPoint(CooldownTextDB.Layout[1], icon, CooldownTextDB.Layout[2], CooldownTextDB.Layout[3], CooldownTextDB.Layout[4])
+                if GeneralDB.Fonts.Shadow.Enabled then
+                    textRegion:SetShadowColor(GeneralDB.Fonts.Shadow.Colour[1], GeneralDB.Fonts.Shadow.Colour[2], GeneralDB.Fonts.Shadow.Colour[3], GeneralDB.Fonts.Shadow.Colour[4])
+                    textRegion:SetShadowOffset(GeneralDB.Fonts.Shadow.OffsetX, GeneralDB.Fonts.Shadow.OffsetY)
+                else
+                    textRegion:SetShadowColor(0, 0, 0, 0)
+                    textRegion:SetShadowOffset(0, 0)
+                end
             end
         end
     end
@@ -225,6 +321,7 @@ function BCDM:Init()
     SetupSlashCommands()
     BCDM:ResolveLSM()
     BCDM:NormalizeCustomSpellSpecTokens()
+    BCDM:SetupExternalAnchorHooks()
     if not C_AddOns.IsAddOnLoaded("Blizzard_CooldownViewer") then C_AddOns.LoadAddOn("Blizzard_CooldownViewer") end
 end
 
@@ -249,21 +346,265 @@ function BCDM:UpdateBCDM()
     BCDM:UpdatePowerBar()
     BCDM:UpdateSecondaryPowerBar()
     BCDM:UpdateCastBar()
-    BCDM:UpdateCustomCooldownViewer()
-    BCDM:UpdateAdditionalCustomCooldownViewer()
-    BCDM:UpdateCustomItemBar()
-    BCDM:UpdateCustomItemsSpellsBar()
+    BCDM:UpdateCustomViewer()
     BCDM:UpdateTrinketBar()
     BCDM:RefreshCustomGlows()
     BCDM:DisableAuraOverlay()
+end
+
+local function GetFrameHorizontalExtents(frame)
+    if not frame or not frame.IsShown or not frame:IsShown() then return nil, nil end
+    local left = frame:GetLeft()
+    local right = frame:GetRight()
+    if not left or not right then return nil, nil end
+    return left, right
+end
+
+function BCDM:GetEffectiveAnchorWidth(anchorName)
+    local anchorFrame = anchorName and _G[anchorName]
+    if not anchorFrame then return nil end
+
+    local width = anchorFrame:GetWidth()
+    if not width or width <= 0 then
+        return width
+    end
+
+    if not self.GetTrinketAppendTargetViewerName or not self.TrinketBarContainer then
+        return width
+    end
+
+    local appendViewerName = self:GetTrinketAppendTargetViewerName()
+    if appendViewerName ~= anchorName then
+        return width
+    end
+
+    local anchorLeft, anchorRight = GetFrameHorizontalExtents(anchorFrame)
+    local trinketLeft, trinketRight = GetFrameHorizontalExtents(self.TrinketBarContainer)
+    if not anchorLeft or not anchorRight or not trinketLeft or not trinketRight then
+        return width
+    end
+
+    return math.max(anchorRight, trinketRight) - math.min(anchorLeft, trinketLeft)
+end
+
+function BCDM:QueueAnchorWidthUpdate(targetFrame, anchorName, delay)
+    if not targetFrame or not anchorName then return end
+    C_Timer.After(delay or 0.1, function()
+        local anchorFrame = BCDM:GetEffectiveAnchorFrame(anchorName)
+        if not anchorFrame then return end
+        local anchorWidth = BCDM:GetEffectiveAnchorWidth(anchorName) or anchorFrame:GetWidth()
+        if anchorWidth and anchorWidth > 0 then
+            targetFrame:SetWidth(anchorWidth)
+        end
+    end)
+end
+
+local function GetViewerBaseAnchor(viewerType)
+    local viewerSettings = BCDM.db and BCDM.db.profile and BCDM.db.profile.CooldownManager and BCDM.db.profile.CooldownManager[viewerType]
+    if not viewerSettings or not viewerSettings.Layout then return nil end
+
+    if viewerType == "Essential" then
+        return {
+            point = viewerSettings.Layout[1],
+            relativeTo = UIParent,
+            relativePoint = viewerSettings.Layout[2],
+            x = viewerSettings.Layout[3],
+            y = viewerSettings.Layout[4],
+        }
+    end
+
+    local relativeTo = viewerSettings.Layout[2] == "NONE" and UIParent
+        or (BCDM.GetEffectiveAnchorFrame and BCDM:GetEffectiveAnchorFrame(viewerSettings.Layout[2]))
+        or _G[viewerSettings.Layout[2]]
+    return {
+        point = viewerSettings.Layout[1],
+        relativeTo = relativeTo,
+        relativePoint = viewerSettings.Layout[3],
+        x = viewerSettings.Layout[4],
+        y = viewerSettings.Layout[5],
+    }
+end
+
+function BCDM:GetAppendedTrinketHorizontalSpan(viewerType)
+    if not self.IsTrinketBarAppendedToViewer or not self:IsTrinketBarAppendedToViewer(viewerType) then
+        return 0
+    end
+
+    local viewerName = self.DBViewerToCooldownManagerViewer and self.DBViewerToCooldownManagerViewer[viewerType]
+    local viewerFrame = viewerName and _G[viewerName]
+    local trinketFrame = self.TrinketBarContainer
+    if not viewerFrame or not trinketFrame or not trinketFrame:IsShown() then
+        return 0
+    end
+
+    local viewerLeft, viewerRight = GetFrameHorizontalExtents(viewerFrame)
+    local trinketLeft, trinketRight = GetFrameHorizontalExtents(trinketFrame)
+    if not viewerLeft or not viewerRight or not trinketLeft or not trinketRight then
+        return 0
+    end
+
+    local appendSide = self.db and self.db.profile and self.db.profile.CooldownManager
+        and self.db.profile.CooldownManager.Trinket and self.db.profile.CooldownManager.Trinket.AppendSide or "RIGHT"
+
+    if appendSide == "LEFT" then
+        return math.max(0, viewerLeft - trinketLeft)
+    end
+
+    return math.max(0, trinketRight - viewerRight)
+end
+
+function BCDM:GetAppendedViewerOffsetX(viewerType)
+    local viewerSettings = self.db and self.db.profile and self.db.profile.CooldownManager and self.db.profile.CooldownManager[viewerType]
+    if not viewerSettings or not viewerSettings.Layout then return 0 end
+
+    local span = self:GetAppendedTrinketHorizontalSpan(viewerType)
+    if span <= 0 then return 0 end
+
+    local appendSide = self.db and self.db.profile and self.db.profile.CooldownManager
+        and self.db.profile.CooldownManager.Trinket and self.db.profile.CooldownManager.Trinket.AppendSide or "RIGHT"
+    local point = viewerSettings.Layout[1] or "CENTER"
+
+    if point:find("LEFT") then
+        return appendSide == "LEFT" and span or 0
+    elseif point:find("RIGHT") then
+        return appendSide == "RIGHT" and -span or 0
+    end
+
+    return appendSide == "LEFT" and (span * 0.5) or -(span * 0.5)
+end
+
+function BCDM:GetViewerAppendAnchor(viewerType)
+    local frameName = "BCDM_" .. viewerType .. "AppendAnchor"
+    if self[frameName] then
+        return self[frameName]
+    end
+
+    local anchor = CreateFrame("Frame", frameName, UIParent)
+    anchor:SetSize(1, 1)
+    anchor:Hide()
+    self[frameName] = anchor
+    return anchor
+end
+
+function BCDM:GetEffectiveAnchorFrame(anchorName)
+    local anchorFrame = anchorName and _G[anchorName]
+    if not anchorFrame then return nil end
+
+    if anchorName == "EssentialCooldownViewer" and self.BCDM_EssentialAppendAnchor and self.BCDM_EssentialAppendAnchor:IsShown() then
+        return self.BCDM_EssentialAppendAnchor
+    end
+
+    if anchorName == "UtilityCooldownViewer" and self.BCDM_UtilityAppendAnchor and self.BCDM_UtilityAppendAnchor:IsShown() then
+        return self.BCDM_UtilityAppendAnchor
+    end
+
+    return anchorFrame
+end
+
+function BCDM:RefreshAppendedViewerPosition(viewerType)
+    local viewerName = self.DBViewerToCooldownManagerViewer and self.DBViewerToCooldownManagerViewer[viewerType]
+    local viewerFrame = viewerName and _G[viewerName]
+    local baseAnchor = GetViewerBaseAnchor(viewerType)
+    if not viewerFrame or not baseAnchor then return end
+
+    local appendAnchor = self:GetViewerAppendAnchor(viewerType)
+    local span = self:GetAppendedTrinketHorizontalSpan(viewerType)
+    if span <= 0 then
+        if appendAnchor then
+            appendAnchor:Hide()
+        end
+        viewerFrame:ClearAllPoints()
+        viewerFrame:SetPoint(baseAnchor.point, baseAnchor.relativeTo, baseAnchor.relativePoint, (baseAnchor.x or 0) - 0.1, baseAnchor.y or 0)
+        return
+    end
+
+    local trinketFrame = self.TrinketBarContainer
+    local combinedWidth = self:GetEffectiveAnchorWidth(viewerName) or viewerFrame:GetWidth()
+    local combinedHeight = math.max(viewerFrame:GetHeight() or 1, (trinketFrame and trinketFrame:GetHeight()) or 1)
+
+    appendAnchor:ClearAllPoints()
+    appendAnchor:SetPoint(baseAnchor.point, baseAnchor.relativeTo, baseAnchor.relativePoint, baseAnchor.x or 0, baseAnchor.y or 0)
+    appendAnchor:SetSize(combinedWidth or 1, combinedHeight or 1)
+    appendAnchor:Show()
+
+    local extraX = self:GetAppendedViewerOffsetX(viewerType)
+    viewerFrame:ClearAllPoints()
+    viewerFrame:SetPoint(baseAnchor.point, appendAnchor, baseAnchor.point, extraX - 0.1, 0)
+end
+
+function BCDM:SetupExternalAnchorHooks()
+    if self.uufAnchorHookInstalled then
+        return true
+    end
+
+    if not C_AddOns.IsAddOnLoaded("UnhaltedUnitFrames") or not UUF or not UUF.CreatePositionController then
+        return false
+    end
+
+    hooksecurefunc(UUF, "CreatePositionController", function()
+        BCDM:RefreshExternalCDMAnchors()
+    end)
+
+    self.uufAnchorHookInstalled = true
+    return true
+end
+
+function BCDM:RefreshExternalCDMAnchors()
+    BCDM:SetupExternalAnchorHooks()
+
+    if InCombatLockdown() then
+        if pendingExternalAnchorRefresh then return end
+        pendingExternalAnchorRefresh = CreateFrame("Frame")
+        pendingExternalAnchorRefresh:RegisterEvent("PLAYER_REGEN_ENABLED")
+        pendingExternalAnchorRefresh:SetScript("OnEvent", function(self)
+            self:UnregisterEvent("PLAYER_REGEN_ENABLED")
+            pendingExternalAnchorRefresh = nil
+            BCDM:RefreshExternalCDMAnchors()
+        end)
+        return
+    end
+
+    local uufAnchor = _G["UUF_CDMAnchor"]
+    if not uufAnchor then return end
+
+    local effectiveAnchor = BCDM:GetEffectiveAnchorFrame("EssentialCooldownViewer") or _G["EssentialCooldownViewer"]
+    if not effectiveAnchor then return end
+
+    uufAnchor:ClearAllPoints()
+    uufAnchor:SetAllPoints(effectiveAnchor)
+    uufAnchor:SetSize(effectiveAnchor:GetWidth() or 1, effectiveAnchor:GetHeight() or 1)
+    if effectiveAnchor:IsShown() then
+        uufAnchor:Show()
+    else
+        uufAnchor:Hide()
+    end
+end
+
+function BCDM:RefreshCooldownViewerOverlay(viewerType)
+    local viewerName = self.DBViewerToCooldownManagerViewer and self.DBViewerToCooldownManagerViewer[viewerType]
+    local overlay = self[viewerType .. "CooldownViewerOverlay"]
+    local viewerFrame = viewerName and self:GetEffectiveAnchorFrame(viewerName)
+    if not overlay or not viewerFrame then return end
+
+    overlay:ClearAllPoints()
+    overlay:SetPoint("TOPLEFT", viewerFrame, "TOPLEFT", -8, 8)
+    overlay:SetPoint("BOTTOMRIGHT", viewerFrame, "BOTTOMRIGHT", 8, -8)
+end
+
+function BCDM:RefreshCooldownViewerOverlays()
+    BCDM:RefreshCooldownViewerOverlay("Essential")
+    BCDM:RefreshCooldownViewerOverlay("Utility")
+    if BCDM.BuffIconCooldownViewerOverlay and _G["BuffIconCooldownViewer"] then
+        BCDM.BuffIconCooldownViewerOverlay:ClearAllPoints()
+        BCDM.BuffIconCooldownViewerOverlay:SetPoint("TOPLEFT", _G["BuffIconCooldownViewer"], "TOPLEFT", -8, 8)
+        BCDM.BuffIconCooldownViewerOverlay:SetPoint("BOTTOMRIGHT", _G["BuffIconCooldownViewer"], "BOTTOMRIGHT", 8, -8)
+    end
 end
 
 function BCDM:CreateCooldownViewerOverlays()
     local OVERLAY_COLOUR = { 64/255, 128/255, 255/255, 1 }
     if _G["EssentialCooldownViewer"] then
         local EssentialCooldownViewerOverlay = CreateFrame("Frame", "BCDM_EssentialCooldownViewerOverlay", UIParent, "BackdropTemplate")
-        EssentialCooldownViewerOverlay:SetPoint("TOPLEFT", _G["EssentialCooldownViewer"], "TOPLEFT", -8, 8)
-        EssentialCooldownViewerOverlay:SetPoint("BOTTOMRIGHT", _G["EssentialCooldownViewer"], "BOTTOMRIGHT", 8, -8)
         EssentialCooldownViewerOverlay:SetBackdrop({ edgeFile = "Interface\\AddOns\\BetterCooldownManager\\Media\\Glow.tga", edgeSize = 8, insets = {left = -8, right = -8, top = -8, bottom = -8} })
         EssentialCooldownViewerOverlay:SetBackdropColor(0, 0, 0, 0)
         EssentialCooldownViewerOverlay:SetBackdropBorderColor(unpack(OVERLAY_COLOUR))
@@ -273,8 +614,6 @@ function BCDM:CreateCooldownViewerOverlays()
 
     if _G["UtilityCooldownViewer"] then
         local UtilityCooldownViewerOverlay = CreateFrame("Frame", "BCDM_UtilityCooldownViewerOverlay", UIParent, "BackdropTemplate")
-        UtilityCooldownViewerOverlay:SetPoint("TOPLEFT", _G["UtilityCooldownViewer"], "TOPLEFT", -8, 8)
-        UtilityCooldownViewerOverlay:SetPoint("BOTTOMRIGHT", _G["UtilityCooldownViewer"], "BOTTOMRIGHT", 8, -8)
         UtilityCooldownViewerOverlay:SetBackdrop({ edgeFile = "Interface\\AddOns\\BetterCooldownManager\\Media\\Glow.tga", edgeSize = 8, insets = {left = -8, right = -8, top = -8, bottom = -8} })
         UtilityCooldownViewerOverlay:SetBackdropColor(0, 0, 0, 0)
         UtilityCooldownViewerOverlay:SetBackdropBorderColor(unpack(OVERLAY_COLOUR))
@@ -284,14 +623,14 @@ function BCDM:CreateCooldownViewerOverlays()
 
     if _G["BuffIconCooldownViewer"] then
         local BuffIconCooldownViewerOverlay = CreateFrame("Frame", "BCDM_BuffIconCooldownViewerOverlay", UIParent, "BackdropTemplate")
-        BuffIconCooldownViewerOverlay:SetPoint("TOPLEFT", _G["BuffIconCooldownViewer"], "TOPLEFT", -8, 8)
-        BuffIconCooldownViewerOverlay:SetPoint("BOTTOMRIGHT", _G["BuffIconCooldownViewer"], "BOTTOMRIGHT", 8, -8)
         BuffIconCooldownViewerOverlay:SetBackdrop({ edgeFile = "Interface\\AddOns\\BetterCooldownManager\\Media\\Glow.tga", edgeSize = 8, insets = {left = -8, right = -8, top = -8, bottom = -8} })
         BuffIconCooldownViewerOverlay:SetBackdropColor(0, 0, 0, 0)
         BuffIconCooldownViewerOverlay:SetBackdropBorderColor(unpack(OVERLAY_COLOUR))
         BuffIconCooldownViewerOverlay:Hide()
         BCDM.BuffIconCooldownViewerOverlay = BuffIconCooldownViewerOverlay
     end
+
+    BCDM:RefreshCooldownViewerOverlays()
 end
 
 function BCDM:ClearTicks()
@@ -518,6 +857,19 @@ BCDM.AnchorParents = {
         },
         { "EssentialCooldownViewer", "UtilityCooldownViewer", "NONE", "BCDM_PowerBar", "BCDM_SecondaryPowerBar", "BCDM_CastBar" },
     },
+    ["CustomViewer"] = {
+        {
+            ["EssentialCooldownViewer"] = "|cFF00AEF7Blizzard|r: Essential Cooldown Viewer",
+            ["UtilityCooldownViewer"] = "|cFF00AEF7Blizzard|r: Utility Cooldown Viewer",
+            ["NONE"] = "|cFF00AEF7Blizzard|r: UIParent",
+            ["PlayerFrame"] = "|cFF00AEF7Blizzard|r: Player Frame",
+            ["TargetFrame"] = "|cFF00AEF7Blizzard|r: Target Frame",
+            ["BCDM_PowerBar"] = "|cFF8080FFBCDM|r: Power Bar",
+            ["BCDM_SecondaryPowerBar"] = "|cFF8080FFBCDM|r: Secondary Power Bar",
+            ["BCDM_TrinketBar"] = "|cFF8080FFBCDM|r: Trinket Bar",
+        },
+        { "EssentialCooldownViewer", "UtilityCooldownViewer", "NONE", "PlayerFrame", "TargetFrame", "BCDM_PowerBar", "BCDM_SecondaryPowerBar", "BCDM_TrinketBar" },
+    },
     ["Custom"] = {
         {
             ["EssentialCooldownViewer"] = "|cFF00AEF7Blizzard|r: Essential Cooldown Viewer",
@@ -575,12 +927,9 @@ BCDM.AnchorParents = {
             ["TargetFrame"] = "|cFF00AEF7Blizzard|r: Target Frame",
             ["BCDM_PowerBar"] = "|cFF8080FFBCDM|r: Power Bar",
             ["BCDM_SecondaryPowerBar"] = "|cFF8080FFBCDM|r: Secondary Power Bar",
-            ["BCDM_CustomCooldownViewer"] = "|cFF8080FFBCDM|r: Custom Bar",
-            ["BCDM_AdditionalCustomCooldownViewer"] = "|cFF8080FFBCDM|r: Additional Custom Bar",
-            ["BCDM_CustomItemBar"] = "|cFF8080FFBCDM|r: Item Bar",
-            ["BCDM_CustomItemSpellBar"] = "|cFF8080FFBCDM|r: Items/Spells Bar",
+            ["BCDM_CustomViewer"] = "|cFF8080FFBCDM|r: Custom Viewer",
         },
-        { "EssentialCooldownViewer", "UtilityCooldownViewer", "NONE", "PlayerFrame", "TargetFrame", "BCDM_PowerBar", "BCDM_SecondaryPowerBar", "BCDM_CustomCooldownViewer", "BCDM_AdditionalCustomCooldownViewer", "BCDM_CustomItemBar", "BCDM_CustomItemSpellBar" },
+        { "EssentialCooldownViewer", "UtilityCooldownViewer", "NONE", "PlayerFrame", "TargetFrame", "BCDM_PowerBar", "BCDM_SecondaryPowerBar", "BCDM_CustomViewer" },
     },
     ["ItemSpell"] = {
         {

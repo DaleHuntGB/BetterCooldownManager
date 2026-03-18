@@ -77,13 +77,6 @@ local function SetCooldownFromDurationObject(cooldown, durationObject)
     return ok
 end
 
-local function SetIconDesaturation(icon, value)
-    if not icon then return end
-
-    if icon.SetDesaturation then icon:SetDesaturation(value) return end
-    if icon.SetDesaturated then icon:SetDesaturated(value > 0) end
-end
-
 local function CalculateFallbackDesaturation(cooldownInfo)
     if not cooldownInfo then return 0 end
 
@@ -100,23 +93,23 @@ local function UpdateIconDesaturation(frame, cooldownInfo, durationObject, hasCh
     local icon = frame and frame.Icon
     if not icon then return end
 
-    if cooldownInfo and cooldownInfo.isOnGCD then SetIconDesaturation(icon, 0) return end
+    if cooldownInfo and cooldownInfo.isOnGCD then BCDM:SetIconDesaturation(icon, 0) return end
 
     if durationObject and not hasChargeSource then
         if durationObject.EvaluateRemainingDuration then
             if desaturationCurve then
-                SetIconDesaturation(icon, durationObject:EvaluateRemainingDuration(desaturationCurve, 0) or 0)
+                BCDM:SetIconDesaturation(icon, durationObject:EvaluateRemainingDuration(desaturationCurve, 0) or 0)
             else
-                SetIconDesaturation(icon, CalculateFallbackDesaturation(cooldownInfo))
+                BCDM:SetIconDesaturation(icon, CalculateFallbackDesaturation(cooldownInfo))
             end
             return
         end
 
-        SetIconDesaturation(icon, CalculateFallbackDesaturation(cooldownInfo))
+        BCDM:SetIconDesaturation(icon, CalculateFallbackDesaturation(cooldownInfo))
         return
     end
 
-    SetIconDesaturation(icon, 0)
+    BCDM:SetIconDesaturation(icon, 0)
 end
 
 local function ApplyCooldownStyle(cooldown)
@@ -131,16 +124,6 @@ local function ApplyCooldownStyle(cooldown)
     if cooldown.SetHideCountdownNumbers then cooldown:SetHideCountdownNumbers(false) end
 end
 
-local function FetchCooldownTextRegion(cooldown)
-    if not cooldown then return nil end
-
-    for _, region in ipairs({ cooldown:GetRegions() }) do
-        if region and region.GetObjectType and region:GetObjectType() == "FontString" then return region end
-    end
-
-    return nil
-end
-
 local function ApplyCooldownTextStyle(parentFrame, cooldown)
     if not (parentFrame and cooldown) then return end
     if not BCDM.db.profile.CooldownManager then return end
@@ -148,7 +131,7 @@ local function ApplyCooldownTextStyle(parentFrame, cooldown)
     local profileDB = BCDM.db.profile
     local generalDB = profileDB.General
     local cooldownTextDB = profileDB.CooldownManager.General and profileDB.CooldownManager.General.CooldownText
-    local textRegion = FetchCooldownTextRegion(cooldown)
+    local textRegion = BCDM:GetFrameRegionByType(cooldown, "FontString")
 
     if not (generalDB and cooldownTextDB and textRegion) then return end
 
@@ -223,7 +206,7 @@ local function ProcessCooldownFrame(frame)
             ApplyAuraState(frame, spellID)
         else
             ClearCooldown(cooldown)
-            SetIconDesaturation(frame.Icon, 0)
+            BCDM:SetIconDesaturation(frame.Icon, 0)
         end
 
         ApplyCooldownTextStyle(frame, cooldown)
@@ -272,7 +255,9 @@ local function ScanCooldownFrames()
     for _, viewerName in ipairs(VIEWERS) do
         local viewer = _G[viewerName]
         if viewer then
-            for _, child in ipairs({ viewer:GetChildren() }) do
+            local childCount = viewer:GetNumChildren()
+            for i = 1, childCount do
+                local child = select(i, viewer:GetChildren())
                 if child and child.Cooldown and child.cooldownInfo then
                     HookCooldownFrame(child.Cooldown, child)
                     ProcessCooldownFrame(child)
@@ -280,10 +265,6 @@ local function ScanCooldownFrames()
             end
         end
     end
-end
-
-local function EnsureEventFrame()
-    eventFrame:SetScript("OnEvent", function(_, event, addon) if event == "ADDON_LOADED" then if addon == "Blizzard_CooldownViewer" then C_Timer.After(0.5, ScanCooldownFrames) end return end C_Timer.After(0.1, ScanCooldownFrames) end)
 end
 
 local function EnableAuraOverlayRemoval()
