@@ -162,7 +162,7 @@ function BCDM:ShouldRefreshCooldownFrame(cooldownFrame, hasActiveCooldown, start
     oldDuration = tonumber(oldDuration) or 0
 
     if BCDM:IsSecretValue(oldStart) or BCDM:IsSecretValue(oldDuration) then
-        return false
+        return true
     end
 
     if hasActiveCooldown then
