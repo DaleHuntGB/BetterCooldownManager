@@ -393,10 +393,12 @@ local function CreateCustomItemIcon(itemId)
                 if C_Item.IsUsableItem(itemId) then
                     local shouldRefreshCooldown = ShouldRefreshItemCooldownFrame(customIcon.Cooldown, hasActiveCooldown, startTime, durationTime)
                     if hasActiveCooldown and shouldRefreshCooldown then
-                        customIcon.Cooldown:SetCooldown(startTime, durationTime)
+                        local durationObject = C_DurationUtil.CreateDuration()
+                        durationObject:SetTimeFromStart(startTime, durationTime)
+                        customIcon.Cooldown:SetCooldownFromDurationObject(durationObject, true)
                     elseif not hasActiveCooldown and event ~= "ITEM_COUNT_CHANGED" and shouldRefreshCooldown then
                         -- Avoid cooldown flicker from transient ITEM_COUNT_CHANGED updates.
-                        customIcon.Cooldown:SetCooldown(0, 0)
+                        customIcon.Cooldown:SetCooldownFromDurationObject(C_DurationUtil.CreateDuration(), true)
                     end
                 end
                 if itemCount <= 0 then
@@ -489,11 +491,11 @@ local function CreateCustomSpellIcon(spellId)
             local spellCharges = C_Spell.GetSpellCharges(spellId)
             if spellCharges then
                 customIcon.Charges:SetText(tostring(spellCharges.currentCharges))
-                customIcon.Cooldown:SetCooldown(spellCharges.cooldownStartTime, spellCharges.cooldownDuration)
+                local spellChargeCooldown = C_Spell.GetSpellChargeDuration(spellId)
+                customIcon.Cooldown:SetCooldownFromDurationObject(spellChargeCooldown, true)
             else
-                local cooldownData = C_Spell.GetSpellCooldown(spellId)
-                customIcon.Cooldown:SetCooldown(cooldownData.startTime, cooldownData.duration)
-                customIcon.Charges:SetText("")
+                local spellCooldown = C_Spell.GetSpellCooldownDuration(spellId)
+                customIcon.Cooldown:SetCooldownFromDurationObject(spellCooldown, true)
             end
             UpdateSpellIconDesaturation(self, spellId)
         end

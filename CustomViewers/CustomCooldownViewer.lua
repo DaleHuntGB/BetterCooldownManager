@@ -157,11 +157,12 @@ local function CreateCustomIcon(spellId)
         if event == "SPELL_UPDATE_COOLDOWN" or event == "PLAYER_ENTERING_WORLD" or event == "SPELL_UPDATE_CHARGES" then
             local spellCharges = C_Spell.GetSpellCharges(spellId)
             if spellCharges then
-                customIcon.Charges:SetText(tostring(spellCharges.currentCharges))
-                customIcon.Cooldown:SetCooldown(spellCharges.cooldownStartTime, spellCharges.cooldownDuration)
+                customIcon.Charges:SetText(C_Spell.GetSpellDisplayCount(spellId))
+                local spellChargeCooldown = C_Spell.GetSpellChargeDuration(spellId)
+                customIcon.Cooldown:SetCooldownFromDurationObject(spellChargeCooldown, true)
             else
-                local cooldownData = C_Spell.GetSpellCooldown(spellId)
-                customIcon.Cooldown:SetCooldown(cooldownData.startTime, cooldownData.duration)
+                local spellCooldown = C_Spell.GetSpellCooldownDuration(spellId)
+                customIcon.Cooldown:SetCooldownFromDurationObject(spellCooldown, true)
             end
             UpdateSpellIconDesaturation(self, spellId)
         end

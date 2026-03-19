@@ -37,6 +37,7 @@ local PowerNames = {
     [19] = LL("Essence"),
     [20] = LL("Maelstrom"),
     ["STAGGER"] = LL("Stagger"),
+    ["SOUL_FRAGMENTS"] = LL("Soul Fragments"),
     ["SOUL"] = LL("Soul"),
     ["RUNE_RECHARGE"] = LL("Rune on Cooldown"),
     ["CHARGED_COMBO_POINTS"] = LL("Charged Combo Points"),
@@ -1131,6 +1132,7 @@ local function CreateGeneralSettings(parentContainer)
             [Enum.PowerType.SoulShards]    = { 0.58, 0.51, 0.79, 1.0 },
             STAGGER                        = { 0.00, 1.00, 0.59, 1.0 },
             [Enum.PowerType.Runes]         = { 0.77, 0.12, 0.23, 1.0 },
+            SOUL_FRAGMENTS                 = { 0.29, 0.42, 1.00, 1.0},
             SOUL                           = { 0.29, 0.42, 1.00, 1.0},
             [Enum.PowerType.Maelstrom]     = { 0.25, 0.50, 0.80, 1.0},
             RUNE_RECHARGE                 = { 0.5, 0.5, 0.5, 1.0 },
@@ -1163,7 +1165,7 @@ local function CreateGeneralSettings(parentContainer)
     SecondaryColoursContainer:SetLayout("Flow")
     CustomColoursContainer:AddChild(SecondaryColoursContainer)
 
-    local SecondaryPowerOrder = {Enum.PowerType.Chi, Enum.PowerType.ComboPoints, Enum.PowerType.HolyPower, Enum.PowerType.ArcaneCharges, Enum.PowerType.Essence, Enum.PowerType.SoulShards, "STAGGER", Enum.PowerType.Runes, "RUNE_RECHARGE", "SOUL", Enum.PowerType.Maelstrom, "CHARGED_COMBO_POINTS", "ESSENCE_RECHARGE" }
+    local SecondaryPowerOrder = {Enum.PowerType.Chi, Enum.PowerType.ComboPoints, Enum.PowerType.HolyPower, Enum.PowerType.ArcaneCharges, Enum.PowerType.Essence, Enum.PowerType.SoulShards, "STAGGER", Enum.PowerType.Runes, "RUNE_RECHARGE", "SOUL_FRAGMENTS", "SOUL", Enum.PowerType.Maelstrom, "CHARGED_COMBO_POINTS", "ESSENCE_RECHARGE" }
     for _, powerType in ipairs(SecondaryPowerOrder) do
         local powerColour = BCDM.db.profile.General.Colours.SecondaryPower[powerType]
         local PowerColour = AG:Create("ColorPicker")
@@ -2200,7 +2202,7 @@ local function CreateCooldownViewerSettings(parentContainer, viewerType)
         itemContainer:SetFullWidth(true)
         itemContainer:SetLayout("Flow")
         ScrollFrame:AddChild(itemContainer)
-        CreateInformationTag(itemSpellContainer, LL("Tracking |cFF8080FFmultiple ranks|r of the same item is supported & will display the item with the highest rank."));
+        CreateInformationTag(itemContainer, LL("Tracking |cFF8080FFmultiple ranks|r of the same item is supported & will display the item with the highest rank."));
         CreateCooldownViewerItemSettings(itemContainer, ScrollFrame)
     end
 

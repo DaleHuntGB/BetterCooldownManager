@@ -2,7 +2,7 @@ local _, BCDM = ...
 
 function BCDM:CheckAddOns()
     local UnsupportedAddOns = {
-        ["CooldownManagerCentered"] = true,
+        -- ["CooldownManagerCentered"] = true,
     }
 
     for AddOnName in pairs(UnsupportedAddOns) do

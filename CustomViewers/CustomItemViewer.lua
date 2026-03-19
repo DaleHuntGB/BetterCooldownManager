@@ -360,10 +360,12 @@ local function CreateCustomIcon(itemId)
                 if C_Item.IsUsableItem(itemId) then
                     local shouldRefreshCooldown = ShouldRefreshItemCooldownFrame(customIcon.Cooldown, hasActiveCooldown, startTime, durationTime)
                     if hasActiveCooldown and shouldRefreshCooldown then
-                        customIcon.Cooldown:SetCooldown(startTime, durationTime)
+                        local durationObject = C_DurationUtil.CreateDuration()
+                        durationObject:SetTimeFromStart(startTime, durationTime)
+                        customIcon.Cooldown:SetCooldownFromDurationObject(durationObject, true)
                     elseif not hasActiveCooldown and event ~= "ITEM_COUNT_CHANGED" and shouldRefreshCooldown then
                         -- Avoid cooldown flicker from transient ITEM_COUNT_CHANGED updates.
-                        customIcon.Cooldown:SetCooldown(0, 0)
+                        customIcon.Cooldown:SetCooldownFromDurationObject(C_DurationUtil.CreateDuration(), true)
                     end
                 end
                 if itemCount <= 0 then

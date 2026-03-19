@@ -60,7 +60,8 @@ local function DetectSecondaryPower()
     elseif class == "DEATHKNIGHT" then
         return Enum.PowerType.Runes
     elseif class == "DEMONHUNTER" then
-        if specID == SPEC_VENGEANCE or specID == SPEC_DEVOURER then return "SOUL" end
+        if specID == SPEC_VENGEANCE then return "SOUL_FRAGMENTS" end
+        if specID == SPEC_DEVOURER then return "SOUL" end
     elseif class == "SHAMAN" then
         if specID == SPEC_ENHANCEMENT then return Enum.PowerType.Maelstrom end
         if specID == SPEC_ELEMENTAL and showMana then return Enum.PowerType.Mana end
@@ -514,6 +515,12 @@ local function UpdatePowerValues()
         secondaryPowerBar.Status:SetValue(powerCurrent)
         secondaryPowerBar.Text:SetText(tostring(powerCurrent))
         secondaryPowerBar.Status:Show()
+    elseif powerType == "SOUL_FRAGMENTS" then
+        powerCurrent = GetSpellCharges(228477)
+        secondaryPowerBar.Status:SetMinMaxValues(0, 6)
+        secondaryPowerBar.Status:SetValue(powerCurrent)
+        secondaryPowerBar.Text:SetText(tostring(powerCurrent))
+        secondaryPowerBar.Status:Show()
     elseif powerType == "SOUL" then
         local hasSoulGlutton = C_SpellBook.IsSpellKnown(1247534)
         local isInMeta = IsInMetamorphosis(1217607)
@@ -614,6 +621,11 @@ local function CreateTicksBasedOnPowerType()
 
     if not secondaryPowerResource then
         BCDM:ClearTicks()
+        return
+    end
+
+    if secondaryPowerResource == "SOUL_FRAGMENTS" then
+        BCDM:CreateTicks(6)
         return
     end
 

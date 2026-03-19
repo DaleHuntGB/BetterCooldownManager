@@ -199,7 +199,9 @@ local function ApplyAuraState(frame, spellID)
     if cooldownInfo and cooldownInfo.isOnGCD then
         ClearCooldown(cooldown)
     elseif cooldownInfo and cooldownInfo.startTime and cooldownInfo.duration then
-        cooldown:SetCooldown(cooldownInfo.startTime, cooldownInfo.duration)
+        local fallbackDuration = C_DurationUtil.CreateDuration()
+        fallbackDuration:SetTimeFromStart(cooldownInfo.startTime, cooldownInfo.duration)
+        SetCooldownFromDurationObject(cooldown, fallbackDuration)
     else
         ClearCooldown(cooldown)
     end
