@@ -700,6 +700,7 @@ local function LayoutCustomItemsSpellsBar()
         BCDM.CustomItemSpellBarContainer:UnregisterEvent("PLAYER_ENTERING_WORLD")
     end
 
+    BCDM:ClearMasqueContainer(BCDM.CustomItemSpellBarContainer)
     for _, child in ipairs({BCDM.CustomItemSpellBarContainer:GetChildren()}) do child:UnregisterAllEvents() child:Hide() child:SetParent(nil) end
 
     CreateCustomIcons(customItemBarIcons, visibleItemIds)
@@ -811,6 +812,7 @@ local function LayoutCustomItemsSpellsBar()
         end
     end
 
+    BCDM:SyncMasqueButtons("ItemSpell", customItemBarIcons)
     BCDM.CustomItemSpellBarContainer:Show()
 end
 

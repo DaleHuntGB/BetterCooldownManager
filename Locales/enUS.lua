@@ -66,6 +66,11 @@ L["Enable Cast Bar"] = "Enable Cast Bar"
 L["Enable Power Bar"] = "Enable Power Bar"
 L["Reset Profile"] = "Reset Profile"
 L["Use Global Profile Settings"] = "Use Global Profile Settings"
+L["Use Masque"] = "Use Masque"
+L["Masque Not Installed"] = "Masque not installed"
+L["Icon Fit"] = "Icon Fit"
+L["Crop"] = "Crop"
+L["Stretch"] = "Stretch"
 
 -- [[ Support & Links ]]
 L["Join the Discord Community!"] = "Join the Discord Community!"

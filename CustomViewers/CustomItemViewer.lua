@@ -594,6 +594,7 @@ local function LayoutCustomItemBar()
         BCDM.CustomItemBarContainer:UnregisterEvent("PLAYER_ENTERING_WORLD")
     end
 
+    BCDM:ClearMasqueContainer(BCDM.CustomItemBarContainer)
     for _, child in ipairs({BCDM.CustomItemBarContainer:GetChildren()}) do child:UnregisterAllEvents() child:Hide() child:SetParent(nil) end
 
     CreateCustomIcons(customItemBarIcons, visibleItemIds)
@@ -705,6 +706,7 @@ local function LayoutCustomItemBar()
         end
     end
 
+    BCDM:SyncMasqueButtons("Item", customItemBarIcons)
     BCDM.CustomItemBarContainer:Show()
 end
 

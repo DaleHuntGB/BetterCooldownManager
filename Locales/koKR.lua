@@ -66,6 +66,11 @@ L["Enable Cast Bar"] = "시전 바 활성화"
 L["Enable Power Bar"] = "자원 바 활성화"
 L["Reset Profile"] = "프로필 초기화"
 L["Use Global Profile Settings"] = "전역 프로필 설정 사용"
+L["Use Masque"] = "Masque 사용"
+L["Masque Not Installed"] = "Masque가 설치되지 않음"
+L["Icon Fit"] = "아이콘 맞춤"
+L["Crop"] = "자르기"
+L["Stretch"] = "늘리기"
 
 -- [[ Support & Links ]]
 L["Join the Discord Community!"] = "Discord 커뮤니티 참여하기!"

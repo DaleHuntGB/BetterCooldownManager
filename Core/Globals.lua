@@ -143,7 +143,12 @@ function BCDM:GetIconDimensions(viewerDB)
     return iconWidth, iconHeight, false
 end
 
-function BCDM:GetIconTexCoords(width, height, baseZoom)
+function BCDM:GetIconTexCoords(width, height, baseZoom, fitMode)
+    if fitMode == nil and self.db and self.db.profile and self.db.profile.CooldownManager and self.db.profile.CooldownManager.General then
+        fitMode = self.db.profile.CooldownManager.General.IconFitMode
+    end
+    fitMode = fitMode or "CROP"
+
     local zoom = baseZoom or 0
     if zoom < 0 then zoom = 0 end
     if zoom > 0.49 then zoom = 0.49 end
@@ -160,6 +165,10 @@ function BCDM:GetIconTexCoords(width, height, baseZoom)
     local aspect = width / height
     local uSpan = right - left
     local vSpan = bottom - top
+
+    if fitMode == "STRETCH" then
+        return left, right, top, bottom
+    end
 
     if aspect > 1 then
         local targetVSpan = uSpan / aspect
@@ -180,9 +189,9 @@ function BCDM:GetIconTexCoords(width, height, baseZoom)
     return left, right, top, bottom
 end
 
-function BCDM:ApplyIconTexCoord(texture, width, height, baseZoom)
+function BCDM:ApplyIconTexCoord(texture, width, height, baseZoom, fitMode)
     if not texture then return end
-    local left, right, top, bottom = BCDM:GetIconTexCoords(width, height, baseZoom)
+    local left, right, top, bottom = BCDM:GetIconTexCoords(width, height, baseZoom, fitMode)
     texture:SetTexCoord(left, right, top, bottom)
 end
 
@@ -224,6 +233,7 @@ end
 function BCDM:Init()
     SetupSlashCommands()
     BCDM:ResolveLSM()
+    if BCDM.SetupMasque then BCDM:SetupMasque() end
     BCDM:NormalizeCustomSpellSpecTokens()
     if not C_AddOns.IsAddOnLoaded("Blizzard_CooldownViewer") then C_AddOns.LoadAddOn("Blizzard_CooldownViewer") end
 end

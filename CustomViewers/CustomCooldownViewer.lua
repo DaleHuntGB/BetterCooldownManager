@@ -259,6 +259,7 @@ local function LayoutCustomCooldownViewer()
     local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]]
     BCDM.CustomCooldownViewerContainer:SetPoint(containerAnchorFrom, anchorParent, CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
 
+    BCDM:ClearMasqueContainer(BCDM.CustomCooldownViewerContainer)
     for _, child in ipairs({BCDM.CustomCooldownViewerContainer:GetChildren()}) do child:UnregisterAllEvents() child:Hide() child:SetParent(nil) end
 
     CreateCustomIcons(customCooldownViewerIcons)
@@ -370,6 +371,7 @@ local function LayoutCustomCooldownViewer()
         end
     end
 
+    BCDM:SyncMasqueButtons("Custom", customCooldownViewerIcons)
     BCDM.CustomCooldownViewerContainer:Show()
 end
 

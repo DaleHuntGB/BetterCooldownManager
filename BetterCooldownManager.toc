@@ -8,6 +8,7 @@
 ## IconTexture: Interface\AddOns\BetterCooldownManager\Media\Logo.png
 ## X-Curse-Project-ID: 1435851
 ## X-Wago-ID: ANz030K4
+## OptionalDeps: Masque
 
 # Load Libraries
 Libraries/Init.xml

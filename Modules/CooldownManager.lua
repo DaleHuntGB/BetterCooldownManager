@@ -2,6 +2,7 @@ local _, BCDM = ...
 
 local function ShouldSkin()
     if not BCDM.db.profile.CooldownManager.Enable then return false end
+    if BCDM:CanMasqueNativeCooldownManager() then return false end
     if C_AddOns.IsAddOnLoaded("ElvUI") and ElvUI[1].private.skins.blizzard.cooldownManager then return false end
     if C_AddOns.IsAddOnLoaded("MasqueBlizzBars") then return false end
     return true
@@ -76,23 +77,42 @@ local function Position()
 end
 
 local function StyleIcons()
-    if not ShouldSkin() then return end
+    local shouldSkin = ShouldSkin()
+    local useMasque = BCDM:CanMasqueNativeCooldownManager()
+    if not shouldSkin and not useMasque then
+        for _, viewerName in ipairs(BCDM.CooldownManagerViewers) do
+            BCDM:ClearMasqueViewer(viewerName)
+        end
+        return
+    end
     local cooldownManagerSettings = BCDM.db.profile.CooldownManager
     for _, viewerName in ipairs(BCDM.CooldownManagerViewers) do
         local viewerSettings = cooldownManagerSettings[BCDM.CooldownManagerViewerToDBViewer[viewerName]]
         local iconWidth, iconHeight = BCDM:GetIconDimensions(viewerSettings)
+        local masqueButtons = {}
         for _, childFrame in ipairs({_G[viewerName]:GetChildren()}) do
             if childFrame then
                 if childFrame.Icon then
-                    BCDM:StripTextures(childFrame.Icon)
-                    local iconZoomAmount = cooldownManagerSettings.General.IconZoom * 0.5
-                    BCDM:ApplyIconTexCoord(childFrame.Icon, iconWidth, iconHeight, iconZoomAmount)
+                    if shouldSkin then
+                        BCDM:StripTextures(childFrame.Icon)
+                        local iconZoomAmount = cooldownManagerSettings.General.IconZoom * 0.5
+                        BCDM:ApplyIconTexCoord(childFrame.Icon, iconWidth, iconHeight, iconZoomAmount)
+                    end
+                    if useMasque then
+                        table.insert(masqueButtons, childFrame)
+                    else
+                        BCDM:RemoveMasqueButton(childFrame)
+                    end
                 end
                 if childFrame.Cooldown then
-                    local borderSize = cooldownManagerSettings.General.BorderSize
                     childFrame.Cooldown:ClearAllPoints()
-                    childFrame.Cooldown:SetPoint("TOPLEFT", childFrame, "TOPLEFT", borderSize, -borderSize)
-                    childFrame.Cooldown:SetPoint("BOTTOMRIGHT", childFrame, "BOTTOMRIGHT", -borderSize, borderSize)
+                    if useMasque then
+                        childFrame.Cooldown:SetAllPoints(childFrame)
+                    else
+                        local borderSize = cooldownManagerSettings.General.BorderSize
+                        childFrame.Cooldown:SetPoint("TOPLEFT", childFrame, "TOPLEFT", borderSize, -borderSize)
+                        childFrame.Cooldown:SetPoint("BOTTOMRIGHT", childFrame, "BOTTOMRIGHT", -borderSize, borderSize)
+                    end
                     childFrame.Cooldown:SetSwipeColor(0, 0, 0, 0.8)
                     childFrame.Cooldown:SetDrawEdge(false)
                     childFrame.Cooldown:SetDrawSwipe(true)
@@ -101,9 +121,14 @@ local function StyleIcons()
                 if childFrame.CooldownFlash then childFrame.CooldownFlash:SetAlpha(0) end
                 if childFrame.DebuffBorder then childFrame.DebuffBorder:SetAlpha(0) end
                 childFrame:SetSize(iconWidth, iconHeight)
-                BCDM:AddBorder(childFrame)
+                if shouldSkin then
+                    BCDM:AddBorder(childFrame)
+                end
                 if not childFrame.layoutIndex then childFrame:SetShown(false) end
             end
+        end
+        if useMasque then
+            BCDM:SyncMasqueButtons(BCDM.CooldownManagerViewerToDBViewer[viewerName], masqueButtons)
         end
     end
 end
@@ -306,6 +331,7 @@ function BCDM:UpdateCooldownViewer(viewerType)
     local cooldownViewerFrame = _G[BCDM.DBViewerToCooldownManagerViewer[viewerType]]
     local viewerSettings = cooldownManagerSettings[viewerType]
     local iconWidth, iconHeight = BCDM:GetIconDimensions(viewerSettings)
+    local useMasque = BCDM:CanMasqueNativeCooldownManager()
     if viewerType == "Custom" then BCDM:UpdateCustomCooldownViewer() return end
     if viewerType == "AdditionalCustom" then BCDM:UpdateAdditionalCustomCooldownViewer() return end
     if viewerType == "Item" then BCDM:UpdateCustomItemBar() return end
@@ -317,12 +343,16 @@ function BCDM:UpdateCooldownViewer(viewerType)
         if childFrame then
             if childFrame.Icon and ShouldSkin() then
                 BCDM:StripTextures(childFrame.Icon)
-                BCDM:ApplyIconTexCoord(childFrame.Icon, iconWidth, iconHeight, cooldownManagerSettings.General.IconZoom)
+                BCDM:ApplyIconTexCoord(childFrame.Icon, iconWidth, iconHeight, cooldownManagerSettings.General.IconZoom * 0.5)
             end
             if childFrame.Cooldown then
                 childFrame.Cooldown:ClearAllPoints()
-                childFrame.Cooldown:SetPoint("TOPLEFT", childFrame, "TOPLEFT", 1, -1)
-                childFrame.Cooldown:SetPoint("BOTTOMRIGHT", childFrame, "BOTTOMRIGHT", -1, 1)
+                if useMasque then
+                    childFrame.Cooldown:SetAllPoints(childFrame)
+                else
+                    childFrame.Cooldown:SetPoint("TOPLEFT", childFrame, "TOPLEFT", 1, -1)
+                    childFrame.Cooldown:SetPoint("BOTTOMRIGHT", childFrame, "BOTTOMRIGHT", -1, 1)
+                end
                 childFrame.Cooldown:SetSwipeColor(0, 0, 0, 0.8)
                 childFrame.Cooldown:SetDrawEdge(false)
                 childFrame.Cooldown:SetDrawSwipe(true)

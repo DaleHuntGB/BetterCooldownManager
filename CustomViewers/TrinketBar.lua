@@ -194,6 +194,7 @@ local function LayoutTrinketBar()
     local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]]
     BCDM.TrinketBarContainer:SetPoint(containerAnchorFrom, anchorParent, CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
 
+    BCDM:ClearMasqueContainer(BCDM.TrinketBarContainer)
     for _, child in ipairs({BCDM.TrinketBarContainer:GetChildren()}) do child:UnregisterAllEvents() child:Hide() child:SetParent(nil) end
 
     CreateCustomIcons(customTrinketIcons)
@@ -271,6 +272,10 @@ local function LayoutTrinketBar()
             ApplyCooldownText()
             spellIcon:Show()
         end
+    end
+
+    if CustomDB.Enabled and #customTrinketIcons > 0 then
+        BCDM:SyncMasqueButtons("Trinket", customTrinketIcons)
     end
 
     if CustomDB.Enabled and #customTrinketIcons > 0 then

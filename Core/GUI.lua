@@ -1302,6 +1302,18 @@ local function CreateGlobalSettings(parentContainer)
     disableChatPrintsCheckbox:SetRelativeWidth(0.33)
     globalSettingsContainer:AddChild(disableChatPrintsCheckbox)
 
+    local masqueAvailable = BCDM:IsMasqueAvailable()
+    local useMasqueCheckbox = AG:Create("CheckBox")
+    local masqueLabel = LL("Use Masque")
+    if not masqueAvailable then
+        masqueLabel = masqueLabel .. " (" .. LL("Masque Not Installed") .. ")"
+    end
+    useMasqueCheckbox:SetLabel(masqueLabel)
+    useMasqueCheckbox:SetValue(masqueAvailable and CooldownManagerDB.General.UseMasque or false)
+    useMasqueCheckbox:SetRelativeWidth(0.33)
+    useMasqueCheckbox:SetDisabled(not masqueAvailable)
+    globalSettingsContainer:AddChild(useMasqueCheckbox)
+
     local iconZoomSlider = AG:Create("Slider")
     iconZoomSlider:SetLabel(LL("Icon Zoom"))
     iconZoomSlider:SetValue(CooldownManagerDB.General.IconZoom)
@@ -1318,6 +1330,36 @@ local function CreateGlobalSettings(parentContainer)
     borderSizeSlider:SetCallback("OnValueChanged", function(_, _, value) CooldownManagerDB.General.BorderSize = value BCDM:UpdateBCDM() end)
     borderSizeSlider:SetRelativeWidth(0.5)
     globalSettingsContainer:AddChild(borderSizeSlider)
+
+    local iconFitDropdown = AG:Create("Dropdown")
+    iconFitDropdown:SetLabel(LL("Icon Fit"))
+    iconFitDropdown:SetList({
+        CROP = LL("Crop"),
+        STRETCH = LL("Stretch"),
+    })
+    iconFitDropdown:SetValue(CooldownManagerDB.General.IconFitMode or "CROP")
+    iconFitDropdown:SetCallback("OnValueChanged", function(_, _, value) CooldownManagerDB.General.IconFitMode = value BCDM:UpdateBCDM() end)
+    iconFitDropdown:SetRelativeWidth(0.5)
+    globalSettingsContainer:AddChild(iconFitDropdown)
+
+    local function RefreshMasqueControls()
+        local useMasque = masqueAvailable and CooldownManagerDB.General.UseMasque
+        borderSizeSlider:SetDisabled(useMasque)
+        iconZoomSlider:SetDisabled(false)
+        iconFitDropdown:SetDisabled(false)
+    end
+
+    useMasqueCheckbox:SetCallback("OnValueChanged", function(_, _, value)
+        if not masqueAvailable then return end
+        CooldownManagerDB.General.UseMasque = value
+        if not value then
+            BCDM:DisableMasque()
+        end
+        RefreshMasqueControls()
+        BCDM:UpdateBCDM()
+    end)
+
+    RefreshMasqueControls()
 
     CreateCustomGlowSettings(globalSettingsContainer)
 
