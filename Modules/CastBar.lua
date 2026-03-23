@@ -10,6 +10,14 @@ local function SetBarValue(bar, value)
     end
 end
 
+local function GetDisplayCastText(text, maxChars)
+    if not text then return "" end
+    if BCDM:IsSecretValue(text) then
+        return text
+    end
+    return string.sub(text, 1, maxChars)
+end
+
 local function FetchCastBarColour()
     local CastBarDB = BCDM.db.profile.CastBar
     if CastBarDB.ColourByClass then
@@ -73,7 +81,7 @@ local function UpdateCastBarValues(self, event, unit)
         local castDuration = UnitCastingDuration("player")
         if not castDuration then return end
         BCDM.CastBar.Status:SetTimerDuration(castDuration, 0)
-        BCDM.CastBar.SpellNameText:SetText(string.sub(UnitCastingInfo("player") or "", 1, BCDM.db.profile.CastBar.Text.SpellName.MaxCharacters))
+        BCDM.CastBar.SpellNameText:SetText(GetDisplayCastText(UnitCastingInfo("player"), BCDM.db.profile.CastBar.Text.SpellName.MaxCharacters))
         BCDM.CastBar.Icon:SetTexture(select(3, UnitCastingInfo("player")) or nil)
         BCDM.CastBar:SetScript("OnUpdate", function()
             local remainingDuration = castDuration:GetRemainingDuration()
@@ -92,7 +100,7 @@ local function UpdateCastBarValues(self, event, unit)
             local empowerCastDuration = UnitEmpoweredChannelDuration("player")
             CreatePips(empoweredStages)
             BCDM.CastBar.Status:SetTimerDuration(empowerCastDuration, 0)
-            BCDM.CastBar.SpellNameText:SetText(string.sub(UnitChannelInfo("player"), 1, BCDM.db.profile.CastBar.Text.SpellName.MaxCharacters))
+            BCDM.CastBar.SpellNameText:SetText(GetDisplayCastText(UnitChannelInfo("player"), BCDM.db.profile.CastBar.Text.SpellName.MaxCharacters))
             BCDM.CastBar.Icon:SetTexture(select(3, UnitChannelInfo("player")) or nil)
             BCDM.CastBar:SetScript("OnUpdate", function()
                 local remainingDuration = empowerCastDuration:GetRemainingDuration()
@@ -110,7 +118,7 @@ local function UpdateCastBarValues(self, event, unit)
         if not channelDuration then return end
         BCDM.CastBar.Status:SetTimerDuration(channelDuration, 0)
         BCDM.CastBar.Status:SetMinMaxValues(0, channelDuration:GetTotalDuration())
-        BCDM.CastBar.SpellNameText:SetText(string.sub(UnitChannelInfo("player"), 1, BCDM.db.profile.CastBar.Text.SpellName.MaxCharacters))
+        BCDM.CastBar.SpellNameText:SetText(GetDisplayCastText(UnitChannelInfo("player"), BCDM.db.profile.CastBar.Text.SpellName.MaxCharacters))
         BCDM.CastBar.Icon:SetTexture(select(3, UnitChannelInfo("player")) or nil)
         BCDM.CastBar:SetScript("OnUpdate", function()
             local remainingDuration = channelDuration:GetRemainingDuration()

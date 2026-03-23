@@ -187,7 +187,7 @@ function BCDM:ApplyIconTexCoord(texture, width, height, baseZoom)
 end
 
 function BCDM:IsSecretValue(value)
-    return type(value) == "number" and type(issecretvalue) == "function" and issecretvalue(value)
+    return value ~= nil and type(issecretvalue) == "function" and issecretvalue(value)
 end
 
 function BCDM:GetCooldownDesaturationCurves()
