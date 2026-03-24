@@ -15,6 +15,9 @@ local function GetDisplayCastText(text, maxChars)
     if BCDM:IsSecretValue(text) then
         return text
     end
+    if maxChars == 0 then
+        return text  -- Show full spellname
+    end
     return string.sub(text, 1, maxChars)
 end
 
