@@ -15,7 +15,6 @@ local function LL(key)
     return (LocaleTable and rawget(LocaleTable, key)) or key
 end
 
--- FIX: Добавлена вспомогательная функция для установки шрифта виджетам AceGUI
 local function SetFontForAceWidget(widget, fontSize)
     if not widget or not widget.frame then return end
     local font = BCDM.Media.Font
@@ -634,7 +633,7 @@ local function AddItemSpellClassSpecFilterEditor(parentContainer, viewerKey, vie
         local classHeading = AG:Create("Heading")
         classHeading:SetText(classEntry.classLabel)
         classHeading:SetFullWidth(true)
-        SetFontForAceWidget(classHeading, 14) -- FIX: установка шрифта
+        SetFontForAceWidget(classHeading, 14)
         filterGroup:AddChild(classHeading)
 
         local specWidth = 0.25
@@ -682,7 +681,7 @@ local function PopulateClassSpecDropdown(dropdown, spellDB)
         classItem:SetText(classEntry.classLabel)
         classItem.userdata.obj = dropdown
         classItem.SetValue = function() end
-        SetFontForAceWidget(classItem, 12) -- FIX: установка шрифта
+        SetFontForAceWidget(classItem, 12)
 
         local submenu = AG:Create("Dropdown-Pullout")
         submenu:SetHideOnLeave(true)
@@ -771,7 +770,6 @@ end
 local function CreateInformationTag(containerParent, labelDescription, textJustification)
     local informationLabel = AG:Create("Label")
     informationLabel:SetText(BCDM.INFOBUTTON .. labelDescription)
-    -- FIX: используем динамический шрифт
     local fontFlag = BCDM.db.profile.General.Fonts.FontFlag or "OUTLINE"
     informationLabel:SetFont(BCDM.Media.Font, 12, fontFlag)
     informationLabel:SetFullWidth(true)
@@ -1254,7 +1252,6 @@ local function CreateGeneralSettings(parentContainer)
 
     local TwitchInteractive = AG:Create("InteractiveLabel")
     TwitchInteractive:SetText(LL("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\Twitch.png:25:21|t |cFF8080FFTwitch|r"))
-    -- FIX: используем динамический шрифт
     local fontFlag = BCDM.db.profile.General.Fonts.FontFlag or "OUTLINE"
     TwitchInteractive:SetFont(BCDM.Media.Font, 13, fontFlag)
     TwitchInteractive:SetJustifyV("MIDDLE")
@@ -3161,7 +3158,7 @@ local function CreateProfileSettings(containerParent)
 
     local ActiveProfileHeading = AG:Create("Heading")
     ActiveProfileHeading:SetFullWidth(true)
-    --SetFontForAceWidget(ActiveProfileHeading, 14) -- FIX: установка шрифта
+    --SetFontForAceWidget(ActiveProfileHeading, 14)
     ProfileContainer:AddChild(ActiveProfileHeading)
 
     local function RefreshProfiles()
@@ -3252,7 +3249,7 @@ local function CreateProfileSettings(containerParent)
     local GlobalProfileHeading = AG:Create("Heading")
     GlobalProfileHeading:SetText(LL("Global Profile Settings"))
     GlobalProfileHeading:SetFullWidth(true)
-    --SetFontForAceWidget(GlobalProfileHeading, 14) -- FIX: установка шрифта
+    --SetFontForAceWidget(GlobalProfileHeading, 14)
     ProfileContainer:AddChild(GlobalProfileHeading)
 
     CreateInformationTag(ProfileContainer, LL("If |cFF8080FFUse Global Profile Settings|r is enabled, the profile selected below will be used as your active profile.\nThis is useful if you want to use the same profile across multiple characters."))
@@ -3308,7 +3305,7 @@ local function CreateProfileSettings(containerParent)
     local ExportingHeading = AG:Create("Heading")
     ExportingHeading:SetText(LL("Exporting"))
     ExportingHeading:SetFullWidth(true)
-    --SetFontForAceWidget(ExportingHeading, 14) -- FIX: установка шрифта
+    --SetFontForAceWidget(ExportingHeading, 14)
     SharingContainer:AddChild(ExportingHeading)
 
     CreateInformationTag(SharingContainer, LL("You can export your profile by pressing |cFF8080FFExport Profile|r button below & share the string with other |cFF8080FFBetter|rCooldownManager users."))
@@ -3331,7 +3328,7 @@ local function CreateProfileSettings(containerParent)
     local ImportingHeading = AG:Create("Heading")
     ImportingHeading:SetText(LL("Importing"))
     ImportingHeading:SetFullWidth(true)
-    --SetFontForAceWidget(ImportingHeading, 14) -- FIX: установка шрифта
+    --SetFontForAceWidget(ImportingHeading, 14)
     SharingContainer:AddChild(ImportingHeading)
 
     CreateInformationTag(SharingContainer, LL("If you have an exported string, paste it in the |cFF8080FFImport String|r box below & press |cFF8080FFImport Profile|r."))
