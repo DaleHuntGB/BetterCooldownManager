@@ -637,3 +637,28 @@ StaticPopupDialogs["BCDM_RELOAD"] = {
 function BCDM:PromptReload()
     StaticPopup_Show("BCDM_RELOAD")
 end
+
+function BCDM:RestoreMirrorFrames()
+    local container = MirrorTimerContainer or MirrorTimerFrame
+    if not container then
+        return
+    end
+
+    container:Show()
+    container:Raise()
+
+    for i = 1, 5 do
+        local mirror = _G["MirrorTimer" .. i] or _G["MirrorTimer" .. i .. "Bar"]
+        if mirror then
+            mirror:Show()
+            mirror:Raise()
+            if mirror.Update then
+                mirror:Update()
+            end
+        end
+    end
+
+    if MirrorTimerFrame_Update then
+        MirrorTimerFrame_Update()
+    end
+end
