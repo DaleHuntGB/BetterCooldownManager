@@ -56,8 +56,12 @@ function BCDM:SetupEventManager()
             if unit ~= "player" then return end
             LEMO:ApplyChanges()
             BCDM:UpdateBCDM()
+            BCDM:RestoreMirrorFrames()
         else
             BCDM:UpdateBCDM()
+            if event == "PLAYER_ENTERING_WORLD" or event == "LOADING_SCREEN_DISABLED" then
+                C_Timer.After(1, function() BCDM:RestoreMirrorFrames() end)
+            end
         end
     end)
 end
