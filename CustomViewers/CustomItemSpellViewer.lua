@@ -93,6 +93,7 @@ local CONTAINER_SETTING_KEYS = {
     "Columns",
     "OffsetByParentHeight",
     "HideZeroCharges",
+    "IncludeUsableTrinkets",
     "ShowItemQualityBorder",
     "Text",
 }
@@ -466,6 +467,23 @@ local function HasTrackedHealthstoneEntries(entries)
         end
     end
     return false
+end
+
+local function IsOnUseTrinket(itemId)
+    if not itemId then return false end
+    local spellName, spellID = C_Item.GetItemSpell(itemId)
+    return (spellID and spellID > 0) or (spellName and spellName ~= "")
+end
+
+local function FetchEquippedOnUseTrinkets()
+    local equipped = {}
+    for _, slotID in ipairs({ 13, 14 }) do
+        local itemId = GetInventoryItemID("player", slotID)
+        if itemId and IsOnUseTrinket(itemId) then
+            equipped[#equipped + 1] = { itemId = itemId, slotID = slotID }
+        end
+    end
+    return equipped
 end
 
 local function GetDefaultContainerName(index)
@@ -1329,6 +1347,72 @@ local function CreateCustomItemIcon(customDB, entry)
     return customIcon
 end
 
+local function CreateEquippedTrinketIcon(customDB, itemId)
+    local CooldownManagerDB = BCDM.db.profile
+    if not itemId then return end
+    if not C_Item.GetItemInfo(itemId) then return end
+
+    local customIcon = CreateFrame("Button", nil, UIParent, "BackdropTemplate")
+    customIcon:SetBackdrop({ edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = BCDM.db.profile.CooldownManager.General.BorderSize, insets = { left = 0, right = 0, top = 0, bottom = 0 } })
+    customIcon:SetBackdropColor(0, 0, 0, 0)
+    if BCDM.db.profile.CooldownManager.General.BorderSize <= 0 then
+        customIcon:SetBackdropBorderColor(0, 0, 0, 0)
+    else
+        customIcon:SetBackdropBorderColor(0, 0, 0, 1)
+    end
+
+    local iconWidth, iconHeight = BCDM:GetIconDimensions(customDB)
+    customIcon:SetSize(iconWidth, iconHeight)
+    customIcon:RegisterEvent("SPELL_UPDATE_COOLDOWN")
+    customIcon:RegisterEvent("PLAYER_ENTERING_WORLD")
+    customIcon:EnableMouse(false)
+    customIcon:SetFrameStrata(customDB.FrameStrata or "LOW")
+
+    customIcon.Cooldown = CreateFrame("Cooldown", nil, customIcon, "CooldownFrameTemplate")
+    customIcon.Cooldown:SetAllPoints(customIcon)
+    customIcon.Cooldown:SetDrawEdge(false)
+    customIcon.Cooldown:SetDrawSwipe(true)
+    customIcon.Cooldown:SetDrawBling(false)
+    customIcon.Cooldown:SetSwipeColor(0, 0, 0, 0.8)
+    customIcon.Cooldown:SetHideCountdownNumbers(false)
+    customIcon.Cooldown:SetReverse(false)
+
+    customIcon:SetScript("OnEvent", function(self, event)
+        if event == "SPELL_UPDATE_COOLDOWN" or event == "PLAYER_ENTERING_WORLD" then
+            local startTime, durationTime = select(2, FetchItemData(itemId))
+            local hasActiveCooldown = (startTime and durationTime and startTime > 0 and durationTime > 0) or false
+            if hasActiveCooldown then
+                local durationObject = C_DurationUtil.CreateDuration()
+                durationObject:SetTimeFromStart(startTime, durationTime)
+                customIcon.Cooldown:SetCooldownFromDurationObject(durationObject, true)
+                if BCDM:IsSecretValue(startTime) or BCDM:IsSecretValue(durationTime) then
+                    SetIconDesaturation(customIcon.Icon, 0)
+                else
+                    SetIconDesaturation(customIcon.Icon, CalculateFallbackDesaturation(startTime, durationTime))
+                end
+            else
+                customIcon.Cooldown:SetCooldownFromDurationObject(C_DurationUtil.CreateDuration(), true)
+                SetIconDesaturation(customIcon.Icon, 0)
+            end
+        end
+    end)
+
+    customIcon.Icon = customIcon:CreateTexture(nil, "BACKGROUND")
+    local borderSize = BCDM.db.profile.CooldownManager.General.BorderSize
+    customIcon.Icon:SetPoint("TOPLEFT", customIcon, "TOPLEFT", borderSize, -borderSize)
+    customIcon.Icon:SetPoint("BOTTOMRIGHT", customIcon, "BOTTOMRIGHT", -borderSize, borderSize)
+    local iconZoom = CooldownManagerDB.CooldownManager.General.IconZoom * 0.5
+    BCDM:ApplyIconTexCoord(customIcon.Icon, iconWidth, iconHeight, iconZoom)
+    customIcon.Icon:SetTexture(select(10, C_Item.GetItemInfo(itemId)))
+
+    local onEvent = customIcon:GetScript("OnEvent")
+    if onEvent then
+        onEvent(customIcon, "PLAYER_ENTERING_WORLD")
+    end
+
+    return customIcon
+end
+
 local function CreateCustomSpellIcon(customDB, entry)
     local CooldownManagerDB = BCDM.db.profile
     local GeneralDB = CooldownManagerDB.General
@@ -1520,6 +1604,15 @@ local function CreateCustomIcons(customDB, entries, iconTable, visibleItemIds)
             iconTable[#iconTable + 1] = customIcon
         end
     end
+
+    if customDB.IncludeUsableTrinkets then
+        for _, trinketEntry in ipairs(FetchEquippedOnUseTrinkets()) do
+            local customTrinket = CreateEquippedTrinketIcon(customDB, trinketEntry.itemId)
+            if customTrinket then
+                iconTable[#iconTable + 1] = customTrinket
+            end
+        end
+    end
 end
 
 local function GetColumnWrapLimit(customDB)
@@ -1585,6 +1678,13 @@ local function SetupFrameEventHandler(frame)
     frame:SetScript("OnEvent", function(self, event, itemId)
         local container = BCDM:GetCustomItemSpellContainer(self.ContainerId)
         if not container then
+            return
+        end
+
+        if event == "PLAYER_EQUIPMENT_CHANGED" then
+            if itemId == 13 or itemId == 14 then
+                RequestDeferredContainerUpdate(self)
+            end
             return
         end
 
@@ -1684,6 +1784,12 @@ local function LayoutCustomItemSpellContainer(container)
         frame:UnregisterEvent("ITEM_PUSH")
         frame:UnregisterEvent("BAG_UPDATE_DELAYED")
         frame:UnregisterEvent("PLAYER_ENTERING_WORLD")
+    end
+
+    if container.IncludeUsableTrinkets then
+        frame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
+    else
+        frame:UnregisterEvent("PLAYER_EQUIPMENT_CHANGED")
     end
 
     ReleaseContainerChildren(frame)

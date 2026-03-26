@@ -2119,7 +2119,7 @@ local function CreateCustomItemSpellContainerSettings(parentContainer, container
     local keepAspectCheckbox = AG:Create("CheckBox")
     keepAspectCheckbox:SetLabel(LL("Keep Aspect Ratio"))
     keepAspectCheckbox:SetValue(containerDB.KeepAspectRatio ~= false)
-    keepAspectCheckbox:SetRelativeWidth(0.3333)
+    keepAspectCheckbox:SetRelativeWidth(0.5)
     iconContainer:AddChild(keepAspectCheckbox)
 
     local hideZeroChargesCheckbox = AG:Create("CheckBox")
@@ -2129,7 +2129,7 @@ local function CreateCustomItemSpellContainerSettings(parentContainer, container
         containerDB.HideZeroCharges = value
         BCDM:UpdateCooldownViewer("ItemSpell")
     end)
-    hideZeroChargesCheckbox:SetRelativeWidth(0.3333)
+    hideZeroChargesCheckbox:SetRelativeWidth(0.5)
     iconContainer:AddChild(hideZeroChargesCheckbox)
 
     local showItemQualityCheckbox = AG:Create("CheckBox")
@@ -2139,8 +2139,19 @@ local function CreateCustomItemSpellContainerSettings(parentContainer, container
         containerDB.ShowItemQualityBorder = value
         BCDM:UpdateCooldownViewer("ItemSpell")
     end)
-    showItemQualityCheckbox:SetRelativeWidth(0.3333)
+    showItemQualityCheckbox:SetRelativeWidth(0.5)
     iconContainer:AddChild(showItemQualityCheckbox)
+
+    local includeUsableTrinketsCheckbox = AG:Create("CheckBox")
+    includeUsableTrinketsCheckbox:SetLabel(LL("Include Usable Trinkets"))
+    includeUsableTrinketsCheckbox:SetValue(containerDB.IncludeUsableTrinkets == true)
+    includeUsableTrinketsCheckbox:SetCallback("OnValueChanged", function(_, _, value)
+        containerDB.IncludeUsableTrinkets = value
+        BCDM:UpdateCooldownViewer("ItemSpell")
+    end)
+    includeUsableTrinketsCheckbox:SetRelativeWidth(0.5)
+    includeUsableTrinketsCheckbox:SetDescription("Usable Trinkets are added to the end of the container.")
+    iconContainer:AddChild(includeUsableTrinketsCheckbox)
 
     local iconSizeSlider = AG:Create("Slider")
     iconSizeSlider:SetLabel(LL("Icon Size"))

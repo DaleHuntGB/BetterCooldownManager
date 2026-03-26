@@ -220,6 +220,7 @@ local Defaults = {
                         OffsetByParentHeight = true,
                         HideZeroCharges = false,
                         ShowItemQualityBorder = true,
+                        IncludeUsableTrinkets = false,
                         NextEntryId = 1,
                         Text = {
                             FontSize = 12,
