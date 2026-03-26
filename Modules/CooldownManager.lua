@@ -302,15 +302,12 @@ function BCDM:SkinCooldownManager()
 end
 
 function BCDM:UpdateCooldownViewer(viewerType)
+    if viewerType == "ItemSpell" then BCDM:UpdateCustomItemsSpellsBar() return end
     local cooldownManagerSettings = BCDM.db.profile.CooldownManager
     local cooldownViewerFrame = _G[BCDM.DBViewerToCooldownManagerViewer[viewerType]]
     local viewerSettings = cooldownManagerSettings[viewerType]
     local iconWidth, iconHeight = BCDM:GetIconDimensions(viewerSettings)
-    if viewerType == "Custom" then BCDM:UpdateCustomCooldownViewer() return end
-    if viewerType == "AdditionalCustom" then BCDM:UpdateAdditionalCustomCooldownViewer() return end
-    if viewerType == "Item" then BCDM:UpdateCustomItemBar() return end
     if viewerType == "Trinket" then BCDM:UpdateTrinketBar() return end
-    if viewerType == "ItemSpell" then BCDM:UpdateCustomItemsSpellsBar() return end
     if viewerType == "Buffs" then SetupCenterBuffs() end
 
     for _, childFrame in ipairs({cooldownViewerFrame:GetChildren()}) do
@@ -350,9 +347,6 @@ function BCDM:UpdateCooldownViewers()
     BCDM:UpdateCooldownViewer("Essential")
     BCDM:UpdateCooldownViewer("Utility")
     BCDM:UpdateCooldownViewer("Buffs")
-    BCDM:UpdateCustomCooldownViewer()
-    BCDM:UpdateAdditionalCustomCooldownViewer()
-    BCDM:UpdateCustomItemBar()
     BCDM:UpdateCustomItemsSpellsBar()
     BCDM:UpdateTrinketBar()
     BCDM:UpdatePowerBar()

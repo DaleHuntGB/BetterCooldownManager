@@ -1,5 +1,102 @@
 local _, BCDM = ...
 
+local FRAME_NAME_PREFIX = "BCDM_CustomItemSpellBar"
+local DEFAULT_CONTAINER_NAME = "Container"
+local ADDON_PREFIX = "|cFF8080FFBCDM|r: "
+
+local HEALTHSTONE_BASE_ID = 5512
+local HEALTHSTONE_GLUTTONY_ID = 224464
+local PACT_OF_GLUTTONY_SPELL_ID = 386689
+
+local LEGACY_VIEWER_DEFAULTS = {
+    Custom = {
+        IconSize = 38,
+        IconWidth = 38,
+        IconHeight = 38,
+        KeepAspectRatio = true,
+        FrameStrata = "LOW",
+        Layout = {"CENTER", "NONE", "CENTER", 0, 0},
+        Spacing = 1,
+        GrowthDirection = "RIGHT",
+        Columns = 0,
+        Text = {
+            FontSize = 12,
+            Colour = {1, 1, 1},
+            Layout = {"BOTTOMRIGHT", "BOTTOMRIGHT", 0, 2},
+        },
+    },
+    AdditionalCustom = {
+        IconSize = 38,
+        IconWidth = 38,
+        IconHeight = 38,
+        KeepAspectRatio = true,
+        FrameStrata = "LOW",
+        Layout = {"CENTER", "NONE", "CENTER", 0, 0},
+        Spacing = 1,
+        GrowthDirection = "RIGHT",
+        Columns = 0,
+        Text = {
+            FontSize = 12,
+            Colour = {1, 1, 1},
+            Layout = {"BOTTOMRIGHT", "BOTTOMRIGHT", 0, 2},
+        },
+    },
+    Item = {
+        IconSize = 38,
+        IconWidth = 38,
+        IconHeight = 38,
+        KeepAspectRatio = true,
+        FrameStrata = "LOW",
+        Layout = {"CENTER", "NONE", "CENTER", 0, 0},
+        Spacing = 1,
+        GrowthDirection = "LEFT",
+        Columns = 0,
+        OffsetByParentHeight = true,
+        HideZeroCharges = false,
+        ShowItemQualityBorder = true,
+        Text = {
+            FontSize = 12,
+            Colour = {1, 1, 1},
+            Layout = {"BOTTOMRIGHT", "BOTTOMRIGHT", 0, 2},
+        },
+    },
+    ItemSpell = {
+        IconSize = 38,
+        IconWidth = 38,
+        IconHeight = 38,
+        KeepAspectRatio = true,
+        FrameStrata = "LOW",
+        Layout = {"CENTER", "NONE", "CENTER", 0, 0},
+        Spacing = 1,
+        GrowthDirection = "LEFT",
+        Columns = 0,
+        OffsetByParentHeight = true,
+        HideZeroCharges = false,
+        ShowItemQualityBorder = true,
+        Text = {
+            FontSize = 12,
+            Colour = {1, 1, 1},
+            Layout = {"BOTTOMRIGHT", "BOTTOMRIGHT", 0, 2},
+        },
+    },
+}
+
+local CONTAINER_SETTING_KEYS = {
+    "IconSize",
+    "IconWidth",
+    "IconHeight",
+    "KeepAspectRatio",
+    "FrameStrata",
+    "Layout",
+    "Spacing",
+    "GrowthDirection",
+    "Columns",
+    "OffsetByParentHeight",
+    "HideZeroCharges",
+    "ShowItemQualityBorder",
+    "Text",
+}
+
 local function FetchCooldownTextRegion(cooldown)
     if not cooldown then return end
     for _, region in ipairs({ cooldown:GetRegions() }) do
@@ -9,13 +106,13 @@ local function FetchCooldownTextRegion(cooldown)
     end
 end
 
-local function ApplyCooldownText()
+local function ApplyCooldownText(viewer)
     local CooldownManagerDB = BCDM.db.profile
     local GeneralDB = CooldownManagerDB.General
     local CooldownTextDB = CooldownManagerDB.CooldownManager.General.CooldownText
-    local Viewer = _G["BCDM_CustomItemSpellBar"]
-    if not Viewer then return end
-    for _, icon in ipairs({ Viewer:GetChildren() }) do
+    if not viewer then return end
+
+    for _, icon in ipairs({ viewer:GetChildren() }) do
         if icon and icon.Cooldown then
             local textRegion = FetchCooldownTextRegion(icon.Cooldown)
             if textRegion then
@@ -30,7 +127,12 @@ local function ApplyCooldownText()
                 textRegion:ClearAllPoints()
                 textRegion:SetPoint(CooldownTextDB.Layout[1], icon, CooldownTextDB.Layout[2], CooldownTextDB.Layout[3], CooldownTextDB.Layout[4])
                 if GeneralDB.Fonts.Shadow.Enabled then
-                    textRegion:SetShadowColor(GeneralDB.Fonts.Shadow.Colour[1], GeneralDB.Fonts.Shadow.Colour[2], GeneralDB.Fonts.Shadow.Colour[3], GeneralDB.Fonts.Shadow.Colour[4])
+                    textRegion:SetShadowColor(
+                        GeneralDB.Fonts.Shadow.Colour[1],
+                        GeneralDB.Fonts.Shadow.Colour[2],
+                        GeneralDB.Fonts.Shadow.Colour[3],
+                        GeneralDB.Fonts.Shadow.Colour[4]
+                    )
                     textRegion:SetShadowOffset(GeneralDB.Fonts.Shadow.OffsetX, GeneralDB.Fonts.Shadow.OffsetY)
                 else
                     textRegion:SetShadowColor(0, 0, 0, 0)
@@ -117,7 +219,7 @@ local function ShouldRefreshItemCooldownFrame(cooldownFrame, hasActiveCooldown, 
         if oldStart <= 0 or oldDuration <= 0 then
             return true
         end
-        -- GetCooldownTimes returns milliseconds, SetCooldown uses seconds.
+
         local oldEnd = (oldStart + oldDuration) / 1000
         local newEnd = (startTime or 0) + (durationTime or 0)
         return math.abs(oldEnd - newEnd) > 0.01
@@ -128,7 +230,9 @@ end
 
 local function FetchItemData(itemId)
     local itemCount = C_Item.GetItemCount(itemId)
-    if itemId == 224464 or itemId == 5512 then itemCount = C_Item.GetItemCount(itemId, false, true) end
+    if itemId == HEALTHSTONE_GLUTTONY_ID or itemId == HEALTHSTONE_BASE_ID then
+        itemCount = C_Item.GetItemCount(itemId, false, true)
+    end
     local startTime, durationTime = C_Item.GetItemCooldown(itemId)
     return itemCount, startTime, durationTime
 end
@@ -273,7 +377,7 @@ local function SelectPotionRankCandidate(potionGroups, itemId, layoutIndex)
     end
 
     if candidate.rank == selected.rank and candidate.id > selected.id then
-            group.selected = candidate
+        group.selected = candidate
     end
 
     return true
@@ -330,14 +434,798 @@ local function IsEntryEnabledForPlayerSpec(entryData, playerClass, playerSpecial
     return not (hasActiveFilter or hasConfiguredFilters)
 end
 
-local function CreateCustomItemIcon(itemId)
+local function ResolveItemSpellEntryType(entryId, entryData)
+    if entryData and entryData.entryType then
+        return entryData.entryType
+    end
+    if C_Item.GetItemInfo(entryId) then
+        return "item"
+    end
+    if C_Spell.GetSpellInfo(entryId) then
+        return "spell"
+    end
+end
+
+local function HasTrackedPotionEntries(entries)
+    if not entries then return false end
+    for _, entry in ipairs(entries) do
+        if entry and entry.isActive and ResolveItemSpellEntryType(entry.entryId, entry) == "item" and IsPotionItem(entry.entryId) then
+            return true
+        end
+    end
+    return false
+end
+
+local function HasTrackedHealthstoneEntries(entries)
+    if not entries then return false end
+    for _, entry in ipairs(entries) do
+        if entry and entry.isActive and ResolveItemSpellEntryType(entry.entryId, entry) == "item" then
+            if entry.entryId == HEALTHSTONE_BASE_ID or entry.entryId == HEALTHSTONE_GLUTTONY_ID then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+local function GetDefaultContainerName(index)
+    return string.format("%s %d", DEFAULT_CONTAINER_NAME, index or 1)
+end
+
+local function TrimName(name)
+    if type(name) ~= "string" then return nil end
+    local trimmed = name:match("^%s*(.-)%s*$")
+    if trimmed == "" then
+        return nil
+    end
+    return trimmed
+end
+
+local function DeepEqual(a, b)
+    if type(a) ~= type(b) then
+        return false
+    end
+    if type(a) ~= "table" then
+        return a == b
+    end
+
+    for key, value in pairs(a) do
+        if not DeepEqual(value, b[key]) then
+            return false
+        end
+    end
+
+    for key in pairs(b) do
+        if a[key] == nil then
+            return false
+        end
+    end
+
+    return true
+end
+
+local function SettingsDifferFromDefaults(source, defaults)
+    for key, defaultValue in pairs(defaults or {}) do
+        local currentValue = source and source[key]
+        if type(defaultValue) == "table" then
+            if type(currentValue) == "table" then
+                if SettingsDifferFromDefaults(currentValue, defaultValue) then
+                    return true
+                end
+            elseif not DeepEqual(defaultValue, {}) then
+                return true
+            end
+        else
+            if currentValue ~= nil and currentValue ~= defaultValue then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+local function CopyMissingFields(target, defaults)
+    if type(target) ~= "table" or type(defaults) ~= "table" then
+        return
+    end
+
+    for key, defaultValue in pairs(defaults) do
+        if type(defaultValue) == "table" then
+            if type(target[key]) ~= "table" then
+                target[key] = BCDM:CopyTable(defaultValue)
+            else
+                CopyMissingFields(target[key], defaultValue)
+            end
+        elseif target[key] == nil then
+            target[key] = defaultValue
+        end
+    end
+end
+
+local function CreateEntry(container, entryId, entryType, data, classSpecFilters, filterClass)
+    container.NextEntryId = math.max(tonumber(container.NextEntryId) or 1, 1)
+    local entry = {
+        uid = container.NextEntryId,
+        entryId = entryId,
+        entryType = entryType,
+        isActive = data == nil or data.isActive ~= false,
+        layoutIndex = data and data.layoutIndex or (#container.Entries + 1),
+        classSpecFilters = classSpecFilters,
+        filterClass = filterClass,
+    }
+
+    container.NextEntryId = container.NextEntryId + 1
+    container.Entries[#container.Entries + 1] = entry
+    return entry
+end
+
+local function HasLegacySpellEntries(spellDB)
+    if type(spellDB) ~= "table" then
+        return false
+    end
+
+    for _, specs in pairs(spellDB) do
+        if type(specs) == "table" then
+            for _, spells in pairs(specs) do
+                if type(spells) == "table" and next(spells) then
+                    return true
+                end
+            end
+        end
+    end
+
+    return false
+end
+
+local function HasLegacyEntryMap(entries)
+    return type(entries) == "table" and next(entries) ~= nil
+end
+
+local function GetDefaultContainerTemplate()
+    local defaults = BCDM:GetDefaultDB()
+    local itemSpellDefaults = defaults and defaults.profile and defaults.profile.CooldownManager and defaults.profile.CooldownManager.ItemSpell
+    local template = itemSpellDefaults and itemSpellDefaults.Containers and itemSpellDefaults.Containers[1]
+    return BCDM:CopyTable(template or {})
+end
+
+local function GetItemSpellFrameworkDB()
+    local CooldownManagerDB = BCDM.db and BCDM.db.profile and BCDM.db.profile.CooldownManager
+    if not CooldownManagerDB then
+        return nil
+    end
+
+    if type(CooldownManagerDB.ItemSpell) ~= "table" then
+        CooldownManagerDB.ItemSpell = {}
+    end
+
+    return CooldownManagerDB.ItemSpell
+end
+
+local function CreateContainerSkeleton(containerId, name)
+    local container = GetDefaultContainerTemplate()
+    container.Id = containerId
+    container.Name = name or GetDefaultContainerName(containerId)
+    container.NextEntryId = math.max(tonumber(container.NextEntryId) or 1, 1)
+    container.Entries = container.Entries or {}
+    return container
+end
+
+local function CopyLegacyContainerSettings(container, legacyDB)
+    for _, key in ipairs(CONTAINER_SETTING_KEYS) do
+        if legacyDB[key] ~= nil then
+            if type(legacyDB[key]) == "table" then
+                container[key] = BCDM:CopyTable(legacyDB[key])
+            else
+                container[key] = legacyDB[key]
+            end
+        end
+    end
+end
+
+local function GetContainerFrameName(containerId)
+    return FRAME_NAME_PREFIX .. tostring(containerId)
+end
+
+local function GetContainerDisplayName(container, index)
+    local name = container and TrimName(container.Name)
+    return name or GetDefaultContainerName(index or (container and container.Id) or 1)
+end
+
+local function BuildLegacySpellViewerContainer(containerId, name, legacyDB)
+    local container = CreateContainerSkeleton(containerId, name)
+    CopyLegacyContainerSettings(container, legacyDB)
+
+    for classToken, specs in pairs(legacyDB.Spells or {}) do
+        for specToken, spells in pairs(specs or {}) do
+            for spellId, data in pairs(spells or {}) do
+                CreateEntry(
+                    container,
+                    spellId,
+                    "spell",
+                    data,
+                    { [classToken .. ":" .. specToken] = true },
+                    classToken
+                )
+            end
+        end
+    end
+
+    return container
+end
+
+local function BuildLegacyEntryViewerContainer(containerId, name, legacyDB, entryField, forcedEntryType)
+    local container = CreateContainerSkeleton(containerId, name)
+    CopyLegacyContainerSettings(container, legacyDB)
+
+    for entryId, data in pairs(legacyDB[entryField] or {}) do
+        local entryType = forcedEntryType or ResolveItemSpellEntryType(entryId, data)
+        local classSpecFilters = data.classSpecFilters
+        local filterClass = data.filterClass
+
+        if type(classSpecFilters) == "table" then
+            classSpecFilters = BCDM:CopyTable(classSpecFilters)
+        elseif entryType == "spell" then
+            filterClass = filterClass or select(2, UnitClass("player"))
+            classSpecFilters = BCDM:BuildClassSpecFilters(filterClass)
+        else
+            classSpecFilters = BCDM:BuildClassSpecFilters()
+        end
+
+        CreateEntry(container, entryId, entryType, data, classSpecFilters, filterClass)
+    end
+
+    return container
+end
+
+local function RemapAnchorParent(layout, anchorMap, containerFrameName)
+    if type(layout) ~= "table" then
+        return
+    end
+
+    local anchorParent = layout[2]
+    if not anchorParent then
+        return
+    end
+
+    if anchorMap[anchorParent] then
+        layout[2] = anchorMap[anchorParent]
+    elseif anchorParent:match("^BCDM_") and not _G[anchorParent] then
+        layout[2] = "NONE"
+    end
+
+    if layout[2] == containerFrameName then
+        layout[2] = "NONE"
+    end
+end
+
+local function MigrateLegacyFramework()
+    local CooldownManagerDB = BCDM.db.profile.CooldownManager
+    local legacyItemSpellDB = CooldownManagerDB.ItemSpell
+    local migratedContainers = {}
+    local anchorMap = {}
+    local nextContainerId = 1
+
+    local legacyConfigs = {
+        {
+            key = "Custom",
+            displayName = "Custom",
+            legacyFrame = "BCDM_CustomCooldownViewer",
+            isMeaningful = function(db)
+                return HasLegacySpellEntries(db and db.Spells) or SettingsDifferFromDefaults(db or {}, LEGACY_VIEWER_DEFAULTS.Custom)
+            end,
+            build = function(id, db)
+                return BuildLegacySpellViewerContainer(id, "Custom", db)
+            end,
+        },
+        {
+            key = "AdditionalCustom",
+            displayName = "Additional Custom",
+            legacyFrame = "BCDM_AdditionalCustomCooldownViewer",
+            isMeaningful = function(db)
+                return HasLegacySpellEntries(db and db.Spells) or SettingsDifferFromDefaults(db or {}, LEGACY_VIEWER_DEFAULTS.AdditionalCustom)
+            end,
+            build = function(id, db)
+                return BuildLegacySpellViewerContainer(id, "Additional Custom", db)
+            end,
+        },
+        {
+            key = "Item",
+            displayName = "Items",
+            legacyFrame = "BCDM_CustomItemBar",
+            isMeaningful = function(db)
+                return HasLegacyEntryMap(db and db.Items) or SettingsDifferFromDefaults(db or {}, LEGACY_VIEWER_DEFAULTS.Item)
+            end,
+            build = function(id, db)
+                return BuildLegacyEntryViewerContainer(id, "Items", db, "Items", "item")
+            end,
+        },
+        {
+            key = "ItemSpell",
+            displayName = "Items & Spells",
+            legacyFrame = "BCDM_CustomItemSpellBar",
+            isMeaningful = function(db)
+                return HasLegacyEntryMap(db and db.ItemsSpells) or SettingsDifferFromDefaults(db or {}, LEGACY_VIEWER_DEFAULTS.ItemSpell)
+            end,
+            build = function(id, db)
+                return BuildLegacyEntryViewerContainer(id, "Items & Spells", db, "ItemsSpells")
+            end,
+        },
+    }
+
+    for _, config in ipairs(legacyConfigs) do
+        local legacyDB = CooldownManagerDB[config.key]
+        if type(legacyDB) == "table" and config.isMeaningful(legacyDB) then
+            local container = config.build(nextContainerId, legacyDB)
+            migratedContainers[#migratedContainers + 1] = container
+            anchorMap[config.legacyFrame] = GetContainerFrameName(container.Id)
+            nextContainerId = nextContainerId + 1
+        end
+    end
+
+    if #migratedContainers == 0 then
+        migratedContainers[1] = CreateContainerSkeleton(1, GetDefaultContainerName(1))
+        nextContainerId = 2
+    end
+
+    for index, container in ipairs(migratedContainers) do
+        RemapAnchorParent(container.Layout, anchorMap, GetContainerFrameName(container.Id))
+        container.Name = GetContainerDisplayName(container, index)
+    end
+
+    if CooldownManagerDB.Trinket and type(CooldownManagerDB.Trinket.Layout) == "table" then
+        RemapAnchorParent(CooldownManagerDB.Trinket.Layout, anchorMap)
+    end
+
+    CooldownManagerDB.ItemSpell = {
+        Containers = migratedContainers,
+        SelectedContainerId = migratedContainers[1].Id,
+        NextContainerId = nextContainerId,
+    }
+end
+
+local function NormalizeLegacyEntryMap(container, legacyEntries)
+    for entryId, data in pairs(legacyEntries or {}) do
+        local entryType = ResolveItemSpellEntryType(entryId, data)
+        local classSpecFilters = data.classSpecFilters
+        local filterClass = data.filterClass
+
+        if type(classSpecFilters) == "table" then
+            classSpecFilters = BCDM:CopyTable(classSpecFilters)
+        elseif entryType == "spell" then
+            filterClass = filterClass or select(2, UnitClass("player"))
+            classSpecFilters = BCDM:BuildClassSpecFilters(filterClass)
+        else
+            classSpecFilters = BCDM:BuildClassSpecFilters()
+        end
+
+        CreateEntry(container, entryId, entryType, data, classSpecFilters, filterClass)
+    end
+end
+
+local function NormalizeContainerEntries(container)
+    local seenUids = {}
+    local normalized = {}
+    local nextEntryId = 1
+
+    if type(container.ItemsSpells) == "table" and next(container.ItemsSpells) then
+        container.Entries = container.Entries or {}
+        NormalizeLegacyEntryMap(container, container.ItemsSpells)
+        container.ItemsSpells = nil
+    end
+
+    if type(container.Entries) ~= "table" then
+        container.Entries = {}
+    end
+
+    for _, entry in ipairs(container.Entries) do
+        if type(entry) == "table" then
+            entry.entryId = entry.entryId or entry.id
+            entry.entryType = ResolveItemSpellEntryType(entry.entryId, entry)
+            if entry.entryId and entry.entryType then
+                local uid = tonumber(entry.uid) or tonumber(entry.id)
+                if not uid or seenUids[uid] then
+                    uid = nextEntryId
+                end
+                seenUids[uid] = true
+                nextEntryId = math.max(nextEntryId, uid + 1)
+
+                entry.uid = uid
+                entry.isActive = entry.isActive ~= false
+                entry.layoutIndex = tonumber(entry.layoutIndex) or (#normalized + 1)
+                if type(entry.classSpecFilters) == "table" then
+                    entry.classSpecFilters = BCDM:CopyTable(entry.classSpecFilters)
+                elseif entry.entryType == "spell" then
+                    entry.filterClass = entry.filterClass or select(2, UnitClass("player"))
+                    entry.classSpecFilters = BCDM:BuildClassSpecFilters(entry.filterClass)
+                else
+                    entry.classSpecFilters = BCDM:BuildClassSpecFilters()
+                end
+
+                normalized[#normalized + 1] = entry
+            end
+        end
+    end
+
+    table.sort(normalized, function(a, b)
+        if a.layoutIndex == b.layoutIndex then
+            if a.entryId == b.entryId then
+                return a.uid < b.uid
+            end
+            return a.entryId < b.entryId
+        end
+        return a.layoutIndex < b.layoutIndex
+    end)
+
+    for index, entry in ipairs(normalized) do
+        entry.layoutIndex = index
+    end
+
+    container.Entries = normalized
+    container.NextEntryId = math.max(tonumber(container.NextEntryId) or 1, nextEntryId)
+end
+
+local function NormalizeContainer(container, index, seenIds, nextContainerId)
+    local template = GetDefaultContainerTemplate()
+    CopyMissingFields(container, template)
+    NormalizeContainerEntries(container)
+
+    local containerId = tonumber(container.Id)
+    if not containerId or seenIds[containerId] then
+        containerId = nextContainerId
+        nextContainerId = nextContainerId + 1
+    end
+
+    seenIds[containerId] = true
+    container.Id = containerId
+    container.Name = GetContainerDisplayName(container, index)
+    container.NextEntryId = math.max(tonumber(container.NextEntryId) or 1, 1)
+
+    return nextContainerId
+end
+
+function BCDM:EnsureCustomItemSpellFramework()
+    local framework = GetItemSpellFrameworkDB()
+    if not framework then
+        return nil
+    end
+
+    if type(framework.Containers) ~= "table" then
+        MigrateLegacyFramework()
+        framework = GetItemSpellFrameworkDB()
+    end
+
+    framework.Containers = framework.Containers or {}
+    if #framework.Containers == 0 then
+        framework.Containers[1] = CreateContainerSkeleton(1, GetDefaultContainerName(1))
+    end
+
+    local seenIds = {}
+    local nextContainerId = math.max(tonumber(framework.NextContainerId) or 1, 1)
+
+    for index, container in ipairs(framework.Containers) do
+        if type(container) ~= "table" then
+            framework.Containers[index] = CreateContainerSkeleton(nextContainerId, GetDefaultContainerName(index))
+            seenIds[nextContainerId] = true
+            nextContainerId = nextContainerId + 1
+        else
+            nextContainerId = NormalizeContainer(container, index, seenIds, nextContainerId)
+        end
+    end
+
+    framework.NextContainerId = nextContainerId
+
+    local selectedContainerId = tonumber(framework.SelectedContainerId)
+    if not selectedContainerId or not seenIds[selectedContainerId] then
+        framework.SelectedContainerId = framework.Containers[1].Id
+    end
+
+    return framework
+end
+
+function BCDM:GetCustomItemSpellContainers()
+    local framework = self:EnsureCustomItemSpellFramework()
+    return framework and framework.Containers or {}
+end
+
+function BCDM:GetCustomItemSpellContainer(containerId)
+    local framework = self:EnsureCustomItemSpellFramework()
+    if not framework then
+        return nil, nil
+    end
+
+    if containerId == nil then
+        containerId = framework.SelectedContainerId
+    end
+
+    containerId = tonumber(containerId)
+    for index, container in ipairs(framework.Containers) do
+        if container.Id == containerId then
+            return container, index
+        end
+    end
+end
+
+function BCDM:GetSelectedCustomItemSpellContainerId()
+    local framework = self:EnsureCustomItemSpellFramework()
+    return framework and framework.SelectedContainerId or nil
+end
+
+function BCDM:SetSelectedCustomItemSpellContainerId(containerId)
+    local framework = self:EnsureCustomItemSpellFramework()
+    if not framework then
+        return
+    end
+
+    local container = self:GetCustomItemSpellContainer(containerId)
+    if container then
+        framework.SelectedContainerId = container.Id
+    end
+end
+
+function BCDM:GetCustomItemSpellContainerFrameName(containerId)
+    local container = containerId
+    if type(containerId) ~= "table" then
+        container = self:GetCustomItemSpellContainer(containerId)
+    end
+
+    if not container then
+        return nil
+    end
+
+    return GetContainerFrameName(container.Id)
+end
+
+function BCDM:GetCustomItemSpellContainerDisplayName(containerId)
+    local container, index = self:GetCustomItemSpellContainer(containerId)
+    if type(containerId) == "table" then
+        container = containerId
+    end
+    return container and GetContainerDisplayName(container, index)
+end
+
+function BCDM:GetCustomItemSpellAnchorParents(currentContainerId)
+    local displayNames = {}
+    local keyList = {}
+    local baseAnchors = BCDM.AnchorParents and BCDM.AnchorParents.ItemSpell
+
+    if baseAnchors then
+        for _, anchorKey in ipairs(baseAnchors[2] or {}) do
+            keyList[#keyList + 1] = anchorKey
+        end
+        for anchorKey, label in pairs(baseAnchors[1] or {}) do
+            displayNames[anchorKey] = label
+        end
+    end
+
+    local currentFrameName = currentContainerId and self:GetCustomItemSpellContainerFrameName(currentContainerId) or nil
+    for index, container in ipairs(self:GetCustomItemSpellContainers()) do
+        local frameName = self:GetCustomItemSpellContainerFrameName(container)
+        if frameName and frameName ~= currentFrameName and not displayNames[frameName] then
+            displayNames[frameName] = ADDON_PREFIX .. GetContainerDisplayName(container, index)
+            keyList[#keyList + 1] = frameName
+        end
+    end
+
+    return displayNames, keyList
+end
+
+function BCDM:GetSortedCustomItemSpellEntries(containerId)
+    local container = type(containerId) == "table" and containerId or self:GetCustomItemSpellContainer(containerId)
+    if not container then
+        return {}
+    end
+
+    local ordered = {}
+    for _, entry in ipairs(container.Entries or {}) do
+        ordered[#ordered + 1] = entry
+    end
+
+    table.sort(ordered, function(a, b)
+        if a.layoutIndex == b.layoutIndex then
+            if a.entryId == b.entryId then
+                return a.uid < b.uid
+            end
+            return a.entryId < b.entryId
+        end
+        return a.layoutIndex < b.layoutIndex
+    end)
+
+    return ordered
+end
+
+function BCDM:NormalizeCustomItemSpellLayoutIndices(containerId)
+    local container = self:GetCustomItemSpellContainer(containerId)
+    if not container then
+        return
+    end
+
+    local ordered = self:GetSortedCustomItemSpellEntries(container)
+    for index, entry in ipairs(ordered) do
+        entry.layoutIndex = index
+    end
+end
+
+function BCDM:AddCustomItemSpellContainer(name)
+    local framework = self:EnsureCustomItemSpellFramework()
+    if not framework then
+        return nil
+    end
+
+    local containerId = math.max(tonumber(framework.NextContainerId) or 1, 1)
+    local container = CreateContainerSkeleton(containerId, TrimName(name) or GetDefaultContainerName(#framework.Containers + 1))
+    framework.Containers[#framework.Containers + 1] = container
+    framework.NextContainerId = containerId + 1
+    framework.SelectedContainerId = container.Id
+    self:UpdateCustomItemsSpellsBar()
+    return container.Id
+end
+
+function BCDM:RenameCustomItemSpellContainer(containerId, name)
+    local container, index = self:GetCustomItemSpellContainer(containerId)
+    if not container then
+        return
+    end
+
+    container.Name = TrimName(name) or GetDefaultContainerName(index)
+end
+
+local function ResetRemovedContainerAnchors(deletedFrameName)
+    local framework = BCDM:EnsureCustomItemSpellFramework()
+    if framework then
+        for _, container in ipairs(framework.Containers) do
+            if type(container.Layout) == "table" and container.Layout[2] == deletedFrameName then
+                container.Layout[2] = "NONE"
+            end
+        end
+    end
+
+    local trinketDB = BCDM.db and BCDM.db.profile and BCDM.db.profile.CooldownManager and BCDM.db.profile.CooldownManager.Trinket
+    if trinketDB and type(trinketDB.Layout) == "table" and trinketDB.Layout[2] == deletedFrameName then
+        trinketDB.Layout[2] = "NONE"
+    end
+end
+
+function BCDM:DeleteCustomItemSpellContainer(containerId)
+    local framework = self:EnsureCustomItemSpellFramework()
+    if not framework or #framework.Containers <= 1 then
+        return framework and framework.SelectedContainerId or nil
+    end
+
+    local deletedIndex
+    local deletedContainer
+    for index, container in ipairs(framework.Containers) do
+        if container.Id == tonumber(containerId) then
+            deletedIndex = index
+            deletedContainer = container
+            break
+        end
+    end
+
+    if not deletedIndex then
+        return framework.SelectedContainerId
+    end
+
+    table.remove(framework.Containers, deletedIndex)
+    local fallbackIndex = math.max(1, math.min(deletedIndex, #framework.Containers))
+    framework.SelectedContainerId = framework.Containers[fallbackIndex].Id
+
+    local deletedFrameName = self:GetCustomItemSpellContainerFrameName(deletedContainer)
+    if deletedFrameName then
+        ResetRemovedContainerAnchors(deletedFrameName)
+        if self.CustomItemSpellContainerFrames and self.CustomItemSpellContainerFrames[deletedContainer.Id] then
+            local frame = self.CustomItemSpellContainerFrames[deletedContainer.Id]
+            frame:UnregisterAllEvents()
+            for _, child in ipairs({ frame:GetChildren() }) do
+                child:UnregisterAllEvents()
+                child:Hide()
+                child:SetParent(nil)
+            end
+            frame:Hide()
+            self.CustomItemSpellContainerFrames[deletedContainer.Id] = nil
+        end
+    end
+
+    self:UpdateCustomItemsSpellsBar()
+    if self.UpdateTrinketBar then
+        self:UpdateTrinketBar()
+    end
+
+    return framework.SelectedContainerId
+end
+
+function BCDM:AdjustCustomItemSpellEntryList(containerId, entryId, adjustingHow, entryType)
+    local container = self:GetCustomItemSpellContainer(containerId)
+    if not container then
+        return
+    end
+
+    if adjustingHow == "add" then
+        entryType = entryType or ResolveItemSpellEntryType(entryId)
+        local classSpecFilters
+        local filterClass
+        if entryType == "spell" then
+            filterClass = select(2, UnitClass("player"))
+            classSpecFilters = BCDM:BuildClassSpecFilters(filterClass)
+        else
+            classSpecFilters = BCDM:BuildClassSpecFilters()
+        end
+
+        CreateEntry(container, entryId, entryType, nil, classSpecFilters, filterClass)
+    elseif adjustingHow == "remove" then
+        local removeIndex
+        for index, entry in ipairs(container.Entries) do
+            if entry.uid == tonumber(entryId) then
+                removeIndex = index
+                break
+            end
+        end
+        if removeIndex then
+            table.remove(container.Entries, removeIndex)
+        end
+    end
+
+    self:NormalizeCustomItemSpellLayoutIndices(container.Id)
+    self:UpdateCustomItemsSpellsBar()
+end
+
+function BCDM:AdjustItemsSpellsList(entryId, adjustingHow, entryType, containerId)
+    self:AdjustCustomItemSpellEntryList(containerId or self:GetSelectedCustomItemSpellContainerId(), entryId, adjustingHow, entryType)
+end
+
+function BCDM:AdjustCustomItemSpellLayoutIndex(containerId, direction, entryUid)
+    local container = self:GetCustomItemSpellContainer(containerId)
+    if not container then
+        return
+    end
+
+    local currentIndex
+    for _, entry in ipairs(container.Entries) do
+        if entry.uid == tonumber(entryUid) then
+            currentIndex = entry.layoutIndex
+            break
+        end
+    end
+
+    if not currentIndex then
+        return
+    end
+
+    local newIndex = currentIndex + direction
+    local totalEntries = #container.Entries
+    if newIndex < 1 or newIndex > totalEntries then
+        return
+    end
+
+    for _, entry in ipairs(container.Entries) do
+        if entry.layoutIndex == newIndex then
+            entry.layoutIndex = currentIndex
+            break
+        end
+    end
+
+    for _, entry in ipairs(container.Entries) do
+        if entry.uid == tonumber(entryUid) then
+            entry.layoutIndex = newIndex
+            break
+        end
+    end
+
+    self:NormalizeCustomItemSpellLayoutIndices(container.Id)
+    self:UpdateCustomItemsSpellsBar()
+end
+
+function BCDM:AdjustItemsSpellsLayoutIndex(direction, entryUid, containerId)
+    self:AdjustCustomItemSpellLayoutIndex(containerId or self:GetSelectedCustomItemSpellContainerId(), direction, entryUid)
+end
+
+local function CreateCustomItemIcon(customDB, entry)
     local CooldownManagerDB = BCDM.db.profile
     local GeneralDB = CooldownManagerDB.General
-    local CustomDB = CooldownManagerDB.CooldownManager.ItemSpell
+    local itemId = entry.entryId
     if not itemId then return end
     if not C_Item.GetItemInfo(itemId) then return end
 
-    local customIcon = CreateFrame("Button", "BCDM_Custom_" .. itemId, UIParent, "BackdropTemplate")
+    local customIcon = CreateFrame("Button", nil, UIParent, "BackdropTemplate")
     customIcon:SetBackdrop({ edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = BCDM.db.profile.CooldownManager.General.BorderSize, insets = { left = 0, right = 0, top = 0, bottom = 0 } })
     customIcon:SetBackdropColor(0, 0, 0, 0)
     if BCDM.db.profile.CooldownManager.General.BorderSize <= 0 then
@@ -345,24 +1233,23 @@ local function CreateCustomItemIcon(itemId)
     else
         customIcon:SetBackdropBorderColor(0, 0, 0, 1)
     end
-    local iconWidth, iconHeight = BCDM:GetIconDimensions(CustomDB)
+
+    local iconWidth, iconHeight = BCDM:GetIconDimensions(customDB)
     customIcon:SetSize(iconWidth, iconHeight)
-    local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]]
-    customIcon:SetPoint(CustomDB.Layout[1], anchorParent, CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
     customIcon:RegisterEvent("SPELL_UPDATE_COOLDOWN")
     customIcon:RegisterEvent("PLAYER_ENTERING_WORLD")
     customIcon:RegisterEvent("ITEM_COUNT_CHANGED")
     customIcon:EnableMouse(false)
-    customIcon:SetFrameStrata(CustomDB.FrameStrata or "LOW")
+    customIcon:SetFrameStrata(customDB.FrameStrata or "LOW")
 
-    local HighLevelContainer = CreateFrame("Frame", nil, customIcon)
-    HighLevelContainer:SetAllPoints(customIcon)
-    HighLevelContainer:SetFrameLevel(customIcon:GetFrameLevel() + 999)
+    local highLevelContainer = CreateFrame("Frame", nil, customIcon)
+    highLevelContainer:SetAllPoints(customIcon)
+    highLevelContainer:SetFrameLevel(customIcon:GetFrameLevel() + 999)
 
-    customIcon.Charges = HighLevelContainer:CreateFontString(nil, "OVERLAY")
-    customIcon.Charges:SetFont(BCDM.Media.Font, CustomDB.Text.FontSize, GeneralDB.Fonts.FontFlag)
-    customIcon.Charges:SetPoint(CustomDB.Text.Layout[1], customIcon, CustomDB.Text.Layout[2], CustomDB.Text.Layout[3], CustomDB.Text.Layout[4])
-    customIcon.Charges:SetTextColor(CustomDB.Text.Colour[1], CustomDB.Text.Colour[2], CustomDB.Text.Colour[3], 1)
+    customIcon.Charges = highLevelContainer:CreateFontString(nil, "OVERLAY")
+    customIcon.Charges:SetFont(BCDM.Media.Font, customDB.Text.FontSize, GeneralDB.Fonts.FontFlag)
+    customIcon.Charges:SetPoint(customDB.Text.Layout[1], customIcon, customDB.Text.Layout[2], customDB.Text.Layout[3], customDB.Text.Layout[4])
+    customIcon.Charges:SetTextColor(customDB.Text.Colour[1], customDB.Text.Colour[2], customDB.Text.Colour[3], 1)
     customIcon.Charges:SetText(tostring(select(1, FetchItemData(itemId)) or ""))
     if GeneralDB.Fonts.Shadow.Enabled then
         customIcon.Charges:SetShadowColor(GeneralDB.Fonts.Shadow.Colour[1], GeneralDB.Fonts.Shadow.Colour[2], GeneralDB.Fonts.Shadow.Colour[3], GeneralDB.Fonts.Shadow.Colour[4])
@@ -376,15 +1263,16 @@ local function CreateCustomItemIcon(itemId)
     customIcon.Cooldown:SetAllPoints(customIcon)
     customIcon.Cooldown:SetDrawEdge(false)
     customIcon.Cooldown:SetDrawSwipe(true)
+    customIcon.Cooldown:SetDrawBling(false)
     customIcon.Cooldown:SetSwipeColor(0, 0, 0, 0.8)
     customIcon.Cooldown:SetHideCountdownNumbers(false)
     customIcon.Cooldown:SetReverse(false)
 
-    customIcon.QualityAtlas = HighLevelContainer:CreateTexture(nil, "OVERLAY")
+    customIcon.QualityAtlas = highLevelContainer:CreateTexture(nil, "OVERLAY")
     customIcon.QualityAtlas:Hide()
-    ApplyItemQualityAtlas(customIcon, itemId, CustomDB, iconWidth, iconHeight)
+    ApplyItemQualityAtlas(customIcon, itemId, customDB, iconWidth, iconHeight)
 
-    customIcon:SetScript("OnEvent", function(self, event, ...)
+    customIcon:SetScript("OnEvent", function(self, event)
         if event == "SPELL_UPDATE_COOLDOWN" or event == "PLAYER_ENTERING_WORLD" or event == "ITEM_COUNT_CHANGED" then
             local itemCount, startTime, durationTime = FetchItemData(itemId)
             if itemCount then
@@ -397,15 +1285,16 @@ local function CreateCustomItemIcon(itemId)
                         durationObject:SetTimeFromStart(startTime, durationTime)
                         customIcon.Cooldown:SetCooldownFromDurationObject(durationObject, true)
                     elseif not hasActiveCooldown and event ~= "ITEM_COUNT_CHANGED" and shouldRefreshCooldown then
-                        -- Avoid cooldown flicker from transient ITEM_COUNT_CHANGED updates.
                         customIcon.Cooldown:SetCooldownFromDurationObject(C_DurationUtil.CreateDuration(), true)
                     end
                 end
+
                 if itemCount <= 0 then
                     customIcon.Charges:SetText("")
                 else
                     customIcon.Charges:SetText(tostring(itemCount))
                 end
+
                 if BCDM:IsSecretValue(startTime) or BCDM:IsSecretValue(durationTime) then
                     SetIconDesaturation(customIcon.Icon, 0)
                 elseif hasActiveCooldown then
@@ -413,7 +1302,12 @@ local function CreateCustomItemIcon(itemId)
                 else
                     SetIconDesaturation(customIcon.Icon, 0)
                 end
-                if not C_Item.IsUsableItem(itemId) then customIcon.Icon:SetVertexColor(0.5, 0.5, 0.5) else customIcon.Icon:SetVertexColor(1, 1, 1) end
+
+                if not C_Item.IsUsableItem(itemId) then
+                    customIcon.Icon:SetVertexColor(0.5, 0.5, 0.5)
+                else
+                    customIcon.Icon:SetVertexColor(1, 1, 1)
+                end
                 customIcon.Charges:SetAlphaFromBoolean(itemCount > 1, 1, 0)
             end
         end
@@ -435,14 +1329,14 @@ local function CreateCustomItemIcon(itemId)
     return customIcon
 end
 
-local function CreateCustomSpellIcon(spellId)
+local function CreateCustomSpellIcon(customDB, entry)
     local CooldownManagerDB = BCDM.db.profile
     local GeneralDB = CooldownManagerDB.General
-    local CustomDB = CooldownManagerDB.CooldownManager.ItemSpell
+    local spellId = entry.entryId
     if not spellId then return end
     if not C_SpellBook.IsSpellInSpellBook(spellId) then return end
 
-    local customIcon = CreateFrame("Button", "BCDM_Custom_" .. spellId, UIParent, "BackdropTemplate")
+    local customIcon = CreateFrame("Button", nil, UIParent, "BackdropTemplate")
     customIcon:SetBackdrop({ edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = BCDM.db.profile.CooldownManager.General.BorderSize, insets = { left = 0, right = 0, top = 0, bottom = 0 } })
     customIcon:SetBackdropColor(0, 0, 0, 0)
     if BCDM.db.profile.CooldownManager.General.BorderSize <= 0 then
@@ -450,25 +1344,23 @@ local function CreateCustomSpellIcon(spellId)
     else
         customIcon:SetBackdropBorderColor(0, 0, 0, 1)
     end
-    local iconWidth, iconHeight = BCDM:GetIconDimensions(CustomDB)
+
+    local iconWidth, iconHeight = BCDM:GetIconDimensions(customDB)
     customIcon:SetSize(iconWidth, iconHeight)
-    local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]]
-    customIcon:SetPoint(CustomDB.Layout[1], anchorParent, CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
     customIcon:RegisterEvent("SPELL_UPDATE_COOLDOWN")
     customIcon:RegisterEvent("PLAYER_ENTERING_WORLD")
     customIcon:RegisterEvent("SPELL_UPDATE_CHARGES")
-    customIcon:RegisterEvent("ITEM_PUSH")
     customIcon:EnableMouse(false)
-    customIcon:SetFrameStrata(CustomDB.FrameStrata or "LOW")
+    customIcon:SetFrameStrata(customDB.FrameStrata or "LOW")
 
-    local HighLevelContainer = CreateFrame("Frame", nil, customIcon)
-    HighLevelContainer:SetAllPoints(customIcon)
-    HighLevelContainer:SetFrameLevel(customIcon:GetFrameLevel() + 999)
+    local highLevelContainer = CreateFrame("Frame", nil, customIcon)
+    highLevelContainer:SetAllPoints(customIcon)
+    highLevelContainer:SetFrameLevel(customIcon:GetFrameLevel() + 999)
 
-    customIcon.Charges = HighLevelContainer:CreateFontString(nil, "OVERLAY")
-    customIcon.Charges:SetFont(BCDM.Media.Font, CustomDB.Text.FontSize, GeneralDB.Fonts.FontFlag)
-    customIcon.Charges:SetPoint(CustomDB.Text.Layout[1], customIcon, CustomDB.Text.Layout[2], CustomDB.Text.Layout[3], CustomDB.Text.Layout[4])
-    customIcon.Charges:SetTextColor(CustomDB.Text.Colour[1], CustomDB.Text.Colour[2], CustomDB.Text.Colour[3], 1)
+    customIcon.Charges = highLevelContainer:CreateFontString(nil, "OVERLAY")
+    customIcon.Charges:SetFont(BCDM.Media.Font, customDB.Text.FontSize, GeneralDB.Fonts.FontFlag)
+    customIcon.Charges:SetPoint(customDB.Text.Layout[1], customIcon, customDB.Text.Layout[2], customDB.Text.Layout[3], customDB.Text.Layout[4])
+    customIcon.Charges:SetTextColor(customDB.Text.Colour[1], customDB.Text.Colour[2], customDB.Text.Colour[3], 1)
     if GeneralDB.Fonts.Shadow.Enabled then
         customIcon.Charges:SetShadowColor(GeneralDB.Fonts.Shadow.Colour[1], GeneralDB.Fonts.Shadow.Colour[2], GeneralDB.Fonts.Shadow.Colour[3], GeneralDB.Fonts.Shadow.Colour[4])
         customIcon.Charges:SetShadowOffset(GeneralDB.Fonts.Shadow.OffsetX, GeneralDB.Fonts.Shadow.OffsetY)
@@ -486,7 +1378,7 @@ local function CreateCustomSpellIcon(spellId)
     customIcon.Cooldown:SetHideCountdownNumbers(false)
     customIcon.Cooldown:SetReverse(false)
 
-    customIcon:SetScript("OnEvent", function(self, event, ...)
+    customIcon:SetScript("OnEvent", function(self, event)
         if event == "SPELL_UPDATE_COOLDOWN" or event == "PLAYER_ENTERING_WORLD" or event == "SPELL_UPDATE_CHARGES" then
             local spellCharges = C_Spell.GetSpellCharges(spellId)
             if spellCharges and (spellCharges.maxCharges or 0) > 1 then
@@ -513,82 +1405,119 @@ local function CreateCustomSpellIcon(spellId)
     return customIcon
 end
 
-local function ResolveItemSpellEntryType(entryId, entryData)
-    if entryData and entryData.entryType then
-        return entryData.entryType
-    end
-    if C_Item.GetItemInfo(entryId) then
-        return "item"
-    end
-    if C_Spell.GetSpellInfo(entryId) then
-        return "spell"
-    end
-end
-
-local function HasTrackedPotionEntries(items)
-    if not items then return false end
-    for entryId, data in pairs(items) do
-        if data and data.isActive and ResolveItemSpellEntryType(entryId, data) == "item" and IsPotionItem(entryId) then
-            return true
-        end
-    end
-    return false
-end
-
-local function CreateCustomIcons(iconTable, visibleItemIds)
-    local CustomDB = BCDM.db.profile.CooldownManager.ItemSpell
-    local Items = CustomDB.ItemsSpells
+local function GetPlayerSpecState()
     local playerClass = select(2, UnitClass("player"))
     local specIndex = GetSpecialization()
     local specID, specName = specIndex and GetSpecializationInfo(specIndex)
     local playerSpecialization = BCDM:NormalizeSpecToken(specName, specID, specIndex)
+    return playerClass, playerSpecialization
+end
+
+local function GetTrackedHealthstoneInfo(entries, playerClass, playerSpecialization)
+    if playerClass ~= "WARLOCK" then
+        return nil, nil
+    end
+
+    local healthstoneIndex
+    for _, entry in ipairs(entries or {}) do
+        local entryId = entry and entry.entryId
+        if entry and entry.isActive and (entryId == HEALTHSTONE_BASE_ID or entryId == HEALTHSTONE_GLUTTONY_ID) then
+            if ResolveItemSpellEntryType(entryId, entry) == "item" and IsEntryEnabledForPlayerSpec(entry, playerClass, playerSpecialization) then
+                healthstoneIndex = math.min(healthstoneIndex or math.huge, entry.layoutIndex or math.huge)
+            end
+        end
+    end
+
+    if not healthstoneIndex then
+        return nil, nil
+    end
+
+    local activeHealthstoneId = C_SpellBook.IsSpellKnown(PACT_OF_GLUTTONY_SPELL_ID) and HEALTHSTONE_GLUTTONY_ID or HEALTHSTONE_BASE_ID
+    return activeHealthstoneId, healthstoneIndex
+end
+
+local function CreateCustomIcons(customDB, entries, iconTable, visibleItemIds)
+    local playerClass, playerSpecialization = GetPlayerSpecState()
+    local activeEntries = {}
+    local potionGroups = {}
+    local activeHealthstoneId, healthstoneIndex = GetTrackedHealthstoneInfo(entries, playerClass, playerSpecialization)
 
     wipe(iconTable)
     if visibleItemIds then wipe(visibleItemIds) end
 
-    if Items then
-        local items = {}
-        local potionGroups = {}
-        for entryId, data in pairs(Items) do
-            if data.isActive and IsEntryEnabledForPlayerSpec(data, playerClass, playerSpecialization) then
-                local entryType = ResolveItemSpellEntryType(entryId, data)
-                if entryType then
-                    if entryType == "item" then
-                        local layoutIndex = data.layoutIndex or math.huge
-                        local isPotionEntry = SelectPotionRankCandidate(potionGroups, entryId, layoutIndex)
-                        if not isPotionEntry and not ShouldShowItem(CustomDB, entryId) then
-                            entryType = nil
-                        end
-                        if isPotionEntry then
-                            entryType = nil
-                        end
+    for _, entry in ipairs(entries or {}) do
+        if entry.isActive and IsEntryEnabledForPlayerSpec(entry, playerClass, playerSpecialization) then
+            local entryType = ResolveItemSpellEntryType(entry.entryId, entry)
+            local layoutIndex = entry.layoutIndex or math.huge
+
+            if entryType == "item" then
+                if activeHealthstoneId and (entry.entryId == HEALTHSTONE_BASE_ID or entry.entryId == HEALTHSTONE_GLUTTONY_ID) then
+                    entryType = nil
+                else
+                    local isPotionEntry = SelectPotionRankCandidate(potionGroups, entry.entryId, layoutIndex)
+                    if isPotionEntry then
+                        entryType = nil
+                    elseif not ShouldShowItem(customDB, entry.entryId) then
+                        entryType = nil
                     end
                 end
-                if entryType then
-                    table.insert(items, {id = entryId, index = data.layoutIndex, entryType = entryType})
-                end
+            end
+
+            if entryType then
+                activeEntries[#activeEntries + 1] = {
+                    uid = entry.uid,
+                    entryId = entry.entryId,
+                    entryType = entryType,
+                    layoutIndex = layoutIndex,
+                    entry = entry,
+                }
             end
         end
-        for _, potionGroup in pairs(potionGroups) do
-            local selected = potionGroup.selected
-            if selected and selected.count > 0 then
-                table.insert(items, {id = selected.id, index = potionGroup.index or math.huge, entryType = "item"})
+    end
+
+    for _, potionGroup in pairs(potionGroups) do
+        local selected = potionGroup.selected
+        if selected and selected.count > 0 then
+            activeEntries[#activeEntries + 1] = {
+                entryId = selected.id,
+                entryType = "item",
+                layoutIndex = potionGroup.index or math.huge,
+                entry = { entryId = selected.id, entryType = "item" },
+            }
+        end
+    end
+
+    if activeHealthstoneId and healthstoneIndex and ShouldShowItem(customDB, activeHealthstoneId) then
+        activeEntries[#activeEntries + 1] = {
+            entryId = activeHealthstoneId,
+            entryType = "item",
+            layoutIndex = healthstoneIndex,
+            entry = { entryId = activeHealthstoneId, entryType = "item" },
+        }
+    end
+
+    table.sort(activeEntries, function(a, b)
+        if a.layoutIndex == b.layoutIndex then
+            local aUid = tonumber(a.uid) or a.entryId
+            local bUid = tonumber(b.uid) or b.entryId
+            return aUid < bUid
+        end
+        return a.layoutIndex < b.layoutIndex
+    end)
+
+    for _, entry in ipairs(activeEntries) do
+        local customIcon
+        if entry.entryType == "spell" then
+            customIcon = CreateCustomSpellIcon(customDB, entry.entry)
+        else
+            customIcon = CreateCustomItemIcon(customDB, entry.entry)
+            if visibleItemIds then
+                visibleItemIds[entry.entryId] = true
             end
         end
 
-        table.sort(items, function(a, b) return a.index < b.index end)
-
-        for _, item in ipairs(items) do
-            local customItem = nil
-            if item.entryType == "spell" then
-                customItem = CreateCustomSpellIcon(item.id)
-            else
-                customItem = CreateCustomItemIcon(item.id)
-            end
-            if customItem then
-                table.insert(iconTable, customItem)
-                if visibleItemIds and item.entryType == "item" then visibleItemIds[item.id] = true end
-            end
+        if customIcon then
+            iconTable[#iconTable + 1] = customIcon
         end
     end
 end
@@ -613,27 +1542,118 @@ local function ShouldGrowLeft(point)
     return point and point:find("RIGHT") ~= nil
 end
 
-local function RequestDeferredContainerUpdate(container)
-    if not container or container.PendingRefresh then
+local function GetOrCreateContainerFrame(container)
+    BCDM.CustomItemSpellContainerFrames = BCDM.CustomItemSpellContainerFrames or {}
+    local frame = BCDM.CustomItemSpellContainerFrames[container.Id]
+    if frame then
+        return frame
+    end
+
+    frame = CreateFrame("Frame", GetContainerFrameName(container.Id), UIParent, "BackdropTemplate")
+    frame:SetSize(1, 1)
+    frame.ContainerId = container.Id
+    BCDM.CustomItemSpellContainerFrames[container.Id] = frame
+    return frame
+end
+
+local function ReleaseContainerChildren(frame)
+    for _, child in ipairs({ frame:GetChildren() }) do
+        child:UnregisterAllEvents()
+        child:Hide()
+        child:SetParent(nil)
+    end
+end
+
+local function RequestDeferredContainerUpdate(frame)
+    if not frame or frame.PendingRefresh then
         return
     end
 
-    container.PendingRefresh = true
+    frame.PendingRefresh = true
     C_Timer.After(0, function()
-        container.PendingRefresh = false
-        BCDM:UpdateCustomItemsSpellsBar()
+        frame.PendingRefresh = false
+        BCDM:UpdateCustomItemSpellContainer(frame.ContainerId)
     end)
 end
 
-local function LayoutCustomItemsSpellsBar()
-    local CooldownManagerDB = BCDM.db.profile
-    local CustomDB = CooldownManagerDB.CooldownManager.ItemSpell
+local function SetupFrameEventHandler(frame)
+    if frame.HideZeroEventHooked then
+        return
+    end
+
+    frame.HideZeroEventHooked = true
+    frame:SetScript("OnEvent", function(self, event, itemId)
+        local container = BCDM:GetCustomItemSpellContainer(self.ContainerId)
+        if not container then
+            return
+        end
+
+        if event == "PLAYER_ENTERING_WORLD" or event == "BAG_UPDATE_DELAYED" then
+            RequestDeferredContainerUpdate(self)
+            return
+        end
+
+        if event ~= "ITEM_COUNT_CHANGED" and event ~= "ITEM_PUSH" then
+            return
+        end
+
+        if not itemId then
+            RequestDeferredContainerUpdate(self)
+            return
+        end
+
+        local playerClass, playerSpecialization = GetPlayerSpecState()
+        local activeHealthstoneId, healthstoneIndex = GetTrackedHealthstoneInfo(container.Entries, playerClass, playerSpecialization)
+
+        local hasTrackedItem = false
+        local itemIsPotion = false
+        for _, entry in ipairs(container.Entries or {}) do
+            if entry.isActive and ResolveItemSpellEntryType(entry.entryId, entry) == "item" and IsEntryEnabledForPlayerSpec(entry, playerClass, playerSpecialization) then
+                if entry.entryId == itemId then
+                    hasTrackedItem = true
+                    itemIsPotion = IsPotionItem(itemId)
+                    break
+                end
+            end
+        end
+
+        if not hasTrackedItem and activeHealthstoneId and healthstoneIndex and (itemId == HEALTHSTONE_BASE_ID or itemId == HEALTHSTONE_GLUTTONY_ID) then
+            hasTrackedItem = true
+        end
+
+        if not hasTrackedItem then
+            return
+        end
+
+        if itemIsPotion or (activeHealthstoneId and (itemId == HEALTHSTONE_BASE_ID or itemId == HEALTHSTONE_GLUTTONY_ID)) then
+            RequestDeferredContainerUpdate(self)
+            return
+        end
+
+        if not container.HideZeroCharges then
+            return
+        end
+
+        local activeItemId = activeHealthstoneId and (itemId == HEALTHSTONE_BASE_ID or itemId == HEALTHSTONE_GLUTTONY_ID) and activeHealthstoneId or itemId
+        local visible = self.VisibleItemIds and self.VisibleItemIds[activeItemId] or false
+        local shouldShow = ShouldShowItem(container, activeItemId)
+        if visible ~= shouldShow then
+            RequestDeferredContainerUpdate(self)
+        end
+    end)
+end
+
+local function LayoutCustomItemSpellContainer(container)
+    if not container then
+        return
+    end
+
     local customItemBarIcons = {}
     local visibleItemIds = {}
+    local frame = GetOrCreateContainerFrame(container)
+    local growthDirection = container.GrowthDirection or "RIGHT"
 
-    local growthDirection = CustomDB.GrowthDirection or "RIGHT"
-
-    local containerAnchorFrom = CustomDB.Layout[1]
+    local containerAnchorFrom = container.Layout[1]
     if growthDirection == "UP" then
         local verticalFlipMap = {
             ["TOPLEFT"] = "BOTTOMLEFT",
@@ -643,79 +1663,43 @@ local function LayoutCustomItemsSpellsBar()
             ["BOTTOM"] = "TOP",
             ["BOTTOMRIGHT"] = "TOPRIGHT",
         }
-        containerAnchorFrom = verticalFlipMap[CustomDB.Layout[1]] or CustomDB.Layout[1]
+        containerAnchorFrom = verticalFlipMap[container.Layout[1]] or container.Layout[1]
     end
 
-    if not BCDM.CustomItemSpellBarContainer then
-        BCDM.CustomItemSpellBarContainer = CreateFrame("Frame", "BCDM_CustomItemSpellBar", UIParent, "BackdropTemplate")
-        BCDM.CustomItemSpellBarContainer:SetSize(1, 1)
-    end
+    frame:ClearAllPoints()
+    frame:SetFrameStrata(container.FrameStrata or "LOW")
+    local anchorParent = BCDM:ResolveAnchorFrame(container.Layout[2])
+    frame:SetPoint(containerAnchorFrom, anchorParent, container.Layout[3], container.Layout[4], container.Layout[5])
 
-    BCDM.CustomItemSpellBarContainer:ClearAllPoints()
-    BCDM.CustomItemSpellBarContainer:SetFrameStrata(CustomDB.FrameStrata or "LOW")
-    local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]]
-    BCDM.CustomItemSpellBarContainer:SetPoint(containerAnchorFrom, anchorParent, CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
-    if not BCDM.CustomItemSpellBarContainer.HideZeroEventHooked then
-        BCDM.CustomItemSpellBarContainer.HideZeroEventHooked = true
-        BCDM.CustomItemSpellBarContainer:SetScript("OnEvent", function(self, event, itemId)
-            local customDB = BCDM.db.profile.CooldownManager.ItemSpell
-            local items = customDB.ItemsSpells
-            if not items then return end
-            if event == "PLAYER_ENTERING_WORLD" or event == "BAG_UPDATE_DELAYED" then
-                RequestDeferredContainerUpdate(self)
-                return
-            end
-            if event == "ITEM_COUNT_CHANGED" or event == "ITEM_PUSH" then
-                if not itemId then
-                    RequestDeferredContainerUpdate(self)
-                    return
-                end
-                local entry = items[itemId]
-                if not (entry and entry.isActive) then return end
-                local entryType = ResolveItemSpellEntryType(itemId, entry)
-                if entryType ~= "item" then return end
-                if IsPotionItem(itemId) then
-                    RequestDeferredContainerUpdate(self)
-                    return
-                end
-                if not customDB.HideZeroCharges then return end
-                local visible = self.VisibleItemIds and self.VisibleItemIds[itemId] or false
-                local shouldShow = ShouldShowItem(customDB, itemId)
-                if visible ~= shouldShow then
-                    RequestDeferredContainerUpdate(self)
-                end
-            end
-        end)
-    end
+    SetupFrameEventHandler(frame)
 
-    local shouldTrackItemCountChanges = CustomDB.HideZeroCharges or HasTrackedPotionEntries(CustomDB.ItemsSpells)
+    local shouldTrackItemCountChanges = container.HideZeroCharges or HasTrackedPotionEntries(container.Entries) or HasTrackedHealthstoneEntries(container.Entries)
     if shouldTrackItemCountChanges then
-        BCDM.CustomItemSpellBarContainer:RegisterEvent("ITEM_COUNT_CHANGED")
-        BCDM.CustomItemSpellBarContainer:RegisterEvent("ITEM_PUSH")
-        BCDM.CustomItemSpellBarContainer:RegisterEvent("BAG_UPDATE_DELAYED")
-        BCDM.CustomItemSpellBarContainer:RegisterEvent("PLAYER_ENTERING_WORLD")
+        frame:RegisterEvent("ITEM_COUNT_CHANGED")
+        frame:RegisterEvent("ITEM_PUSH")
+        frame:RegisterEvent("BAG_UPDATE_DELAYED")
+        frame:RegisterEvent("PLAYER_ENTERING_WORLD")
     else
-        BCDM.CustomItemSpellBarContainer:UnregisterEvent("ITEM_COUNT_CHANGED")
-        BCDM.CustomItemSpellBarContainer:UnregisterEvent("ITEM_PUSH")
-        BCDM.CustomItemSpellBarContainer:UnregisterEvent("BAG_UPDATE_DELAYED")
-        BCDM.CustomItemSpellBarContainer:UnregisterEvent("PLAYER_ENTERING_WORLD")
+        frame:UnregisterEvent("ITEM_COUNT_CHANGED")
+        frame:UnregisterEvent("ITEM_PUSH")
+        frame:UnregisterEvent("BAG_UPDATE_DELAYED")
+        frame:UnregisterEvent("PLAYER_ENTERING_WORLD")
     end
 
-    for _, child in ipairs({BCDM.CustomItemSpellBarContainer:GetChildren()}) do child:UnregisterAllEvents() child:Hide() child:SetParent(nil) end
+    ReleaseContainerChildren(frame)
+    CreateCustomIcons(container, container.Entries, customItemBarIcons, visibleItemIds)
+    frame.VisibleItemIds = visibleItemIds
 
-    CreateCustomIcons(customItemBarIcons, visibleItemIds)
-    BCDM.CustomItemSpellBarContainer.VisibleItemIds = visibleItemIds
-
-    local iconWidth, iconHeight = BCDM:GetIconDimensions(CustomDB)
-    local iconSpacing = CustomDB.Spacing
-    local point = select(1, BCDM.CustomItemSpellBarContainer:GetPoint(1))
+    local iconWidth, iconHeight = BCDM:GetIconDimensions(container)
+    local iconSpacing = container.Spacing
+    local point = select(1, frame:GetPoint(1))
     local isHorizontalGrowth = growthDirection == "LEFT" or growthDirection == "RIGHT"
-    local wrapLimit = GetColumnWrapLimit(CustomDB)
+    local wrapLimit = GetColumnWrapLimit(container)
     local lineLimit = (wrapLimit > 0) and wrapLimit or #customItemBarIcons
     local useCenteredLayout = IsCenteredHorizontalLayout(point, growthDirection)
 
     if #customItemBarIcons == 0 then
-        BCDM.CustomItemSpellBarContainer:SetSize(1, 1)
+        frame:SetSize(1, 1)
     else
         local totalWidth, totalHeight
         local lineCount = math.ceil(#customItemBarIcons / lineLimit)
@@ -729,8 +1713,9 @@ local function LayoutCustomItemsSpellsBar()
             totalWidth = (lineCount * iconWidth) + ((lineCount - 1) * iconSpacing)
             totalHeight = (rowsInColumn * iconHeight) + ((rowsInColumn - 1) * iconSpacing)
         end
-        BCDM.CustomItemSpellBarContainer:SetWidth(totalWidth)
-        BCDM.CustomItemSpellBarContainer:SetHeight(totalHeight)
+
+        frame:SetWidth(totalWidth)
+        frame:SetHeight(totalHeight)
     end
 
     local LayoutConfig = {
@@ -759,25 +1744,24 @@ local function LayoutCustomItemsSpellsBar()
 
             for i = rowStart, rowEnd do
                 local spellIcon = customItemBarIcons[i]
-                spellIcon:SetParent(BCDM.CustomItemSpellBarContainer)
+                spellIcon:SetParent(frame)
                 spellIcon:SetSize(iconWidth, iconHeight)
                 spellIcon:ClearAllPoints()
 
                 local xOffset = startOffset + ((i - rowStart) * (iconWidth + iconSpacing))
-                spellIcon:SetPoint("CENTER", BCDM.CustomItemSpellBarContainer, "CENTER", xOffset, yOffset)
-                ApplyCooldownText()
+                spellIcon:SetPoint("CENTER", frame, "CENTER", xOffset, yOffset)
                 spellIcon:Show()
             end
         end
     else
         for i, spellIcon in ipairs(customItemBarIcons) do
-            spellIcon:SetParent(BCDM.CustomItemSpellBarContainer)
+            spellIcon:SetParent(frame)
             spellIcon:SetSize(iconWidth, iconHeight)
             spellIcon:ClearAllPoints()
 
             if i == 1 then
                 local config = LayoutConfig[point] or LayoutConfig.TOPLEFT
-                spellIcon:SetPoint(config.anchor, BCDM.CustomItemSpellBarContainer, config.anchor, 0, 0)
+                spellIcon:SetPoint(config.anchor, frame, config.anchor, 0, 0)
             else
                 local isWrappedRowStart = (i - 1) % lineLimit == 0
                 if isWrappedRowStart then
@@ -807,123 +1791,50 @@ local function LayoutCustomItemsSpellsBar()
                     end
                 end
             end
-            ApplyCooldownText()
             spellIcon:Show()
         end
     end
 
-    BCDM.CustomItemSpellBarContainer:Show()
+    ApplyCooldownText(frame)
+    frame:Show()
+end
+
+local function HideUnusedContainerFrames(activeContainerIds)
+    local frames = BCDM.CustomItemSpellContainerFrames or {}
+    for containerId, frame in pairs(frames) do
+        if not activeContainerIds[containerId] then
+            frame:UnregisterAllEvents()
+            ReleaseContainerChildren(frame)
+            frame:Hide()
+        end
+    end
+end
+
+function BCDM:UpdateCustomItemSpellContainer(containerId)
+    local container = self:GetCustomItemSpellContainer(containerId)
+    if not container then
+        if self.CustomItemSpellContainerFrames and self.CustomItemSpellContainerFrames[tonumber(containerId)] then
+            local frame = self.CustomItemSpellContainerFrames[tonumber(containerId)]
+            frame:UnregisterAllEvents()
+            ReleaseContainerChildren(frame)
+            frame:Hide()
+        end
+        return
+    end
+
+    LayoutCustomItemSpellContainer(container)
 end
 
 function BCDM:SetupCustomItemsSpellsBar()
-    LayoutCustomItemsSpellsBar()
+    self:EnsureCustomItemSpellFramework()
+    self:UpdateCustomItemsSpellsBar()
 end
 
 function BCDM:UpdateCustomItemsSpellsBar()
-    local CooldownManagerDB = BCDM.db.profile
-    local CustomDB = CooldownManagerDB.CooldownManager.ItemSpell
-    if BCDM.CustomItemSpellBarContainer then
-        BCDM.CustomItemSpellBarContainer:ClearAllPoints()
-        local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]]
-        BCDM.CustomItemSpellBarContainer:SetPoint(CustomDB.Layout[1], anchorParent, CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
+    local activeContainerIds = {}
+    for _, container in ipairs(self:GetCustomItemSpellContainers()) do
+        activeContainerIds[container.Id] = true
+        LayoutCustomItemSpellContainer(container)
     end
-    LayoutCustomItemsSpellsBar()
-end
-
-function BCDM:AdjustItemsSpellsLayoutIndex(direction, itemId)
-    local CooldownManagerDB = BCDM.db.profile
-    local CustomDB = CooldownManagerDB.CooldownManager.ItemSpell
-    local Items = CustomDB.ItemsSpells
-
-    if not Items then return end
-
-    local currentIndex = Items[itemId].layoutIndex
-    local newIndex = currentIndex + direction
-
-    local totalItems = 0
-
-    for _ in pairs(Items) do totalItems = totalItems + 1 end
-    if newIndex < 1 or newIndex > totalItems then return end
-
-    for _, data in pairs(Items) do
-        if data.layoutIndex == newIndex then
-            data.layoutIndex = currentIndex
-            break
-        end
-    end
-
-    Items[itemId].layoutIndex = newIndex
-    BCDM:NormalizeItemsSpellsLayoutIndices()
-
-    BCDM:UpdateCustomItemsSpellsBar()
-end
-
-function BCDM:NormalizeItemsSpellsLayoutIndices()
-    local CooldownManagerDB = BCDM.db.profile
-    local CustomDB = CooldownManagerDB.CooldownManager.ItemSpell
-    local Items = CustomDB.ItemsSpells
-
-    if not Items then return end
-
-    local ordered = {}
-    for itemId, data in pairs(Items) do
-        ordered[#ordered + 1] = {
-            itemId = itemId,
-            data = data,
-            sortIndex = data.layoutIndex or math.huge,
-        }
-    end
-
-    table.sort(ordered, function(a, b)
-        if a.sortIndex == b.sortIndex then
-            return tostring(a.itemId) < tostring(b.itemId)
-        end
-        return a.sortIndex < b.sortIndex
-    end)
-
-    for index, entry in ipairs(ordered) do
-        entry.data.layoutIndex = index
-    end
-end
-
-function BCDM:AdjustItemsSpellsList(itemId, adjustingHow, entryType)
-    local CooldownManagerDB = BCDM.db.profile
-    local CustomDB = CooldownManagerDB.CooldownManager.ItemSpell
-    local Items = CustomDB.ItemsSpells
-
-    if not Items then
-        Items = {}
-        CustomDB.ItemsSpells = Items
-    end
-
-    if adjustingHow == "add" then
-        local maxIndex = 0
-        for _, data in pairs(Items) do
-            if data.layoutIndex > maxIndex then
-                maxIndex = data.layoutIndex
-            end
-        end
-        local resolvedType = entryType or ResolveItemSpellEntryType(itemId)
-        local playerClass = select(2, UnitClass("player"))
-        local classSpecFilters
-        local filterClass
-        if resolvedType == "spell" then
-            filterClass = playerClass
-            classSpecFilters = BCDM:BuildClassSpecFilters(filterClass)
-        else
-            classSpecFilters = BCDM:BuildClassSpecFilters()
-        end
-        Items[itemId] = {
-            isActive = true,
-            layoutIndex = maxIndex + 1,
-            entryType = resolvedType,
-            classSpecFilters = classSpecFilters,
-            filterClass = filterClass,
-        }
-    elseif adjustingHow == "remove" then
-        Items[itemId] = nil
-    end
-
-    BCDM:NormalizeItemsSpellsLayoutIndices()
-    BCDM:UpdateCustomItemsSpellsBar()
+    HideUnusedContainerFrames(activeContainerIds)
 end

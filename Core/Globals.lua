@@ -225,6 +225,9 @@ function BCDM:Init()
     SetupSlashCommands()
     BCDM:ResolveLSM()
     BCDM:NormalizeCustomSpellSpecTokens()
+    if BCDM.EnsureCustomItemSpellFramework then
+        BCDM:EnsureCustomItemSpellFramework()
+    end
     if not C_AddOns.IsAddOnLoaded("Blizzard_CooldownViewer") then C_AddOns.LoadAddOn("Blizzard_CooldownViewer") end
 end
 
@@ -241,17 +244,24 @@ function BCDM:CopyTable(defaultTable)
     return newTable
 end
 
+function BCDM:ResolveAnchorFrame(anchorKey)
+    if not anchorKey or anchorKey == "NONE" then
+        return UIParent
+    end
+    return _G[anchorKey] or UIParent
+end
+
 function BCDM:UpdateBCDM()
     BCDM:ResolveLSM()
+    if BCDM.EnsureCustomItemSpellFramework then
+        BCDM:EnsureCustomItemSpellFramework()
+    end
     BCDM:UpdateCooldownViewer("Essential")
     BCDM:UpdateCooldownViewer("Utility")
     BCDM:UpdateCooldownViewer("Buffs")
     BCDM:UpdatePowerBar()
     BCDM:UpdateSecondaryPowerBar()
     BCDM:UpdateCastBar()
-    BCDM:UpdateCustomCooldownViewer()
-    BCDM:UpdateAdditionalCustomCooldownViewer()
-    BCDM:UpdateCustomItemBar()
     BCDM:UpdateCustomItemsSpellsBar()
     BCDM:UpdateTrinketBar()
     BCDM:RefreshCustomGlows()
@@ -413,10 +423,8 @@ function BCDM:AdjustSpellLayoutIndex(direction, spellId, customDB, targetClass, 
 
     DefensiveSpells[playerClass][playerSpecialization][spellId].layoutIndex = newIndex
     BCDM:NormalizeSpellLayoutIndices(customDB, playerClass, playerSpecialization)
-    if customDB == "Custom" then
-        BCDM:UpdateCustomCooldownViewer()
-    else
-        BCDM:UpdateAdditionalCustomCooldownViewer()
+    if BCDM.UpdateCustomItemsSpellsBar then
+        BCDM:UpdateCustomItemsSpellsBar()
     end
 end
 
@@ -476,7 +484,9 @@ function BCDM:AdjustSpellList(spellId, adjustingHow, customDB, targetClass, targ
     end
 
     BCDM:NormalizeSpellLayoutIndices(customDB, playerClass, playerSpecialization)
-    BCDM:UpdateAdditionalCustomCooldownViewer()
+    if BCDM.UpdateCustomItemsSpellsBar then
+        BCDM:UpdateCustomItemsSpellsBar()
+    end
 end
 
 
@@ -575,12 +585,8 @@ BCDM.AnchorParents = {
             ["TargetFrame"] = "|cFF00AEF7Blizzard|r: Target Frame",
             ["BCDM_PowerBar"] = "|cFF8080FFBCDM|r: Power Bar",
             ["BCDM_SecondaryPowerBar"] = "|cFF8080FFBCDM|r: Secondary Power Bar",
-            ["BCDM_CustomCooldownViewer"] = "|cFF8080FFBCDM|r: Custom Bar",
-            ["BCDM_AdditionalCustomCooldownViewer"] = "|cFF8080FFBCDM|r: Additional Custom Bar",
-            ["BCDM_CustomItemBar"] = "|cFF8080FFBCDM|r: Item Bar",
-            ["BCDM_CustomItemSpellBar"] = "|cFF8080FFBCDM|r: Items/Spells Bar",
         },
-        { "EssentialCooldownViewer", "UtilityCooldownViewer", "NONE", "PlayerFrame", "TargetFrame", "BCDM_PowerBar", "BCDM_SecondaryPowerBar", "BCDM_CustomCooldownViewer", "BCDM_AdditionalCustomCooldownViewer", "BCDM_CustomItemBar", "BCDM_CustomItemSpellBar" },
+        { "EssentialCooldownViewer", "UtilityCooldownViewer", "NONE", "PlayerFrame", "TargetFrame", "BCDM_PowerBar", "BCDM_SecondaryPowerBar" },
     },
     ["ItemSpell"] = {
         {
@@ -591,12 +597,9 @@ BCDM.AnchorParents = {
             ["TargetFrame"] = "|cFF00AEF7Blizzard|r: Target Frame",
             ["BCDM_PowerBar"] = "|cFF8080FFBCDM|r: Power Bar",
             ["BCDM_SecondaryPowerBar"] = "|cFF8080FFBCDM|r: Secondary Power Bar",
-            ["BCDM_CustomCooldownViewer"] = "|cFF8080FFBCDM|r: Custom Bar",
-            ["BCDM_AdditionalCustomCooldownViewer"] = "|cFF8080FFBCDM|r: Additional Custom Bar",
-            ["BCDM_CustomItemBar"] = "|cFF8080FFBCDM|r: Item Bar",
             ["BCDM_TrinketBar"] = "|cFF8080FFBCDM|r: Trinket Bar",
         },
-        { "EssentialCooldownViewer", "UtilityCooldownViewer", "NONE", "PlayerFrame", "TargetFrame", "BCDM_PowerBar", "BCDM_SecondaryPowerBar", "BCDM_CustomCooldownViewer", "BCDM_AdditionalCustomCooldownViewer", "BCDM_CustomItemBar", "BCDM_TrinketBar" },
+        { "EssentialCooldownViewer", "UtilityCooldownViewer", "NONE", "PlayerFrame", "TargetFrame", "BCDM_PowerBar", "BCDM_SecondaryPowerBar", "BCDM_TrinketBar" },
     },
     ["Power"] = {
         {

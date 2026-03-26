@@ -18,10 +18,9 @@ local function HidePetBattleFrames()
     HideFrameForPetBattle(BCDM.PowerBar)
     HideFrameForPetBattle(BCDM.SecondaryPowerBar)
     HideFrameForPetBattle(BCDM.CastBar)
-    HideFrameForPetBattle(BCDM.AdditionalCustomCooldownViewerContainer)
-    HideFrameForPetBattle(BCDM.CustomCooldownViewerContainer)
-    HideFrameForPetBattle(BCDM.CustomItemBarContainer)
-    HideFrameForPetBattle(BCDM.CustomItemSpellBarContainer)
+    for _, frame in pairs(BCDM.CustomItemSpellContainerFrames or {}) do
+        HideFrameForPetBattle(frame)
+    end
     HideFrameForPetBattle(BCDM.TrinketBarContainer)
 end
 

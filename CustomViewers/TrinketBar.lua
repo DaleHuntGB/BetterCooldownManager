@@ -102,7 +102,7 @@ local function CreateCustomIcon(itemId, slotID)
     end
     local iconWidth, iconHeight = BCDM:GetIconDimensions(CustomDB)
     customIcon:SetSize(iconWidth, iconHeight)
-    local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]]
+    local anchorParent = BCDM:ResolveAnchorFrame(CustomDB.Layout[2])
     customIcon:SetPoint(CustomDB.Layout[1], anchorParent, CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
     customIcon:RegisterEvent("SPELL_UPDATE_COOLDOWN")
     customIcon:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -191,7 +191,7 @@ local function LayoutTrinketBar()
 
     BCDM.TrinketBarContainer:ClearAllPoints()
     BCDM.TrinketBarContainer:SetFrameStrata(CustomDB.FrameStrata or "LOW")
-    local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]]
+    local anchorParent = BCDM:ResolveAnchorFrame(CustomDB.Layout[2])
     BCDM.TrinketBarContainer:SetPoint(containerAnchorFrom, anchorParent, CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
 
     for _, child in ipairs({BCDM.TrinketBarContainer:GetChildren()}) do child:UnregisterAllEvents() child:Hide() child:SetParent(nil) end
@@ -290,7 +290,7 @@ function BCDM:UpdateTrinketBar()
     local isEnabled = CustomDB.Enabled
     if BCDM.TrinketBarContainer and isEnabled then
         BCDM.TrinketBarContainer:ClearAllPoints()
-        local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]]
+        local anchorParent = BCDM:ResolveAnchorFrame(CustomDB.Layout[2])
         BCDM.TrinketBarContainer:SetPoint(CustomDB.Layout[1], anchorParent, CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
         LayoutTrinketBar()
     else

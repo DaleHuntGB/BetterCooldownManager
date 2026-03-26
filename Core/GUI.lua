@@ -271,9 +271,6 @@ local function BuildMainNavigationTree()
         { text = LL("Essential"), value = "Essential" },
         { text = LL("Utility"), value = "Utility" },
         { text = LL("Buffs"), value = "Buffs" },
-        { text = LL("Custom"), value = "Custom" },
-        { text = LL("Additional Custom"), value = "AdditionalCustom" },
-        { text = LL("Item"), value = "Item" },
         { text = LL("Trinkets"), value = "Trinket" },
         { text = LL("Items & Spells"), value = "ItemSpell" },
         { text = LL("Power Bar"), value = "PowerBar" },
@@ -1787,22 +1784,111 @@ local function CreateCooldownViewerItemSettings(parentContainer, containerToRefr
     return parentContainer
 end
 
-local function CreateCooldownViewerItemSpellSettings(parentContainer, containerToRefresh)
-    local ItemSpellDB = BCDM.db.profile.CooldownManager.ItemSpell.ItemsSpells
+local function GetAnchorParentOptions(viewerType, activeContainerId)
+    if viewerType == "ItemSpell" then
+        return BCDM:GetCustomItemSpellAnchorParents(activeContainerId)
+    end
+
+    local displayNames = {}
+    local keyList = {}
+    local source = AnchorParents[viewerType]
+
+    if source then
+        for _, anchorKey in ipairs(source[2] or {}) do
+            keyList[#keyList + 1] = anchorKey
+        end
+        for anchorKey, label in pairs(source[1] or {}) do
+            displayNames[anchorKey] = label
+        end
+    end
+
+    if viewerType == "Trinket" then
+        for _, container in ipairs(BCDM:GetCustomItemSpellContainers()) do
+            local frameName = BCDM:GetCustomItemSpellContainerFrameName(container)
+            if frameName and not displayNames[frameName] then
+                displayNames[frameName] = "|cFF8080FFBCDM|r: " .. BCDM:GetCustomItemSpellContainerDisplayName(container)
+                keyList[#keyList + 1] = frameName
+            end
+        end
+    end
+
+    return displayNames, keyList
+end
+
+local function CreateCustomItemSpellTextSettings(parentContainer, containerDB)
+    local textContainer = AG:Create("InlineGroup")
+    textContainer:SetTitle(LL("Text Settings"))
+    textContainer:SetFullWidth(true)
+    textContainer:SetLayout("Flow")
+    parentContainer:AddChild(textContainer)
+
+    local anchorFromDropdown = AG:Create("Dropdown")
+    anchorFromDropdown:SetLabel(LL("Anchor From"))
+    anchorFromDropdown:SetList(AnchorPoints[1], AnchorPoints[2])
+    anchorFromDropdown:SetValue(containerDB.Text.Layout[1])
+    anchorFromDropdown:SetCallback("OnValueChanged", function(_, _, value) containerDB.Text.Layout[1] = value BCDM:UpdateCooldownViewer("ItemSpell") end)
+    anchorFromDropdown:SetRelativeWidth(0.5)
+    textContainer:AddChild(anchorFromDropdown)
+
+    local anchorToDropdown = AG:Create("Dropdown")
+    anchorToDropdown:SetLabel(LL("Anchor To"))
+    anchorToDropdown:SetList(AnchorPoints[1], AnchorPoints[2])
+    anchorToDropdown:SetValue(containerDB.Text.Layout[2])
+    anchorToDropdown:SetCallback("OnValueChanged", function(_, _, value) containerDB.Text.Layout[2] = value BCDM:UpdateCooldownViewer("ItemSpell") end)
+    anchorToDropdown:SetRelativeWidth(0.5)
+    textContainer:AddChild(anchorToDropdown)
+
+    local xOffsetSlider = AG:Create("Slider")
+    xOffsetSlider:SetLabel(LL("X Offset"))
+    xOffsetSlider:SetValue(containerDB.Text.Layout[3])
+    xOffsetSlider:SetSliderValues(-500, 500, 0.1)
+    xOffsetSlider:SetCallback("OnValueChanged", function(_, _, value) containerDB.Text.Layout[3] = value BCDM:UpdateCooldownViewer("ItemSpell") end)
+    xOffsetSlider:SetRelativeWidth(0.5)
+    textContainer:AddChild(xOffsetSlider)
+
+    local yOffsetSlider = AG:Create("Slider")
+    yOffsetSlider:SetLabel(LL("Y Offset"))
+    yOffsetSlider:SetValue(containerDB.Text.Layout[4])
+    yOffsetSlider:SetSliderValues(-500, 500, 0.1)
+    yOffsetSlider:SetCallback("OnValueChanged", function(_, _, value) containerDB.Text.Layout[4] = value BCDM:UpdateCooldownViewer("ItemSpell") end)
+    yOffsetSlider:SetRelativeWidth(0.5)
+    textContainer:AddChild(yOffsetSlider)
+
+    local fontSizeSlider = AG:Create("Slider")
+    fontSizeSlider:SetLabel(LL("Font Size"))
+    fontSizeSlider:SetValue(containerDB.Text.FontSize)
+    fontSizeSlider:SetSliderValues(6, 72, 1)
+    fontSizeSlider:SetCallback("OnValueChanged", function(_, _, value) containerDB.Text.FontSize = value BCDM:UpdateCooldownViewer("ItemSpell") end)
+    fontSizeSlider:SetRelativeWidth(0.5)
+    textContainer:AddChild(fontSizeSlider)
+
+    local colourPicker = AG:Create("ColorPicker")
+    colourPicker:SetLabel(LL("Font Colour"))
+    local r, g, b = unpack(containerDB.Text.Colour)
+    colourPicker:SetColor(r, g, b)
+    colourPicker:SetCallback("OnValueChanged", function(_, _, nr, ng, nb) containerDB.Text.Colour = {nr, ng, nb} BCDM:UpdateCooldownViewer("ItemSpell") end)
+    colourPicker:SetRelativeWidth(0.5)
+    textContainer:AddChild(colourPicker)
+end
+
+local function CreateCooldownViewerItemSpellSettings(parentContainer, containerToRefresh, containerId)
+    local containerDB = BCDM:GetCustomItemSpellContainer(containerId)
+    if not containerDB then
+        return parentContainer
+    end
+
     local function RefreshItemSpellSettings()
         parentContainer:ReleaseChildren()
-        CreateCooldownViewerItemSpellSettings(parentContainer, containerToRefresh)
+        CreateCooldownViewerItemSpellSettings(parentContainer, containerToRefresh, containerId)
     end
 
     local addSpellEditBox = AG:Create("EditBox")
     addSpellEditBox:SetLabel(LL("Add Spell by ID or Spell Name"))
     addSpellEditBox:SetRelativeWidth(0.33)
     addSpellEditBox:SetCallback("OnEnterPressed", function(self)
-        local input = self:GetText()
-        local spellId = FetchSpellID(input)
+        local spellId = FetchSpellID(self:GetText())
         if spellId then
-            BCDM:AdjustItemsSpellsList(spellId, "add", "spell")
-            BCDM:UpdateCooldownViewer("ItemSpell")
+            BCDM:AdjustCustomItemSpellEntryList(containerId, spellId, "add", "spell")
             RefreshItemSpellSettings()
             self:SetText("")
         end
@@ -1813,11 +1899,9 @@ local function CreateCooldownViewerItemSpellSettings(parentContainer, containerT
     addItemEditBox:SetLabel(LL("Add Item by ID"))
     addItemEditBox:SetRelativeWidth(0.33)
     addItemEditBox:SetCallback("OnEnterPressed", function(self)
-        local input = self:GetText()
-        local itemId = tonumber(input)
+        local itemId = tonumber(self:GetText())
         if itemId then
-            BCDM:AdjustItemsSpellsList(itemId, "add", "item")
-            BCDM:UpdateCooldownViewer("ItemSpell")
+            BCDM:AdjustCustomItemSpellEntryList(containerId, itemId, "add", "item")
             RefreshItemSpellSettings()
             self:SetText("")
         end
@@ -1831,58 +1915,54 @@ local function CreateCooldownViewerItemSpellSettings(parentContainer, containerT
     dataListDropdown:SetCallback("OnValueChanged", function(_, _, value)
         local entryType, entryId = ParseDataDropdownValue(value)
         if entryType and entryId then
-            BCDM:AdjustItemsSpellsList(entryId, "add", entryType)
-            BCDM:UpdateCooldownViewer("ItemSpell")
+            BCDM:AdjustCustomItemSpellEntryList(containerId, entryId, "add", entryType)
             RefreshItemSpellSettings()
         end
     end)
     dataListDropdown:SetRelativeWidth(0.33)
     parentContainer:AddChild(dataListDropdown)
 
-    if ItemSpellDB then
+    for _, entry in ipairs(BCDM:GetSortedCustomItemSpellEntries(containerId)) do
+        local itemCheckbox = AG:Create("CheckBox")
+        itemCheckbox:SetLabel("[" .. entry.layoutIndex .. "] " .. (FetchItemSpellInformation(entry.entryId, entry.entryType) or LL("Unknown")))
+        itemCheckbox:SetValue(entry.isActive)
+        itemCheckbox:SetCallback("OnValueChanged", function(_, _, value)
+            entry.isActive = value
+            BCDM:UpdateCooldownViewer("ItemSpell")
+        end)
+        itemCheckbox:SetCallback("OnEnter", function(widget) ShowItemSpellTooltip(widget.frame, entry.entryId, entry.entryType) end)
+        itemCheckbox:SetCallback("OnLeave", function() GameTooltip:Hide() end)
+        itemCheckbox:SetRelativeWidth(0.5)
+        parentContainer:AddChild(itemCheckbox)
 
-        local sortedItems = {}
+        local moveUpButton = AG:Create("Button")
+        moveUpButton:SetText(LL("Up"))
+        moveUpButton:SetRelativeWidth(0.125)
+        moveUpButton:SetCallback("OnClick", function()
+            BCDM:AdjustCustomItemSpellLayoutIndex(containerId, -1, entry.uid)
+            RefreshItemSpellSettings()
+        end)
+        parentContainer:AddChild(moveUpButton)
 
-        for spellId, data in pairs(ItemSpellDB) do table.insert(sortedItems, {id = spellId, data = data}) end
-        table.sort(sortedItems, function(a, b) return a.data.layoutIndex < b.data.layoutIndex end)
+        local moveDownButton = AG:Create("Button")
+        moveDownButton:SetText(LL("Down"))
+        moveDownButton:SetRelativeWidth(0.125)
+        moveDownButton:SetCallback("OnClick", function()
+            BCDM:AdjustCustomItemSpellLayoutIndex(containerId, 1, entry.uid)
+            RefreshItemSpellSettings()
+        end)
+        parentContainer:AddChild(moveDownButton)
 
-        for _, item in ipairs(sortedItems) do
-            local itemId = item.id
-            local data = item.data
+        local removeItemButton = AG:Create("Button")
+        removeItemButton:SetText(LL("X"))
+        removeItemButton:SetRelativeWidth(0.125)
+        removeItemButton:SetCallback("OnClick", function()
+            BCDM:AdjustCustomItemSpellEntryList(containerId, entry.uid, "remove")
+            RefreshItemSpellSettings()
+        end)
+        parentContainer:AddChild(removeItemButton)
 
-            local itemCheckbox = AG:Create("CheckBox")
-            itemCheckbox:SetLabel("[" .. data.layoutIndex .. "] " .. (FetchItemSpellInformation(itemId, data.entryType) or LL("Unknown")))
-            itemCheckbox:SetValue(data.isActive)
-            itemCheckbox:SetCallback("OnValueChanged", function(_, _, value) ItemSpellDB[itemId].isActive = value BCDM:UpdateCooldownViewer("ItemSpell") end)
-            itemCheckbox:SetCallback("OnEnter", function(widget) ShowItemSpellTooltip(widget.frame, itemId, data.entryType) end)
-            itemCheckbox:SetCallback("OnLeave", function() GameTooltip:Hide() end)
-            itemCheckbox:SetRelativeWidth(0.5)
-            parentContainer:AddChild(itemCheckbox)
-
-            local moveUpButton = AG:Create("Button")
-            moveUpButton:SetText(LL("Up"))
-            moveUpButton:SetRelativeWidth(0.125)
-            moveUpButton:SetCallback("OnClick", function() BCDM:AdjustItemsSpellsLayoutIndex(-1, itemId) RefreshItemSpellSettings() end)
-            parentContainer:AddChild(moveUpButton)
-
-            local moveDownButton = AG:Create("Button")
-            moveDownButton:SetText(LL("Down"))
-            moveDownButton:SetRelativeWidth(0.125)
-            moveDownButton:SetCallback("OnClick", function() BCDM:AdjustItemsSpellsLayoutIndex(1, itemId) RefreshItemSpellSettings() end)
-            parentContainer:AddChild(moveDownButton)
-
-            local removeItemButton = AG:Create("Button")
-            removeItemButton:SetText(LL("X"))
-            removeItemButton:SetRelativeWidth(0.125)
-            removeItemButton:SetCallback("OnClick", function()
-                BCDM:AdjustItemsSpellsList(itemId, "remove")
-                BCDM:UpdateCooldownViewer("ItemSpell")
-                RefreshItemSpellSettings()
-            end)
-            parentContainer:AddChild(removeItemButton)
-
-            AddItemSpellClassSpecFilterEditor(parentContainer, "ItemSpell", "ItemSpell", itemId, data, RefreshItemSpellSettings)
-        end
+        AddItemSpellClassSpecFilterEditor(parentContainer, "ItemSpell:" .. tostring(containerId), "ItemSpell", entry.uid, entry, RefreshItemSpellSettings)
     end
 
     containerToRefresh:DoLayout()
@@ -1891,10 +1971,312 @@ local function CreateCooldownViewerItemSpellSettings(parentContainer, containerT
     return parentContainer
 end
 
+local function CreateCustomItemSpellContainerSettings(parentContainer, containerId, refreshTabs)
+    local containerDB = BCDM:GetCustomItemSpellContainer(containerId)
+    if not containerDB then
+        return
+    end
+
+    BCDMG:AddAnchors("ElvUI", {"Utility", "ItemSpell", "Trinket"}, {
+        ["ElvUF_Player"] = "|cff1784d1ElvUI|r: Player Frame",
+        ["ElvUF_Target"] = "|cff1784d1ElvUI|r: Target Frame",
+    })
+
+    local ScrollFrame = AG:Create("ScrollFrame")
+    ScrollFrame:SetLayout("Flow")
+    ScrollFrame:SetFullWidth(true)
+    ScrollFrame:SetFullHeight(true)
+    parentContainer:AddChild(ScrollFrame)
+
+    local containerGroup = AG:Create("InlineGroup")
+    containerGroup:SetTitle(LL("Container"))
+    containerGroup:SetFullWidth(true)
+    containerGroup:SetLayout("Flow")
+    ScrollFrame:AddChild(containerGroup)
+
+    local nameEditBox = AG:Create("EditBox")
+    nameEditBox:SetLabel(LL("Container Name"))
+    nameEditBox:SetText(BCDM:GetCustomItemSpellContainerDisplayName(containerId))
+    nameEditBox:SetRelativeWidth(0.5)
+    containerGroup:AddChild(nameEditBox)
+
+    local saveNameButton = AG:Create("Button")
+    saveNameButton:SetText(LL("Save"))
+    saveNameButton:SetRelativeWidth(0.2)
+    saveNameButton:SetCallback("OnClick", function()
+        BCDM:RenameCustomItemSpellContainer(containerId, nameEditBox:GetText())
+        if refreshTabs then
+            refreshTabs(containerId)
+        end
+    end)
+    containerGroup:AddChild(saveNameButton)
+
+    local deleteContainerButton = AG:Create("Button")
+    deleteContainerButton:SetText(LL("Delete"))
+    deleteContainerButton:SetRelativeWidth(0.3)
+    deleteContainerButton:SetDisabled(#BCDM:GetCustomItemSpellContainers() <= 1)
+    deleteContainerButton:SetCallback("OnClick", function()
+        local nextContainerId = BCDM:DeleteCustomItemSpellContainer(containerId)
+        if refreshTabs then
+            refreshTabs(nextContainerId)
+        end
+    end)
+    containerGroup:AddChild(deleteContainerButton)
+
+    CreateInformationTag(containerGroup, LL("Use the |cFF8080FF+|r tab to create another container. Each tab represents a live container in the world."))
+
+    local layoutContainer = AG:Create("InlineGroup")
+    layoutContainer:SetTitle(LL("Layout & Positioning"))
+    layoutContainer:SetFullWidth(true)
+    layoutContainer:SetLayout("Flow")
+    ScrollFrame:AddChild(layoutContainer)
+
+    local anchorFromDropdown = AG:Create("Dropdown")
+    anchorFromDropdown:SetLabel(LL("Anchor From"))
+    anchorFromDropdown:SetList(AnchorPoints[1], AnchorPoints[2])
+    anchorFromDropdown:SetValue(containerDB.Layout[1])
+    anchorFromDropdown:SetCallback("OnValueChanged", function(_, _, value) containerDB.Layout[1] = value BCDM:UpdateCooldownViewer("ItemSpell") end)
+    anchorFromDropdown:SetRelativeWidth(0.33)
+    layoutContainer:AddChild(anchorFromDropdown)
+
+    local anchorParentOptions, anchorParentOrder = GetAnchorParentOptions("ItemSpell", containerId)
+    local anchorToParentDropdown = AG:Create("Dropdown")
+    anchorToParentDropdown:SetLabel(LL("Anchor To Parent"))
+    anchorToParentDropdown:SetList(anchorParentOptions, anchorParentOrder)
+    anchorToParentDropdown:SetValue(containerDB.Layout[2])
+    anchorToParentDropdown:SetCallback("OnValueChanged", function(_, _, value) containerDB.Layout[2] = value BCDM:UpdateCooldownViewer("ItemSpell") end)
+    anchorToParentDropdown:SetRelativeWidth(0.33)
+    layoutContainer:AddChild(anchorToParentDropdown)
+
+    local anchorToDropdown = AG:Create("Dropdown")
+    anchorToDropdown:SetLabel(LL("Anchor To"))
+    anchorToDropdown:SetList(AnchorPoints[1], AnchorPoints[2])
+    anchorToDropdown:SetValue(containerDB.Layout[3])
+    anchorToDropdown:SetCallback("OnValueChanged", function(_, _, value) containerDB.Layout[3] = value BCDM:UpdateCooldownViewer("ItemSpell") end)
+    anchorToDropdown:SetRelativeWidth(0.33)
+    layoutContainer:AddChild(anchorToDropdown)
+
+    local growthDirectionDropdown = AG:Create("Dropdown")
+    growthDirectionDropdown:SetLabel(LL("Growth Direction"))
+    growthDirectionDropdown:SetList({["LEFT"] = "Left", ["RIGHT"] = "Right", ["UP"] = "Up", ["DOWN"] = "Down"}, {"UP", "DOWN", "LEFT", "RIGHT"})
+    growthDirectionDropdown:SetValue(containerDB.GrowthDirection)
+    growthDirectionDropdown:SetCallback("OnValueChanged", function(_, _, value) containerDB.GrowthDirection = value BCDM:UpdateCooldownViewer("ItemSpell") end)
+    growthDirectionDropdown:SetRelativeWidth(0.3333)
+    layoutContainer:AddChild(growthDirectionDropdown)
+
+    local spacingSlider = AG:Create("Slider")
+    spacingSlider:SetLabel(LL("Icon Spacing"))
+    spacingSlider:SetValue(containerDB.Spacing)
+    spacingSlider:SetSliderValues(-1, 32, 0.1)
+    spacingSlider:SetCallback("OnValueChanged", function(_, _, value) containerDB.Spacing = value BCDM:UpdateCooldownViewer("ItemSpell") end)
+    spacingSlider:SetRelativeWidth(0.3333)
+    layoutContainer:AddChild(spacingSlider)
+
+    local columnsSlider = AG:Create("Slider")
+    columnsSlider:SetLabel(LL("Wrap After"))
+    columnsSlider:SetValue(containerDB.Columns or 0)
+    columnsSlider:SetSliderValues(0, 24, 1)
+    columnsSlider:SetCallback("OnValueChanged", function(_, _, value)
+        containerDB.Columns = math.max(0, math.floor(value or 0))
+        BCDM:UpdateCooldownViewer("ItemSpell")
+    end)
+    columnsSlider:SetRelativeWidth(0.3333)
+    layoutContainer:AddChild(columnsSlider)
+
+    local xOffsetSlider = AG:Create("Slider")
+    xOffsetSlider:SetLabel(LL("X Offset"))
+    xOffsetSlider:SetValue(containerDB.Layout[4])
+    xOffsetSlider:SetSliderValues(-3000, 3000, 0.1)
+    xOffsetSlider:SetCallback("OnValueChanged", function(_, _, value) containerDB.Layout[4] = value BCDM:UpdateCooldownViewer("ItemSpell") end)
+    xOffsetSlider:SetRelativeWidth(0.33)
+    layoutContainer:AddChild(xOffsetSlider)
+
+    local yOffsetSlider = AG:Create("Slider")
+    yOffsetSlider:SetLabel(LL("Y Offset"))
+    yOffsetSlider:SetValue(containerDB.Layout[5])
+    yOffsetSlider:SetSliderValues(-3000, 3000, 0.1)
+    yOffsetSlider:SetCallback("OnValueChanged", function(_, _, value) containerDB.Layout[5] = value BCDM:UpdateCooldownViewer("ItemSpell") end)
+    yOffsetSlider:SetRelativeWidth(0.33)
+    layoutContainer:AddChild(yOffsetSlider)
+
+    local frameStrataDropdown = AG:Create("Dropdown")
+    frameStrataDropdown:SetLabel(LL("Frame Strata"))
+    frameStrataDropdown:SetList(
+        {["BACKGROUND"] = "Background", ["LOW"] = "Low", ["MEDIUM"] = "Medium", ["HIGH"] = "High", ["DIALOG"] = "Dialog", ["FULLSCREEN"] = "Fullscreen", ["FULLSCREEN_DIALOG"] = "Fullscreen Dialog", ["TOOLTIP"] = "Tooltip"},
+        {"BACKGROUND", "LOW", "MEDIUM", "HIGH", "DIALOG", "FULLSCREEN", "FULLSCREEN_DIALOG", "TOOLTIP"}
+    )
+    frameStrataDropdown:SetValue(containerDB.FrameStrata)
+    frameStrataDropdown:SetCallback("OnValueChanged", function(_, _, value) containerDB.FrameStrata = value BCDM:UpdateCooldownViewer("ItemSpell") end)
+    frameStrataDropdown:SetRelativeWidth(0.33)
+    layoutContainer:AddChild(frameStrataDropdown)
+
+    local iconContainer = AG:Create("InlineGroup")
+    iconContainer:SetTitle(LL("Icon Settings"))
+    iconContainer:SetFullWidth(true)
+    iconContainer:SetLayout("Flow")
+    ScrollFrame:AddChild(iconContainer)
+
+    local keepAspectCheckbox = AG:Create("CheckBox")
+    keepAspectCheckbox:SetLabel(LL("Keep Aspect Ratio"))
+    keepAspectCheckbox:SetValue(containerDB.KeepAspectRatio ~= false)
+    keepAspectCheckbox:SetRelativeWidth(0.3333)
+    iconContainer:AddChild(keepAspectCheckbox)
+
+    local hideZeroChargesCheckbox = AG:Create("CheckBox")
+    hideZeroChargesCheckbox:SetLabel(LL("Hide Items with Zero Charges/Uses"))
+    hideZeroChargesCheckbox:SetValue(containerDB.HideZeroCharges)
+    hideZeroChargesCheckbox:SetCallback("OnValueChanged", function(_, _, value)
+        containerDB.HideZeroCharges = value
+        BCDM:UpdateCooldownViewer("ItemSpell")
+    end)
+    hideZeroChargesCheckbox:SetRelativeWidth(0.3333)
+    iconContainer:AddChild(hideZeroChargesCheckbox)
+
+    local showItemQualityCheckbox = AG:Create("CheckBox")
+    showItemQualityCheckbox:SetLabel(LL("Show Item Quality"))
+    showItemQualityCheckbox:SetValue(containerDB.ShowItemQualityBorder ~= false)
+    showItemQualityCheckbox:SetCallback("OnValueChanged", function(_, _, value)
+        containerDB.ShowItemQualityBorder = value
+        BCDM:UpdateCooldownViewer("ItemSpell")
+    end)
+    showItemQualityCheckbox:SetRelativeWidth(0.3333)
+    iconContainer:AddChild(showItemQualityCheckbox)
+
+    local iconSizeSlider = AG:Create("Slider")
+    iconSizeSlider:SetLabel(LL("Icon Size"))
+    iconSizeSlider:SetValue(containerDB.IconSize)
+    iconSizeSlider:SetSliderValues(16, 128, 0.1)
+    iconSizeSlider:SetCallback("OnValueChanged", function(_, _, value)
+        containerDB.IconSize = value
+        BCDM:UpdateCooldownViewer("ItemSpell")
+    end)
+    iconSizeSlider:SetRelativeWidth(0.3333)
+    iconContainer:AddChild(iconSizeSlider)
+
+    local iconWidthSlider = AG:Create("Slider")
+    iconWidthSlider:SetLabel(LL("Icon Width"))
+    iconWidthSlider:SetValue(containerDB.IconWidth or containerDB.IconSize)
+    iconWidthSlider:SetSliderValues(16, 128, 0.1)
+    iconWidthSlider:SetCallback("OnValueChanged", function(_, _, value)
+        containerDB.IconWidth = value
+        BCDM:UpdateCooldownViewer("ItemSpell")
+    end)
+    iconWidthSlider:SetRelativeWidth(0.3333)
+    iconContainer:AddChild(iconWidthSlider)
+
+    local iconHeightSlider = AG:Create("Slider")
+    iconHeightSlider:SetLabel(LL("Icon Height"))
+    iconHeightSlider:SetValue(containerDB.IconHeight or containerDB.IconSize)
+    iconHeightSlider:SetSliderValues(16, 128, 0.1)
+    iconHeightSlider:SetCallback("OnValueChanged", function(_, _, value)
+        containerDB.IconHeight = value
+        BCDM:UpdateCooldownViewer("ItemSpell")
+    end)
+    iconHeightSlider:SetRelativeWidth(0.3333)
+    iconContainer:AddChild(iconHeightSlider)
+
+    local function UpdateIconSizeControlState()
+        local keepAspect = containerDB.KeepAspectRatio ~= false
+        DeepDisable(iconSizeSlider, not keepAspect)
+        DeepDisable(iconWidthSlider, keepAspect)
+        DeepDisable(iconHeightSlider, keepAspect)
+    end
+
+    keepAspectCheckbox:SetCallback("OnValueChanged", function(_, _, value)
+        containerDB.KeepAspectRatio = value
+        local fallbackSize = containerDB.IconSize or containerDB.IconWidth or containerDB.IconHeight or 32
+        if value then
+            containerDB.IconSize = containerDB.IconWidth or containerDB.IconHeight or fallbackSize
+        else
+            containerDB.IconWidth = containerDB.IconWidth or fallbackSize
+            containerDB.IconHeight = containerDB.IconHeight or fallbackSize
+        end
+        UpdateIconSizeControlState()
+        BCDM:UpdateCooldownViewer("ItemSpell")
+    end)
+
+    UpdateIconSizeControlState()
+
+    CreateCustomItemSpellTextSettings(ScrollFrame, containerDB)
+
+    local itemSpellContainer = AG:Create("InlineGroup")
+    itemSpellContainer:SetTitle(LL("Items & Spells"))
+    itemSpellContainer:SetFullWidth(true)
+    itemSpellContainer:SetLayout("Flow")
+    ScrollFrame:AddChild(itemSpellContainer)
+    CreateInformationTag(itemSpellContainer, LL("|cFFFFCC00Spells|r can be added by their |cFF8080FFSpell Name|r or |cFF8080FFSpell ID|r, |cFFFFCC00Items|r must be added by their |cFF8080FFItem ID|r."))
+    CreateInformationTag(itemSpellContainer, LL("Tracking |cFF8080FFmultiple ranks|r of the same item is supported & will display the item with the highest rank."))
+    CreateCooldownViewerItemSpellSettings(itemSpellContainer, ScrollFrame, containerId)
+
+    ScrollFrame:DoLayout()
+    parentContainer:DoLayout()
+end
+
+local function BuildCustomItemSpellContainerTabs()
+    local tabs = {}
+    for _, container in ipairs(BCDM:GetCustomItemSpellContainers()) do
+        tabs[#tabs + 1] = {
+            text = BCDM:GetCustomItemSpellContainerDisplayName(container),
+            value = tostring(container.Id),
+        }
+    end
+    tabs[#tabs + 1] = { text = "+", value = "__add__" }
+    return tabs
+end
+
+local function CreateCustomItemSpellFrameworkSettings(parentContainer)
+    local containerTabs = AG:Create("TabGroup")
+    containerTabs:SetLayout("Fill")
+    containerTabs:SetFullWidth(true)
+    containerTabs:SetFullHeight(true)
+    BCDMGUI.ItemSpellContainerTabs = BCDMGUI.ItemSpellContainerTabs or {}
+    containerTabs:SetStatusTable(BCDMGUI.ItemSpellContainerTabs)
+    parentContainer:AddChild(containerTabs)
+
+    local function RefreshTabs(selectedContainerId)
+        containerTabs:SetTabs(BuildCustomItemSpellContainerTabs())
+        local fallbackId = selectedContainerId or BCDM:GetSelectedCustomItemSpellContainerId()
+        if fallbackId then
+            containerTabs:SelectTab(tostring(fallbackId))
+        end
+    end
+
+    containerTabs:SetCallback("OnGroupSelected", function(widget, _, selectedTab)
+        if selectedTab == "__add__" then
+            local newContainerId = BCDM:AddCustomItemSpellContainer()
+            RefreshTabs(newContainerId)
+            return
+        end
+
+        local containerId = tonumber(selectedTab)
+        if not containerId then
+            return
+        end
+
+        BCDM:SetSelectedCustomItemSpellContainerId(containerId)
+        widget:ReleaseChildren()
+
+        local wrapper = AG:Create("SimpleGroup")
+        wrapper:SetFullWidth(true)
+        wrapper:SetFullHeight(true)
+        wrapper:SetLayout("Fill")
+        widget:AddChild(wrapper)
+
+        CreateCustomItemSpellContainerSettings(wrapper, containerId, RefreshTabs)
+    end)
+
+    RefreshTabs(BCDM:GetSelectedCustomItemSpellContainerId())
+end
+
 local function CreateCooldownViewerSettings(parentContainer, viewerType)
-    local hasAnchorParent = viewerType == "Utility" or viewerType == "Buffs" or viewerType == "Custom" or viewerType == "AdditionalCustom" or viewerType == "Item" or viewerType == "Trinket" or viewerType == "ItemSpell"
-    local isCustomViewer = viewerType == "Custom" or viewerType == "AdditionalCustom" or viewerType == "Item" or viewerType == "Trinket" or viewerType == "ItemSpell"
-    local supportsColumnWrap = viewerType == "Custom" or viewerType == "AdditionalCustom" or viewerType == "Item" or viewerType == "ItemSpell"
+    if viewerType == "ItemSpell" then
+        CreateCustomItemSpellFrameworkSettings(parentContainer)
+        return parentContainer
+    end
+
+    local hasAnchorParent = viewerType == "Utility" or viewerType == "Buffs" or viewerType == "Trinket"
+    local isCustomViewer = viewerType == "Trinket"
+    local supportsColumnWrap = false
 
     local ScrollFrame = AG:Create("ScrollFrame")
     ScrollFrame:SetLayout("Flow")
@@ -1974,7 +2356,7 @@ local function CreateCooldownViewerSettings(parentContainer, viewerType)
     layoutContainer:SetLayout("Flow")
     ScrollFrame:AddChild(layoutContainer)
 
-    if viewerType ~= "Custom" and viewerType ~= "AdditionalCustom" and viewerType ~= "Trinket" and viewerType ~= "ItemSpell" and viewerType ~= "Item" then
+    if viewerType ~= "Trinket" then
         CreateInformationTag(layoutContainer, LL("|cFFFFCC00Padding|r is handled by |cFF00B0F7Blizzard|r, not |cFF8080FFBetter|rCooldownManager."))
     end
 
@@ -1987,10 +2369,11 @@ local function CreateCooldownViewerSettings(parentContainer, viewerType)
     layoutContainer:AddChild(anchorFromDropdown)
 
     if hasAnchorParent then
-        BCDMG:AddAnchors("ElvUI", {"Utility", "Custom", "AdditionalCustom", "Item", "ItemSpell", "Trinket"}, { ["ElvUF_Player"] = "|cff1784d1ElvUI|r: Player Frame", ["ElvUF_Target"] = "|cff1784d1ElvUI|r: Target Frame", })
+        BCDMG:AddAnchors("ElvUI", {"Utility", "ItemSpell", "Trinket"}, { ["ElvUF_Player"] = "|cff1784d1ElvUI|r: Player Frame", ["ElvUF_Target"] = "|cff1784d1ElvUI|r: Target Frame", })
+        local anchorParentOptions, anchorParentOrder = GetAnchorParentOptions(viewerType)
         local anchorToParentDropdown = AG:Create("Dropdown")
         anchorToParentDropdown:SetLabel(LL("Anchor To Parent"))
-        anchorToParentDropdown:SetList(AnchorParents[viewerType][1], AnchorParents[viewerType][2])
+        anchorToParentDropdown:SetList(anchorParentOptions, anchorParentOrder)
         anchorToParentDropdown:SetValue(BCDM.db.profile.CooldownManager[viewerType].Layout[2])
         anchorToParentDropdown:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.CooldownManager[viewerType].Layout[2] = value BCDM:UpdateCooldownViewer(viewerType) end)
         anchorToParentDropdown:SetRelativeWidth(0.33)
@@ -2062,7 +2445,7 @@ local function CreateCooldownViewerSettings(parentContainer, viewerType)
     iconContainer:SetLayout("Flow")
     ScrollFrame:AddChild(iconContainer)
 
-    local isItemViewer = viewerType == "Item" or viewerType == "ItemSpell"
+    local isItemViewer = false
 
     local keepAspectCheckbox = AG:Create("CheckBox")
     keepAspectCheckbox:SetLabel(LL("Keep Aspect Ratio"))
@@ -2172,36 +2555,6 @@ local function CreateCooldownViewerSettings(parentContainer, viewerType)
 
     if viewerType ~= "Trinket" then
         CreateCooldownViewerTextSettings(ScrollFrame, viewerType)
-    end
-
-    if viewerType == "Custom" or viewerType == "AdditionalCustom" then
-        local spellContainer = AG:Create("InlineGroup")
-        spellContainer:SetTitle(LL("Custom Spells"))
-        spellContainer:SetFullWidth(true)
-        spellContainer:SetLayout("Flow")
-        ScrollFrame:AddChild(spellContainer)
-        CreateCooldownViewerSpellSettings(spellContainer, viewerType, ScrollFrame)
-    end
-
-    if viewerType == "Item" then
-        local itemContainer = AG:Create("InlineGroup")
-        itemContainer:SetTitle(LL("Custom Items"))
-        itemContainer:SetFullWidth(true)
-        itemContainer:SetLayout("Flow")
-        ScrollFrame:AddChild(itemContainer)
-        CreateInformationTag(itemContainer, LL("Tracking |cFF8080FFmultiple ranks|r of the same item is supported & will display the item with the highest rank."));
-        CreateCooldownViewerItemSettings(itemContainer, ScrollFrame)
-    end
-
-    if viewerType == "ItemSpell" then
-        local itemSpellContainer = AG:Create("InlineGroup")
-        itemSpellContainer:SetTitle(LL("Items & Spells"))
-        itemSpellContainer:SetFullWidth(true)
-        itemSpellContainer:SetLayout("Flow")
-        ScrollFrame:AddChild(itemSpellContainer)
-        CreateInformationTag(itemSpellContainer, LL("|cFFFFCC00Spells|r can be added by their |cFF8080FFSpell Name|r or |cFF8080FFSpell ID|r, |cFFFFCC00Items|r must be added by their |cFF8080FFItem ID|r."))
-        CreateInformationTag(itemSpellContainer, LL("Tracking |cFF8080FFmultiple ranks|r of the same item is supported & will display the item with the highest rank."));
-        CreateCooldownViewerItemSpellSettings(itemSpellContainer, ScrollFrame)
     end
 
     ScrollFrame:DoLayout()
@@ -3354,12 +3707,6 @@ function BCDM:CreateGUI()
             CreateCooldownViewerSettings(Wrapper, "Utility")
         elseif MainTab == "Buffs" then
             CreateCooldownViewerSettings(Wrapper, "Buffs")
-        elseif MainTab == "Custom" then
-            CreateCooldownViewerSettings(Wrapper, "Custom")
-        elseif MainTab == "AdditionalCustom" then
-            CreateCooldownViewerSettings(Wrapper, "AdditionalCustom")
-        elseif MainTab == "Item" then
-            CreateCooldownViewerSettings(Wrapper, "Item")
         elseif MainTab == "Trinket" then
             CreateCooldownViewerSettings(Wrapper, "Trinket")
         elseif MainTab == "ItemSpell" then
