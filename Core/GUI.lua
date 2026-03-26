@@ -570,7 +570,7 @@ local function AddItemSpellClassSpecFilterEditor(parentContainer, viewerKey, vie
     local classEntries, validValues = BuildClassSpecFilterMenuData(scopeClassToken)
 
     local loadButton = AG:Create("Button")
-    loadButton:SetText(IsLoadConditionEditorExpanded(viewerKey, entryId) and LL("Hide") or LL("Load"))
+    loadButton:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Menu.png:18:18:0:-1|t")
     loadButton:SetRelativeWidth(0.125)
     loadButton:SetCallback("OnClick", function()
         ToggleLoadConditionEditor(viewerKey, entryId)
@@ -1658,7 +1658,7 @@ local function CreateCooldownViewerSpellSettings(parentContainer, customDB, cont
             parentContainer:AddChild(spellCheckbox)
 
             local moveUpButton = AG:Create("Button")
-            moveUpButton:SetText(LL("Up"))
+            moveUpButton:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Up_Arrow.png:18:18:0:-1|t")
             moveUpButton:SetRelativeWidth(0.1333)
             moveUpButton:SetCallback("OnClick", function()
                 BCDM:AdjustSpellLayoutIndex(-1, spellId, customDB, selectedClass, selectedSpec)
@@ -1668,7 +1668,7 @@ local function CreateCooldownViewerSpellSettings(parentContainer, customDB, cont
             parentContainer:AddChild(moveUpButton)
 
             local moveDownButton = AG:Create("Button")
-            moveDownButton:SetText(LL("Down"))
+            moveDownButton:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Down_Arrow.png:18:18:0:-1|t")
             moveDownButton:SetRelativeWidth(0.1333)
             moveDownButton:SetCallback("OnClick", function()
                 BCDM:AdjustSpellLayoutIndex(1, spellId, customDB, selectedClass, selectedSpec)
@@ -1678,7 +1678,7 @@ local function CreateCooldownViewerSpellSettings(parentContainer, customDB, cont
             parentContainer:AddChild(moveDownButton)
 
             local removeSpellButton = AG:Create("Button")
-            removeSpellButton:SetText(LL("X"))
+            removeSpellButton:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Delete.png:18:18:0:-1|t")
             removeSpellButton:SetRelativeWidth(0.1333)
             removeSpellButton:SetCallback("OnClick", function()
                 BCDM:AdjustSpellList(spellId, "remove", customDB, selectedClass, selectedSpec)
@@ -1753,19 +1753,19 @@ local function CreateCooldownViewerItemSettings(parentContainer, containerToRefr
             parentContainer:AddChild(itemCheckbox)
 
             local moveUpButton = AG:Create("Button")
-            moveUpButton:SetText(LL("Up"))
+            moveUpButton:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Up_Arrow.png:18:18:0:-1|t")
             moveUpButton:SetRelativeWidth(0.125)
             moveUpButton:SetCallback("OnClick", function() BCDM:AdjustItemLayoutIndex(-1, itemId) RefreshItemSettings() end)
             parentContainer:AddChild(moveUpButton)
 
             local moveDownButton = AG:Create("Button")
-            moveDownButton:SetText(LL("Down"))
+            moveDownButton:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Down_Arrow.png:18:18:0:-1|t")
             moveDownButton:SetRelativeWidth(0.125)
             moveDownButton:SetCallback("OnClick", function() BCDM:AdjustItemLayoutIndex(1, itemId) RefreshItemSettings() end)
             parentContainer:AddChild(moveDownButton)
 
             local removeItemButton = AG:Create("Button")
-            removeItemButton:SetText(LL("X"))
+            removeItemButton:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Delete.png:18:18:0:-1|t")
             removeItemButton:SetRelativeWidth(0.125)
             removeItemButton:SetCallback("OnClick", function()
                 BCDM:AdjustItemList(itemId, "remove")
@@ -1936,7 +1936,7 @@ local function CreateCooldownViewerItemSpellSettings(parentContainer, containerT
         parentContainer:AddChild(itemCheckbox)
 
         local moveUpButton = AG:Create("Button")
-        moveUpButton:SetText(LL("Up"))
+        moveUpButton:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Up_Arrow.png:18:18:0:-1|t")
         moveUpButton:SetRelativeWidth(0.125)
         moveUpButton:SetCallback("OnClick", function()
             BCDM:AdjustCustomItemSpellLayoutIndex(containerId, -1, entry.uid)
@@ -1945,7 +1945,7 @@ local function CreateCooldownViewerItemSpellSettings(parentContainer, containerT
         parentContainer:AddChild(moveUpButton)
 
         local moveDownButton = AG:Create("Button")
-        moveDownButton:SetText(LL("Down"))
+        moveDownButton:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Down_Arrow.png:18:18:0:-1|t")
         moveDownButton:SetRelativeWidth(0.125)
         moveDownButton:SetCallback("OnClick", function()
             BCDM:AdjustCustomItemSpellLayoutIndex(containerId, 1, entry.uid)
@@ -1954,7 +1954,7 @@ local function CreateCooldownViewerItemSpellSettings(parentContainer, containerT
         parentContainer:AddChild(moveDownButton)
 
         local removeItemButton = AG:Create("Button")
-        removeItemButton:SetText(LL("X"))
+        removeItemButton:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Delete.png:18:18:0:-1|t")
         removeItemButton:SetRelativeWidth(0.125)
         removeItemButton:SetCallback("OnClick", function()
             BCDM:AdjustCustomItemSpellEntryList(containerId, entry.uid, "remove")
@@ -1997,12 +1997,12 @@ local function CreateCustomItemSpellContainerSettings(parentContainer, container
     local nameEditBox = AG:Create("EditBox")
     nameEditBox:SetLabel(LL("Container Name"))
     nameEditBox:SetText(BCDM:GetCustomItemSpellContainerDisplayName(containerId))
-    nameEditBox:SetRelativeWidth(0.5)
+    nameEditBox:SetRelativeWidth(0.7)
     containerGroup:AddChild(nameEditBox)
 
     local saveNameButton = AG:Create("Button")
     saveNameButton:SetText(LL("Save"))
-    saveNameButton:SetRelativeWidth(0.2)
+    saveNameButton:SetRelativeWidth(0.15)
     saveNameButton:SetCallback("OnClick", function()
         BCDM:RenameCustomItemSpellContainer(containerId, nameEditBox:GetText())
         if refreshTabs then
@@ -2013,7 +2013,7 @@ local function CreateCustomItemSpellContainerSettings(parentContainer, container
 
     local deleteContainerButton = AG:Create("Button")
     deleteContainerButton:SetText(LL("Delete"))
-    deleteContainerButton:SetRelativeWidth(0.3)
+    deleteContainerButton:SetRelativeWidth(0.15)
     deleteContainerButton:SetDisabled(#BCDM:GetCustomItemSpellContainers() <= 1)
     deleteContainerButton:SetCallback("OnClick", function()
         local nextContainerId = BCDM:DeleteCustomItemSpellContainer(containerId)
