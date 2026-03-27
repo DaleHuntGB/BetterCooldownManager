@@ -1,5 +1,6 @@
 <Ui xmlns="http://www.blizzard.com/wow/ui/" xmlGUIS:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/ ..\FrameXML\UI.xsd">
 	<Script file="CastBar.lua"/>
+	<Script file="CooldownButtonHighlight.lua"/>
 	<Script file="CooldownManager.lua"/>
 	<Script file="CustomGlows.lua"/>
 	<Script file="DisableAuraOverlay.lua"/>

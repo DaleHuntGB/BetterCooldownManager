@@ -1252,6 +1252,7 @@ end
 local function CreateGlobalSettings(parentContainer)
     local GeneralDB = BCDM.db.profile.General
     local CooldownManagerDB = BCDM.db.profile.CooldownManager
+    local CooldownButtonHighlightDB = BCDM.db.global.CooldownButtonHighlight
 
     local ScrollFrame = AG:Create("ScrollFrame")
     ScrollFrame:SetLayout("Flow")
@@ -1298,6 +1299,75 @@ local function CreateGlobalSettings(parentContainer)
     disableChatPrintsCheckbox:SetCallback("OnValueChanged", function(_, _, value) BCDM.db.global.DisplayLoginMessage = value end)
     disableChatPrintsCheckbox:SetRelativeWidth(0.33)
     globalSettingsContainer:AddChild(disableChatPrintsCheckbox)
+
+    local cooldownButtonHighlightContainer = AG:Create("InlineGroup")
+    cooldownButtonHighlightContainer:SetTitle(LL("Cooldown Button Highlight"))
+    cooldownButtonHighlightContainer:SetFullWidth(true)
+    cooldownButtonHighlightContainer:SetLayout("Flow")
+    globalSettingsContainer:AddChild(cooldownButtonHighlightContainer)
+
+    CreateInformationTag(cooldownButtonHighlightContainer, LL("Highlights the matching Cooldown Manager icon while the corresponding action button is pressed."))
+
+    local enableCooldownButtonHighlightCheckbox = AG:Create("CheckBox")
+    enableCooldownButtonHighlightCheckbox:SetLabel(LL("Enable Highlight"))
+    enableCooldownButtonHighlightCheckbox:SetValue(CooldownButtonHighlightDB.Enabled)
+    enableCooldownButtonHighlightCheckbox:SetRelativeWidth(0.25)
+    cooldownButtonHighlightContainer:AddChild(enableCooldownButtonHighlightCheckbox)
+
+    local highlightStyleDropdown = AG:Create("Dropdown")
+    highlightStyleDropdown:SetLabel(LL("Style"))
+    highlightStyleDropdown:SetList({
+        ["Blizzard"] = LL("Blizzard"),
+        ["Flat"] = LL("Flat"),
+        ["Border"] = LL("Border"),
+    }, { "Blizzard", "Flat", "Border" })
+    highlightStyleDropdown:SetValue(CooldownButtonHighlightDB.Style)
+    highlightStyleDropdown:SetRelativeWidth(0.25)
+    cooldownButtonHighlightContainer:AddChild(highlightStyleDropdown)
+
+    local highlightColourPicker = AG:Create("ColorPicker")
+    highlightColourPicker:SetLabel(LL("Colour"))
+    highlightColourPicker:SetColor(unpack(CooldownButtonHighlightDB.Colour))
+    highlightColourPicker:SetRelativeWidth(0.25)
+    cooldownButtonHighlightContainer:AddChild(highlightColourPicker)
+
+    local highlightOpacitySlider = AG:Create("Slider")
+    highlightOpacitySlider:SetLabel(LL("Opacity"))
+    highlightOpacitySlider:SetValue(CooldownButtonHighlightDB.Opacity)
+    highlightOpacitySlider:SetSliderValues(0, 1, 0.01)
+    highlightOpacitySlider:SetIsPercent(true)
+    highlightOpacitySlider:SetRelativeWidth(0.25)
+    cooldownButtonHighlightContainer:AddChild(highlightOpacitySlider)
+
+    local function RefreshCooldownButtonHighlightSettings()
+        local isEnabled = CooldownButtonHighlightDB.Enabled
+        highlightStyleDropdown:SetDisabled(not isEnabled)
+        highlightColourPicker:SetDisabled(not isEnabled)
+        highlightOpacitySlider:SetDisabled(not isEnabled)
+    end
+
+    enableCooldownButtonHighlightCheckbox:SetCallback("OnValueChanged", function(_, _, value)
+        CooldownButtonHighlightDB.Enabled = value
+        RefreshCooldownButtonHighlightSettings()
+        BCDM:UpdateCooldownButtonHighlight()
+    end)
+
+    highlightStyleDropdown:SetCallback("OnValueChanged", function(_, _, value)
+        CooldownButtonHighlightDB.Style = value
+        BCDM:UpdateCooldownButtonHighlight()
+    end)
+
+    highlightColourPicker:SetCallback("OnValueChanged", function(_, _, r, g, b)
+        CooldownButtonHighlightDB.Colour = {r, g, b}
+        BCDM:UpdateCooldownButtonHighlight()
+    end)
+
+    highlightOpacitySlider:SetCallback("OnValueChanged", function(_, _, value)
+        CooldownButtonHighlightDB.Opacity = value
+        BCDM:UpdateCooldownButtonHighlight()
+    end)
+
+    RefreshCooldownButtonHighlightSettings()
 
     local iconZoomSlider = AG:Create("Slider")
     iconZoomSlider:SetLabel(LL("Icon Zoom"))

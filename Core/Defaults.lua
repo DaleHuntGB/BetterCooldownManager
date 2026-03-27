@@ -5,6 +5,12 @@ local Defaults = {
         UseGlobalProfile = false,
         GlobalProfileName = "Default",
         DisplayLoginMessage = true,
+        CooldownButtonHighlight = {
+            Enabled = false,
+            Style = "Blizzard",
+            Opacity = 0.35,
+            Colour = {1, 1, 1},
+        },
         EditModeManager = {
             SwapOnInstanceDifficulty = false,
             RaidLayouts = {

@@ -264,6 +264,9 @@ function BCDM:UpdateBCDM()
     BCDM:UpdateCastBar()
     BCDM:UpdateCustomItemsSpellsBar()
     BCDM:UpdateTrinketBar()
+    if BCDM.UpdateCooldownButtonHighlight then
+        BCDM:UpdateCooldownButtonHighlight()
+    end
     BCDM:RefreshCustomGlows()
     BCDM:DisableAuraOverlay()
 end

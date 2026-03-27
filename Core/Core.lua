@@ -16,6 +16,7 @@ end
 function BetterCooldownManager:OnEnable()
     BCDM:CheckAddOns()
     BCDM:Init()
+    BCDM:SetupCooldownButtonHighlight()
     BCDM:SetupEventManager()
     BCDM:SkinCooldownManager()
     BCDM:DisableAuraOverlay()
