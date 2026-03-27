@@ -303,6 +303,7 @@ end
 
 function BCDM:UpdateCooldownViewer(viewerType)
     if viewerType == "ItemSpell" then BCDM:UpdateCustomItemsSpellsBar() return end
+    if viewerType == "CustomTimer" then BCDM:UpdateCustomTimerViewer() return end
     local cooldownManagerSettings = BCDM.db.profile.CooldownManager
     local cooldownViewerFrame = _G[BCDM.DBViewerToCooldownManagerViewer[viewerType]]
     local viewerSettings = cooldownManagerSettings[viewerType]
@@ -348,6 +349,7 @@ function BCDM:UpdateCooldownViewers()
     BCDM:UpdateCooldownViewer("Utility")
     BCDM:UpdateCooldownViewer("Buffs")
     BCDM:UpdateCustomItemsSpellsBar()
+    BCDM:UpdateCustomTimerViewer()
     BCDM:UpdateTrinketBar()
     BCDM:UpdatePowerBar()
     BCDM:UpdateSecondaryPowerBar()

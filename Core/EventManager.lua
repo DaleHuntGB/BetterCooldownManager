@@ -21,6 +21,7 @@ local function HidePetBattleFrames()
     for _, frame in pairs(BCDM.CustomItemSpellContainerFrames or {}) do
         HideFrameForPetBattle(frame)
     end
+    HideFrameForPetBattle(BCDM.CustomTimerContainer)
     HideFrameForPetBattle(BCDM.TrinketBarContainer)
 end
 

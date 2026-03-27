@@ -273,6 +273,7 @@ local function BuildMainNavigationTree()
         { text = LL("Buffs"), value = "Buffs" },
         { text = LL("Trinkets"), value = "Trinket" },
         { text = LL("Items & Spells"), value = "ItemSpell" },
+        { text = LL("Custom Timers"), value = "CustomTimer" },
         { text = LL("Power Bar"), value = "PowerBar" },
         { text = LL("Secondary Power Bar"), value = "SecondaryPowerBar" },
         { text = LL("Cast Bar"), value = "CastBar" },
@@ -1872,7 +1873,7 @@ local function GetAnchorParentOptions(viewerType, activeContainerId)
         end
     end
 
-    if viewerType == "Trinket" then
+    if viewerType == "Trinket" or viewerType == "CustomTimer" then
         for _, container in ipairs(BCDM:GetCustomItemSpellContainers()) do
             local frameName = BCDM:GetCustomItemSpellContainerFrameName(container)
             if frameName and not displayNames[frameName] then
@@ -1883,6 +1884,27 @@ local function GetAnchorParentOptions(viewerType, activeContainerId)
     end
 
     return displayNames, keyList
+end
+
+local function FormatCustomTimerDuration(duration)
+    duration = tonumber(duration) or 0
+    if math.abs(duration - math.floor(duration)) < 0.001 then
+        return tostring(math.floor(duration))
+    end
+    return string.format("%.1f", duration)
+end
+
+local function GetCustomTimerEntryLabel(entry)
+    local spellData = entry and entry.spellId and C_Spell.GetSpellInfo(entry.spellId)
+    local spellName = spellData and spellData.name or LL("Unknown")
+    local displayName = strtrim(tostring(entry and entry.name or ""))
+    if displayName == "" then
+        displayName = spellName
+    end
+
+    local spellSuffix = displayName ~= spellName and (" - " .. spellName) or ""
+    local spellIcon = spellData and spellData.iconID and ("|T" .. tostring(spellData.iconID) .. ":16:16:0:-1|t ") or ""
+    return string.format("%s[%d] %s%s (%ss)", spellIcon, tonumber(entry and entry.layoutIndex) or 0, displayName, spellSuffix, FormatCustomTimerDuration(entry and entry.duration))
 end
 
 local function CreateCustomItemSpellTextSettings(parentContainer, containerDB)
@@ -2347,6 +2369,319 @@ local function CreateCustomItemSpellFrameworkSettings(parentContainer)
     end)
 
     RefreshTabs(BCDM:GetSelectedCustomItemSpellContainerId())
+end
+
+local function CreateCustomTimerSettings(parentContainer)
+    local containerDB = BCDM.db.profile.CooldownManager.CustomTimer
+    if not containerDB then
+        return
+    end
+
+    BCDMG:AddAnchors("ElvUI", {"Utility", "ItemSpell", "Trinket", "CustomTimer"}, {
+        ["ElvUF_Player"] = "|cff1784d1ElvUI|r: Player Frame",
+        ["ElvUF_Target"] = "|cff1784d1ElvUI|r: Target Frame",
+    })
+
+    local function RefreshCustomTimerSettings()
+        parentContainer:ReleaseChildren()
+        CreateCustomTimerSettings(parentContainer)
+    end
+
+    local ScrollFrame = AG:Create("ScrollFrame")
+    ScrollFrame:SetLayout("Flow")
+    ScrollFrame:SetFullWidth(true)
+    ScrollFrame:SetFullHeight(true)
+    parentContainer:AddChild(ScrollFrame)
+
+    local toggleContainer = AG:Create("InlineGroup")
+    toggleContainer:SetTitle(LL("Custom Timer Viewer"))
+    toggleContainer:SetFullWidth(true)
+    toggleContainer:SetLayout("Flow")
+    ScrollFrame:AddChild(toggleContainer)
+
+    local enabledCheckbox = AG:Create("CheckBox")
+    enabledCheckbox:SetLabel(LL("Enable Custom Timer Viewer"))
+    enabledCheckbox:SetValue(containerDB.Enabled ~= false)
+    enabledCheckbox:SetCallback("OnValueChanged", function(_, _, value)
+        containerDB.Enabled = value
+        BCDM:UpdateCooldownViewer("CustomTimer")
+    end)
+    enabledCheckbox:SetRelativeWidth(1)
+    toggleContainer:AddChild(enabledCheckbox)
+
+    CreateInformationTag(toggleContainer, LL("Custom timers start when you successfully cast the tracked spell."), "LEFT")
+
+    local layoutContainer = AG:Create("InlineGroup")
+    layoutContainer:SetTitle(LL("Layout & Positioning"))
+    layoutContainer:SetFullWidth(true)
+    layoutContainer:SetLayout("Flow")
+    ScrollFrame:AddChild(layoutContainer)
+
+    local anchorFromDropdown = AG:Create("Dropdown")
+    anchorFromDropdown:SetLabel(LL("Anchor From"))
+    anchorFromDropdown:SetList(AnchorPoints[1], AnchorPoints[2])
+    anchorFromDropdown:SetValue(containerDB.Layout[1])
+    anchorFromDropdown:SetCallback("OnValueChanged", function(_, _, value)
+        containerDB.Layout[1] = value
+        BCDM:UpdateCooldownViewer("CustomTimer")
+    end)
+    anchorFromDropdown:SetRelativeWidth(0.33)
+    layoutContainer:AddChild(anchorFromDropdown)
+
+    local anchorParentOptions, anchorParentOrder = GetAnchorParentOptions("CustomTimer")
+    local anchorToParentDropdown = AG:Create("Dropdown")
+    anchorToParentDropdown:SetLabel(LL("Anchor To Parent"))
+    anchorToParentDropdown:SetList(anchorParentOptions, anchorParentOrder)
+    anchorToParentDropdown:SetValue(containerDB.Layout[2])
+    anchorToParentDropdown:SetCallback("OnValueChanged", function(_, _, value)
+        containerDB.Layout[2] = value
+        BCDM:UpdateCooldownViewer("CustomTimer")
+    end)
+    anchorToParentDropdown:SetRelativeWidth(0.33)
+    layoutContainer:AddChild(anchorToParentDropdown)
+
+    local anchorToDropdown = AG:Create("Dropdown")
+    anchorToDropdown:SetLabel(LL("Anchor To"))
+    anchorToDropdown:SetList(AnchorPoints[1], AnchorPoints[2])
+    anchorToDropdown:SetValue(containerDB.Layout[3])
+    anchorToDropdown:SetCallback("OnValueChanged", function(_, _, value)
+        containerDB.Layout[3] = value
+        BCDM:UpdateCooldownViewer("CustomTimer")
+    end)
+    anchorToDropdown:SetRelativeWidth(0.33)
+    layoutContainer:AddChild(anchorToDropdown)
+
+    local growthDirectionDropdown = AG:Create("Dropdown")
+    growthDirectionDropdown:SetLabel(LL("Growth Direction"))
+    growthDirectionDropdown:SetList({["LEFT"] = "Left", ["RIGHT"] = "Right", ["UP"] = "Up", ["DOWN"] = "Down"}, {"UP", "DOWN", "LEFT", "RIGHT"})
+    growthDirectionDropdown:SetValue(containerDB.GrowthDirection)
+    growthDirectionDropdown:SetCallback("OnValueChanged", function(_, _, value)
+        containerDB.GrowthDirection = value
+        BCDM:UpdateCooldownViewer("CustomTimer")
+    end)
+    growthDirectionDropdown:SetRelativeWidth(0.3333)
+    layoutContainer:AddChild(growthDirectionDropdown)
+
+    local spacingSlider = AG:Create("Slider")
+    spacingSlider:SetLabel(LL("Icon Spacing"))
+    spacingSlider:SetValue(containerDB.Spacing)
+    spacingSlider:SetSliderValues(-1, 32, 0.1)
+    spacingSlider:SetCallback("OnValueChanged", function(_, _, value)
+        containerDB.Spacing = value
+        BCDM:UpdateCooldownViewer("CustomTimer")
+    end)
+    spacingSlider:SetRelativeWidth(0.3333)
+    layoutContainer:AddChild(spacingSlider)
+
+    local columnsSlider = AG:Create("Slider")
+    columnsSlider:SetLabel(LL("Wrap After"))
+    columnsSlider:SetValue(containerDB.Columns or 0)
+    columnsSlider:SetSliderValues(0, 24, 1)
+    columnsSlider:SetCallback("OnValueChanged", function(_, _, value)
+        containerDB.Columns = math.max(0, math.floor(value or 0))
+        BCDM:UpdateCooldownViewer("CustomTimer")
+    end)
+    columnsSlider:SetRelativeWidth(0.3333)
+    layoutContainer:AddChild(columnsSlider)
+
+    local xOffsetSlider = AG:Create("Slider")
+    xOffsetSlider:SetLabel(LL("X Offset"))
+    xOffsetSlider:SetValue(containerDB.Layout[4])
+    xOffsetSlider:SetSliderValues(-3000, 3000, 0.1)
+    xOffsetSlider:SetCallback("OnValueChanged", function(_, _, value)
+        containerDB.Layout[4] = value
+        BCDM:UpdateCooldownViewer("CustomTimer")
+    end)
+    xOffsetSlider:SetRelativeWidth(0.33)
+    layoutContainer:AddChild(xOffsetSlider)
+
+    local yOffsetSlider = AG:Create("Slider")
+    yOffsetSlider:SetLabel(LL("Y Offset"))
+    yOffsetSlider:SetValue(containerDB.Layout[5])
+    yOffsetSlider:SetSliderValues(-3000, 3000, 0.1)
+    yOffsetSlider:SetCallback("OnValueChanged", function(_, _, value)
+        containerDB.Layout[5] = value
+        BCDM:UpdateCooldownViewer("CustomTimer")
+    end)
+    yOffsetSlider:SetRelativeWidth(0.33)
+    layoutContainer:AddChild(yOffsetSlider)
+
+    local frameStrataDropdown = AG:Create("Dropdown")
+    frameStrataDropdown:SetLabel(LL("Frame Strata"))
+    frameStrataDropdown:SetList(
+        {["BACKGROUND"] = "Background", ["LOW"] = "Low", ["MEDIUM"] = "Medium", ["HIGH"] = "High", ["DIALOG"] = "Dialog", ["FULLSCREEN"] = "Fullscreen", ["FULLSCREEN_DIALOG"] = "Fullscreen Dialog", ["TOOLTIP"] = "Tooltip"},
+        {"BACKGROUND", "LOW", "MEDIUM", "HIGH", "DIALOG", "FULLSCREEN", "FULLSCREEN_DIALOG", "TOOLTIP"}
+    )
+    frameStrataDropdown:SetValue(containerDB.FrameStrata)
+    frameStrataDropdown:SetCallback("OnValueChanged", function(_, _, value)
+        containerDB.FrameStrata = value
+        BCDM:UpdateCooldownViewer("CustomTimer")
+    end)
+    frameStrataDropdown:SetRelativeWidth(0.33)
+    layoutContainer:AddChild(frameStrataDropdown)
+
+    local iconContainer = AG:Create("InlineGroup")
+    iconContainer:SetTitle(LL("Icon Settings"))
+    iconContainer:SetFullWidth(true)
+    iconContainer:SetLayout("Flow")
+    ScrollFrame:AddChild(iconContainer)
+
+    local keepAspectCheckbox = AG:Create("CheckBox")
+    keepAspectCheckbox:SetLabel(LL("Keep Aspect Ratio"))
+    keepAspectCheckbox:SetValue(containerDB.KeepAspectRatio ~= false)
+    keepAspectCheckbox:SetRelativeWidth(1)
+    iconContainer:AddChild(keepAspectCheckbox)
+
+    local iconSizeSlider = AG:Create("Slider")
+    iconSizeSlider:SetLabel(LL("Icon Size"))
+    iconSizeSlider:SetValue(containerDB.IconSize)
+    iconSizeSlider:SetSliderValues(16, 128, 0.1)
+    iconSizeSlider:SetCallback("OnValueChanged", function(_, _, value)
+        containerDB.IconSize = value
+        BCDM:UpdateCooldownViewer("CustomTimer")
+    end)
+    iconSizeSlider:SetRelativeWidth(0.3333)
+    iconContainer:AddChild(iconSizeSlider)
+
+    local iconWidthSlider = AG:Create("Slider")
+    iconWidthSlider:SetLabel(LL("Icon Width"))
+    iconWidthSlider:SetValue(containerDB.IconWidth or containerDB.IconSize)
+    iconWidthSlider:SetSliderValues(16, 128, 0.1)
+    iconWidthSlider:SetCallback("OnValueChanged", function(_, _, value)
+        containerDB.IconWidth = value
+        BCDM:UpdateCooldownViewer("CustomTimer")
+    end)
+    iconWidthSlider:SetRelativeWidth(0.3333)
+    iconContainer:AddChild(iconWidthSlider)
+
+    local iconHeightSlider = AG:Create("Slider")
+    iconHeightSlider:SetLabel(LL("Icon Height"))
+    iconHeightSlider:SetValue(containerDB.IconHeight or containerDB.IconSize)
+    iconHeightSlider:SetSliderValues(16, 128, 0.1)
+    iconHeightSlider:SetCallback("OnValueChanged", function(_, _, value)
+        containerDB.IconHeight = value
+        BCDM:UpdateCooldownViewer("CustomTimer")
+    end)
+    iconHeightSlider:SetRelativeWidth(0.3333)
+    iconContainer:AddChild(iconHeightSlider)
+
+    local function UpdateIconSizeControlState()
+        local keepAspect = containerDB.KeepAspectRatio ~= false
+        DeepDisable(iconSizeSlider, not keepAspect)
+        DeepDisable(iconWidthSlider, keepAspect)
+        DeepDisable(iconHeightSlider, keepAspect)
+    end
+
+    keepAspectCheckbox:SetCallback("OnValueChanged", function(_, _, value)
+        containerDB.KeepAspectRatio = value
+        local fallbackSize = containerDB.IconSize or containerDB.IconWidth or containerDB.IconHeight or 32
+        if value then
+            containerDB.IconSize = containerDB.IconWidth or containerDB.IconHeight or fallbackSize
+        else
+            containerDB.IconWidth = containerDB.IconWidth or fallbackSize
+            containerDB.IconHeight = containerDB.IconHeight or fallbackSize
+        end
+        UpdateIconSizeControlState()
+        BCDM:UpdateCooldownViewer("CustomTimer")
+    end)
+
+    UpdateIconSizeControlState()
+
+    local timersContainer = AG:Create("InlineGroup")
+    timersContainer:SetTitle(LL("Custom Timers"))
+    timersContainer:SetFullWidth(true)
+    timersContainer:SetLayout("Flow")
+    ScrollFrame:AddChild(timersContainer)
+
+    CreateInformationTag(timersContainer, LL("|cFFFFCC00Spell|r can be added by |cFF8080FFSpell Name|r or |cFF8080FFSpell ID|r. Duration is measured in |cFF8080FFseconds|r."), "LEFT")
+
+    local nameEditBox = AG:Create("EditBox")
+    nameEditBox:SetLabel(LL("Timer Name"))
+    nameEditBox:SetRelativeWidth(0.25)
+    timersContainer:AddChild(nameEditBox)
+
+    local spellEditBox = AG:Create("EditBox")
+    spellEditBox:SetLabel(LL("Spell ID or Spell Name"))
+    spellEditBox:SetRelativeWidth(0.4)
+    timersContainer:AddChild(spellEditBox)
+
+    local durationEditBox = AG:Create("EditBox")
+    durationEditBox:SetLabel(LL("Duration (Seconds)"))
+    durationEditBox:SetRelativeWidth(0.2)
+    timersContainer:AddChild(durationEditBox)
+
+    local addTimerButton = AG:Create("Button")
+    addTimerButton:SetText(LL("Add"))
+    addTimerButton:SetRelativeWidth(0.15)
+    timersContainer:AddChild(addTimerButton)
+
+    local function AddCustomTimerFromInputs()
+        local spellId = FetchSpellID(spellEditBox:GetText())
+        local duration = tonumber(durationEditBox:GetText())
+        if not spellId or not duration or duration <= 0 then
+            return
+        end
+
+        BCDM:AddCustomTimerEntry(nameEditBox:GetText(), spellId, duration)
+        nameEditBox:SetText("")
+        spellEditBox:SetText("")
+        durationEditBox:SetText("")
+        RefreshCustomTimerSettings()
+    end
+
+    nameEditBox:SetCallback("OnEnterPressed", AddCustomTimerFromInputs)
+    spellEditBox:SetCallback("OnEnterPressed", AddCustomTimerFromInputs)
+    durationEditBox:SetCallback("OnEnterPressed", AddCustomTimerFromInputs)
+    addTimerButton:SetCallback("OnClick", AddCustomTimerFromInputs)
+
+    for _, entry in ipairs(BCDM:GetSortedCustomTimerEntries()) do
+        local timerCheckbox = AG:Create("CheckBox")
+        timerCheckbox:SetLabel(GetCustomTimerEntryLabel(entry))
+        timerCheckbox:SetValue(entry.isActive ~= false)
+        timerCheckbox:SetCallback("OnValueChanged", function(_, _, value)
+            BCDM:SetCustomTimerEntryActive(entry.uid, value)
+        end)
+        timerCheckbox:SetCallback("OnEnter", function(widget)
+            GameTooltip:SetOwner(widget.frame, "ANCHOR_RIGHT")
+            GameTooltip:SetSpellByID(entry.spellId)
+            GameTooltip:Show()
+        end)
+        timerCheckbox:SetCallback("OnLeave", function()
+            GameTooltip:Hide()
+        end)
+        timerCheckbox:SetRelativeWidth(0.625)
+        timersContainer:AddChild(timerCheckbox)
+
+        local moveUpButton = AG:Create("Button")
+        moveUpButton:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Up_Arrow.png:18:18:0:-1|t")
+        moveUpButton:SetRelativeWidth(0.125)
+        moveUpButton:SetCallback("OnClick", function()
+            BCDM:AdjustCustomTimerLayoutIndex(-1, entry.uid)
+            RefreshCustomTimerSettings()
+        end)
+        timersContainer:AddChild(moveUpButton)
+
+        local moveDownButton = AG:Create("Button")
+        moveDownButton:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Down_Arrow.png:18:18:0:-1|t")
+        moveDownButton:SetRelativeWidth(0.125)
+        moveDownButton:SetCallback("OnClick", function()
+            BCDM:AdjustCustomTimerLayoutIndex(1, entry.uid)
+            RefreshCustomTimerSettings()
+        end)
+        timersContainer:AddChild(moveDownButton)
+
+        local removeTimerButton = AG:Create("Button")
+        removeTimerButton:SetText("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Delete.png:18:18:0:-1|t")
+        removeTimerButton:SetRelativeWidth(0.125)
+        removeTimerButton:SetCallback("OnClick", function()
+            BCDM:RemoveCustomTimerEntry(entry.uid)
+            RefreshCustomTimerSettings()
+        end)
+        timersContainer:AddChild(removeTimerButton)
+    end
+
+    ScrollFrame:DoLayout()
+    parentContainer:DoLayout()
 end
 
 local function CreateCooldownViewerSettings(parentContainer, viewerType)
@@ -3792,6 +4127,8 @@ function BCDM:CreateGUI()
             CreateCooldownViewerSettings(Wrapper, "Trinket")
         elseif MainTab == "ItemSpell" then
             CreateCooldownViewerSettings(Wrapper, "ItemSpell")
+        elseif MainTab == "CustomTimer" then
+            CreateCustomTimerSettings(Wrapper)
         elseif MainTab == "PowerBar" then
             CreatePowerBarSettings(Wrapper)
         elseif MainTab == "SecondaryPowerBar" then

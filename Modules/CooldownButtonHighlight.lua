@@ -1,7 +1,7 @@
 local _, BCDM = ...
 
 local LAB = LibStub and LibStub("LibActionButton-1.0", true)
-local pressedSpellByButton = {}
+local pressedHighlightsByButton = {}
 local trackedHighlightIcons = setmetatable({}, { __mode = "k" })
 local activeHighlightedIcons = setmetatable({}, { __mode = "k" })
 local defaultHooksInstalled = false
@@ -38,16 +38,12 @@ local function IsEnabled()
 end
 
 local function GetViewerNames()
-    local viewerNames = {}
-
-    for _, viewerName in ipairs(BCDM.CooldownManagerViewers or {}) do
-        viewerNames[#viewerNames + 1] = viewerName
-    end
-
-    viewerNames[#viewerNames + 1] = "CDMGroups_Essential"
-    viewerNames[#viewerNames + 1] = "CDMGroups_Utility"
-
-    return viewerNames
+    return {
+        "EssentialCooldownViewer",
+        "UtilityCooldownViewer",
+        "CDMGroups_Essential",
+        "CDMGroups_Utility",
+    }
 end
 
 local function CreateSpellIDCollection(spellID)
@@ -82,18 +78,26 @@ local function GetSpellIDFromCooldownId(cooldownID)
     return cooldownInfo and cooldownInfo.spellID or nil
 end
 
-function BCDM:GetCooldownViewerIconBySpellId(spellID)
-    if not spellID then return nil end
+local function AddMatchedIcon(matches, seenIcons, icon)
+    if not icon or seenIcons[icon] then
+        return
+    end
 
-    local spellIDCollection = CreateSpellIDCollection(spellID)
-    if not spellIDCollection then return nil end
+    seenIcons[icon] = true
+    matches[#matches + 1] = icon
+end
+
+local function CollectDefaultViewerMatches(matches, seenIcons, spellIDCollection)
+    if not spellIDCollection then
+        return
+    end
 
     for _, viewerName in ipairs(GetViewerNames()) do
         local viewerFrame = _G[viewerName]
         if viewerFrame then
             local cooldownIcons = viewerFrame.ActiveIcons or { viewerFrame:GetChildren() }
             for _, icon in ipairs(cooldownIcons) do
-                if icon and icon.Icon then
+                if icon and icon.Icon and icon.IsShown and icon:IsShown() then
                     local iconSpellID
 
                     if icon.cooldownID then
@@ -108,14 +112,94 @@ function BCDM:GetCooldownViewerIconBySpellId(spellID)
                     end
 
                     if iconSpellID and spellIDCollection[iconSpellID] then
-                        return icon
+                        AddMatchedIcon(matches, seenIcons, icon)
                     end
                 end
             end
         end
     end
+end
 
-    return nil
+local function CustomViewerIconMatches(icon, spellIDCollection, itemIDCollection)
+    if not icon or not icon.Icon then
+        return false
+    end
+
+    if icon.BCDMIconType == "spell" then
+        return spellIDCollection and icon.BCDMSpellId and spellIDCollection[icon.BCDMSpellId] or false
+    end
+
+    if icon.BCDMIconType == "item" or icon.BCDMIconType == "trinket" then
+        if itemIDCollection and icon.BCDMItemId and itemIDCollection[icon.BCDMItemId] then
+            return true
+        end
+
+        if spellIDCollection and icon.BCDMItemId and C_Item and C_Item.GetItemSpell then
+            local _, itemSpellID = C_Item.GetItemSpell(icon.BCDMItemId)
+            return itemSpellID and spellIDCollection[itemSpellID] or false
+        end
+    end
+
+    return false
+end
+
+local function CollectCustomViewerMatches(matches, seenIcons, spellIDCollection, itemIDCollection)
+    local customFrames = BCDM.CustomItemSpellContainerFrames or {}
+    for _, frame in pairs(customFrames) do
+        local icons = frame and (frame.ActiveIcons or { frame:GetChildren() }) or nil
+        for _, icon in ipairs(icons or {}) do
+            if icon and icon.IsShown and icon:IsShown() and CustomViewerIconMatches(icon, spellIDCollection, itemIDCollection) then
+                AddMatchedIcon(matches, seenIcons, icon)
+            end
+        end
+    end
+
+    local trinketContainer = BCDM.TrinketBarContainer
+    local trinketIcons = trinketContainer and (trinketContainer.ActiveIcons or { trinketContainer:GetChildren() }) or nil
+    for _, icon in ipairs(trinketIcons or {}) do
+        if icon and icon.IsShown and icon:IsShown() and CustomViewerIconMatches(icon, spellIDCollection, itemIDCollection) then
+            AddMatchedIcon(matches, seenIcons, icon)
+        end
+    end
+
+end
+
+function BCDM:GetCooldownViewerHighlightTargets(button)
+    if not button or not button.action then
+        return nil
+    end
+
+    local actionType, actionID = GetActionInfo(button.action)
+    local spellID, itemID
+
+    if actionType == "spell" then
+        spellID = actionID
+    elseif actionType == "item" then
+        itemID = actionID
+        if C_Item and C_Item.GetItemSpell then
+            local _, itemSpellID = C_Item.GetItemSpell(itemID)
+            spellID = itemSpellID or spellID
+        end
+    elseif actionType == "macro" then
+        local macroName = GetActionText(button.action)
+        if macroName then
+            spellID = GetMacroSpell(macroName)
+        end
+    end
+
+    if not spellID and not itemID then
+        return nil
+    end
+
+    local spellIDCollection = spellID and CreateSpellIDCollection(spellID) or nil
+    local itemIDCollection = itemID and { [itemID] = true } or nil
+    local matches = {}
+    local seenIcons = {}
+
+    CollectDefaultViewerMatches(matches, seenIcons, spellIDCollection)
+    CollectCustomViewerMatches(matches, seenIcons, spellIDCollection, itemIDCollection)
+
+    return #matches > 0 and matches or nil
 end
 
 local function ApplyHighlightAppearance(textureFrame)
@@ -272,24 +356,6 @@ local function RefreshHighlightFrames()
     end
 end
 
-function BCDM:GetSpellIdFromCooldownButton(button)
-    if not button or not button.action then return nil end
-
-    local actionType, actionID = GetActionInfo(button.action)
-    if actionType == "spell" then
-        return actionID
-    end
-
-    if actionType == "macro" then
-        local macroName = GetActionText(button.action)
-        if macroName then
-            return GetMacroSpell(macroName)
-        end
-    end
-
-    return nil
-end
-
 function BCDM:HandleCooldownButtonHighlightPress(button, isDown)
     if not button then
         return
@@ -297,30 +363,28 @@ function BCDM:HandleCooldownButtonHighlightPress(button, isDown)
 
     if not IsEnabled() then
         if not isDown then
-            pressedSpellByButton[button] = nil
+            pressedHighlightsByButton[button] = nil
         end
         return
     end
 
     if isDown then
-        local spellID = self:GetSpellIdFromCooldownButton(button)
-        if not spellID then return end
+        local matchedIcons = self:GetCooldownViewerHighlightTargets(button)
+        if not matchedIcons then return end
 
-        pressedSpellByButton[button] = spellID
+        pressedHighlightsByButton[button] = matchedIcons
 
-        local icon = self:GetCooldownViewerIconBySpellId(spellID)
-        if icon then
+        for _, icon in ipairs(matchedIcons) do
             ToggleHighlight(icon, true)
         end
         return
     end
 
-    local spellID = pressedSpellByButton[button]
-    pressedSpellByButton[button] = nil
-    if not spellID then return end
+    local matchedIcons = pressedHighlightsByButton[button]
+    pressedHighlightsByButton[button] = nil
+    if not matchedIcons then return end
 
-    local icon = self:GetCooldownViewerIconBySpellId(spellID)
-    if icon then
+    for _, icon in ipairs(matchedIcons) do
         ToggleHighlight(icon, false)
     end
 end

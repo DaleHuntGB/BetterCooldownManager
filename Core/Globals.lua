@@ -263,6 +263,7 @@ function BCDM:UpdateBCDM()
     BCDM:UpdateSecondaryPowerBar()
     BCDM:UpdateCastBar()
     BCDM:UpdateCustomItemsSpellsBar()
+    BCDM:UpdateCustomTimerViewer()
     BCDM:UpdateTrinketBar()
     if BCDM.UpdateCooldownButtonHighlight then
         BCDM:UpdateCooldownButtonHighlight()
@@ -588,10 +589,25 @@ BCDM.AnchorParents = {
             ["TargetFrame"] = "|cFF00AEF7Blizzard|r: Target Frame",
             ["BCDM_PowerBar"] = "|cFF8080FFBCDM|r: Power Bar",
             ["BCDM_SecondaryPowerBar"] = "|cFF8080FFBCDM|r: Secondary Power Bar",
+            ["BCDM_CustomTimerBar"] = "|cFF8080FFBCDM|r: Custom Timers Bar",
         },
-        { "EssentialCooldownViewer", "UtilityCooldownViewer", "NONE", "PlayerFrame", "TargetFrame", "BCDM_PowerBar", "BCDM_SecondaryPowerBar" },
+        { "EssentialCooldownViewer", "UtilityCooldownViewer", "NONE", "PlayerFrame", "TargetFrame", "BCDM_PowerBar", "BCDM_SecondaryPowerBar", "BCDM_CustomTimerBar" },
     },
     ["ItemSpell"] = {
+        {
+            ["EssentialCooldownViewer"] = "|cFF00AEF7Blizzard|r: Essential Cooldown Viewer",
+            ["UtilityCooldownViewer"] = "|cFF00AEF7Blizzard|r: Utility Cooldown Viewer",
+            ["NONE"] = "|cFF00AEF7Blizzard|r: UIParent",
+            ["PlayerFrame"] = "|cFF00AEF7Blizzard|r: Player Frame",
+            ["TargetFrame"] = "|cFF00AEF7Blizzard|r: Target Frame",
+            ["BCDM_PowerBar"] = "|cFF8080FFBCDM|r: Power Bar",
+            ["BCDM_SecondaryPowerBar"] = "|cFF8080FFBCDM|r: Secondary Power Bar",
+            ["BCDM_TrinketBar"] = "|cFF8080FFBCDM|r: Trinket Bar",
+            ["BCDM_CustomTimerBar"] = "|cFF8080FFBCDM|r: Custom Timers Bar",
+        },
+        { "EssentialCooldownViewer", "UtilityCooldownViewer", "NONE", "PlayerFrame", "TargetFrame", "BCDM_PowerBar", "BCDM_SecondaryPowerBar", "BCDM_TrinketBar", "BCDM_CustomTimerBar" },
+    },
+    ["CustomTimer"] = {
         {
             ["EssentialCooldownViewer"] = "|cFF00AEF7Blizzard|r: Essential Cooldown Viewer",
             ["UtilityCooldownViewer"] = "|cFF00AEF7Blizzard|r: Utility Cooldown Viewer",
