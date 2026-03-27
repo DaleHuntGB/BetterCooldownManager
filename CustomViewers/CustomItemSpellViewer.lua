@@ -174,6 +174,8 @@ local function GetReadableNumber(value)
     return value
 end
 
+local GetTrackedSpellOverrideId
+
 local function IsTrackedSpellCooldownUpdate(spellId, updatedSpellId, updatedBaseSpellId)
     if updatedSpellId == nil and updatedBaseSpellId == nil then
         return true
@@ -183,14 +185,90 @@ local function IsTrackedSpellCooldownUpdate(spellId, updatedSpellId, updatedBase
         return true
     end
 
-    if FindSpellOverrideByID then
-        local overrideSpellId = FindSpellOverrideByID(spellId)
+    if GetTrackedSpellOverrideId then
+        local overrideSpellId = GetTrackedSpellOverrideId(spellId)
         if overrideSpellId and (updatedSpellId == overrideSpellId or updatedBaseSpellId == overrideSpellId) then
             return true
         end
     end
 
     return false
+end
+
+local CUSTOM_VIEWER_GCD_SPELL_ID = 61304
+GetTrackedSpellOverrideId = (C_Spell and C_Spell.GetOverrideSpell) or FindSpellOverrideByID
+
+local function BuildTrackedSpellEventIds(spellId)
+    local trackedSpellIds = {}
+    local seenSpellIds = {}
+
+    local function AddTrackedSpellId(candidateSpellId)
+        candidateSpellId = tonumber(candidateSpellId)
+        if not candidateSpellId or seenSpellIds[candidateSpellId] then
+            return
+        end
+
+        seenSpellIds[candidateSpellId] = true
+        trackedSpellIds[#trackedSpellIds + 1] = candidateSpellId
+    end
+
+    AddTrackedSpellId(spellId)
+
+    if GetTrackedSpellOverrideId then
+        AddTrackedSpellId(GetTrackedSpellOverrideId(spellId))
+    end
+
+    return trackedSpellIds
+end
+
+local function AddSpellIconIndexEntry(spellCooldownIndex, spellId, customIcon)
+    if not spellCooldownIndex or not spellId or not customIcon then
+        return
+    end
+
+    local bucket = spellCooldownIndex[spellId]
+    if not bucket then
+        bucket = {}
+        spellCooldownIndex[spellId] = bucket
+    end
+
+    bucket[#bucket + 1] = customIcon
+end
+
+local function BuildSpellCooldownIndex(activeIcons)
+    local spellCooldownIndex = {}
+    local spellIcons = {}
+
+    for _, customIcon in ipairs(activeIcons or {}) do
+        if customIcon and customIcon.BCDMIsActive and customIcon.BCDMIconType == "spell" and customIcon.BCDMSpellId then
+            spellIcons[#spellIcons + 1] = customIcon
+
+            for _, trackedSpellId in ipairs(BuildTrackedSpellEventIds(customIcon.BCDMSpellId)) do
+                AddSpellIconIndexEntry(spellCooldownIndex, trackedSpellId, customIcon)
+            end
+        end
+    end
+
+    return spellCooldownIndex, spellIcons
+end
+
+local function GetCustomViewerGCDState()
+    local cooldownData = C_Spell.GetSpellCooldown(CUSTOM_VIEWER_GCD_SPELL_ID)
+    local startTime = cooldownData and cooldownData.startTime or 0
+    local duration = cooldownData and cooldownData.duration or 0
+    local modRate = cooldownData and cooldownData.modRate or 1
+
+    if type(startTime) ~= "number" or type(duration) ~= "number" or startTime <= 0 or duration <= 0 then
+        return nil, nil, nil
+    end
+
+    return startTime, duration, modRate
+end
+
+local function HasCooldownStateChanged(previousStartTime, previousDuration, previousModRate, currentStartTime, currentDuration, currentModRate)
+    return previousStartTime ~= currentStartTime
+        or previousDuration ~= currentDuration
+        or previousModRate ~= currentModRate
 end
 
 local function UpdateSpellIconDesaturation(customIcon, spellId)
@@ -252,6 +330,60 @@ local function ShouldRefreshItemCooldownFrame(cooldownFrame, hasActiveCooldown, 
     end
 
     return oldStart > 0 and oldDuration > 0
+end
+
+local function UpdateCustomSpellIconCooldown(customIcon, spellId)
+    if not customIcon or not customIcon.Cooldown or not spellId then
+        return
+    end
+
+    local spellCharges = C_Spell.GetSpellCharges(spellId)
+    local hasCharges = spellCharges and (spellCharges.maxCharges or 0) > 1
+
+    if hasCharges then
+        customIcon.Charges:SetText(tostring(spellCharges.currentCharges or 0))
+    else
+        customIcon.Charges:SetText("")
+    end
+
+    local chargeStartTime = hasCharges and spellCharges.cooldownStartTime or 0
+    local chargeDuration = hasCharges and spellCharges.cooldownDuration or 0
+    local hasChargeCooldown = type(chargeStartTime) == "number" and type(chargeDuration) == "number" and chargeStartTime > 0 and chargeDuration > 0
+
+    if hasChargeCooldown then
+        if ShouldRefreshItemCooldownFrame(customIcon.Cooldown, true, chargeStartTime, chargeDuration) then
+            local spellChargeCooldown = C_Spell.GetSpellChargeDuration and C_Spell.GetSpellChargeDuration(spellId)
+            if spellChargeCooldown then
+                customIcon.Cooldown:SetCooldownFromDurationObject(spellChargeCooldown, true)
+            else
+                local durationObject = C_DurationUtil.CreateDuration()
+                durationObject:SetTimeFromStart(chargeStartTime, chargeDuration)
+                customIcon.Cooldown:SetCooldownFromDurationObject(durationObject, true)
+            end
+        end
+
+        return
+    end
+
+    local cooldownData = C_Spell.GetSpellCooldown(spellId)
+    local cooldownStartTime = cooldownData and cooldownData.startTime or 0
+    local cooldownDuration = cooldownData and cooldownData.duration or 0
+    local hasCooldown = type(cooldownStartTime) == "number" and type(cooldownDuration) == "number" and cooldownStartTime > 0 and cooldownDuration > 0
+
+    if hasCooldown then
+        if ShouldRefreshItemCooldownFrame(customIcon.Cooldown, true, cooldownStartTime, cooldownDuration) then
+            local spellCooldown = C_Spell.GetSpellCooldownDuration and C_Spell.GetSpellCooldownDuration(spellId)
+            if spellCooldown then
+                customIcon.Cooldown:SetCooldownFromDurationObject(spellCooldown, true)
+            else
+                local durationObject = C_DurationUtil.CreateDuration()
+                durationObject:SetTimeFromStart(cooldownStartTime, cooldownDuration)
+                customIcon.Cooldown:SetCooldownFromDurationObject(durationObject, true)
+            end
+        end
+    elseif ShouldRefreshItemCooldownFrame(customIcon.Cooldown, false, cooldownStartTime, cooldownDuration) then
+        customIcon.Cooldown:SetCooldownFromDurationObject(C_DurationUtil.CreateDuration(), true)
+    end
 end
 
 local function FetchItemData(itemId)
@@ -1350,12 +1482,121 @@ local function RefreshCustomViewerIcon(customIcon, event, ...)
     end
 end
 
+local function DispatchIndexedSpellIconEvents(frame, event, updatedSpellId, updatedBaseSpellId, refreshAllSpellIcons)
+    if not frame or not frame.SpellIcons then
+        return
+    end
+
+    if refreshAllSpellIcons or (updatedSpellId == nil and updatedBaseSpellId == nil) then
+        for _, customIcon in ipairs(frame.SpellIcons) do
+            RefreshCustomViewerIcon(customIcon, event, updatedSpellId, updatedBaseSpellId)
+        end
+        return
+    end
+
+    local refreshedIcons = {}
+    local function RefreshSpellBucket(spellId)
+        local bucket = spellId and frame.SpellCooldownIndex and frame.SpellCooldownIndex[tonumber(spellId)]
+        if not bucket then
+            return
+        end
+
+        for _, customIcon in ipairs(bucket) do
+            if customIcon and customIcon.BCDMIsActive and not refreshedIcons[customIcon] and IsTrackedSpellCooldownUpdate(customIcon.BCDMSpellId, updatedSpellId, updatedBaseSpellId) then
+                refreshedIcons[customIcon] = true
+                RefreshCustomViewerIcon(customIcon, event, updatedSpellId, updatedBaseSpellId)
+            end
+        end
+    end
+
+    RefreshSpellBucket(updatedSpellId)
+    RefreshSpellBucket(updatedBaseSpellId)
+end
+
+local CustomViewerSpellEventFrame
+local CustomViewerGCDState = {}
+
+local function ResetCustomViewerGCDState()
+    wipe(CustomViewerGCDState)
+end
+
+local function UpdateCustomViewerGCDState()
+    local startTime, duration, modRate = GetCustomViewerGCDState()
+    local hasChanged = HasCooldownStateChanged(
+        CustomViewerGCDState.startTime,
+        CustomViewerGCDState.duration,
+        CustomViewerGCDState.modRate,
+        startTime,
+        duration,
+        modRate
+    )
+
+    CustomViewerGCDState.startTime = startTime
+    CustomViewerGCDState.duration = duration
+    CustomViewerGCDState.modRate = modRate
+
+    return hasChanged
+end
+
+local function DispatchCustomViewerSpellEvents(event, updatedSpellId, updatedBaseSpellId)
+    local refreshAllSpellIcons = false
+    if event == "SPELL_UPDATE_COOLDOWN" then
+        refreshAllSpellIcons = UpdateCustomViewerGCDState()
+    end
+
+    for _, frame in pairs(BCDM.CustomItemSpellContainerFrames or {}) do
+        if frame and frame.HasSpellIcons and frame.SpellIcons and #frame.SpellIcons > 0 and frame:IsShown() then
+            DispatchIndexedSpellIconEvents(frame, event, updatedSpellId, updatedBaseSpellId, refreshAllSpellIcons)
+        end
+    end
+end
+
+local function EnsureCustomViewerSpellEventFrame()
+    if CustomViewerSpellEventFrame then
+        return CustomViewerSpellEventFrame
+    end
+
+    CustomViewerSpellEventFrame = CreateFrame("Frame")
+    CustomViewerSpellEventFrame:SetScript("OnEvent", function(_, event, ...)
+        DispatchCustomViewerSpellEvents(event, ...)
+    end)
+
+    return CustomViewerSpellEventFrame
+end
+
+local function UpdateCustomViewerSpellEventRegistration()
+    local spellEventFrame = EnsureCustomViewerSpellEventFrame()
+    local hasActiveSpellIcons = false
+
+    for _, frame in pairs(BCDM.CustomItemSpellContainerFrames or {}) do
+        if frame and frame.HasSpellIcons and frame.SpellIcons and #frame.SpellIcons > 0 and frame:IsShown() then
+            hasActiveSpellIcons = true
+            break
+        end
+    end
+
+    if hasActiveSpellIcons then
+        spellEventFrame:RegisterEvent("SPELL_UPDATE_COOLDOWN")
+        spellEventFrame:RegisterEvent("SPELL_UPDATE_CHARGES")
+        UpdateCustomViewerGCDState()
+    else
+        spellEventFrame:UnregisterEvent("SPELL_UPDATE_COOLDOWN")
+        spellEventFrame:UnregisterEvent("SPELL_UPDATE_CHARGES")
+        ResetCustomViewerGCDState()
+    end
+end
+
 local function DispatchContainerIconEvents(frame, event, ...)
     if not frame or not frame.ActiveIcons then
         return
     end
 
     local updatedSpellId, updatedBaseSpellId = ...
+
+    if event == "SPELL_UPDATE_COOLDOWN" or event == "SPELL_UPDATE_CHARGES" then
+        DispatchIndexedSpellIconEvents(frame, event, updatedSpellId, updatedBaseSpellId)
+        return
+    end
 
     for _, customIcon in ipairs(frame.ActiveIcons) do
         if customIcon and customIcon.BCDMIsActive then
@@ -1367,12 +1608,6 @@ local function DispatchContainerIconEvents(frame, event, ...)
                     if not itemId or itemId == customIcon.BCDMItemId then
                         RefreshCustomViewerIcon(customIcon, event, ...)
                     end
-                end
-            elseif customIcon.BCDMIconType == "spell" then
-                if event == "SPELL_UPDATE_COOLDOWN" then
-                    RefreshCustomViewerIcon(customIcon, event, ...)
-                elseif event == "SPELL_UPDATE_CHARGES" and IsTrackedSpellCooldownUpdate(customIcon.BCDMSpellId, updatedSpellId, updatedBaseSpellId) then
-                    RefreshCustomViewerIcon(customIcon, event, ...)
                 end
             elseif customIcon.BCDMIconType == "trinket" then
                 if event == "ACTIONBAR_UPDATE_COOLDOWN" then
@@ -1670,16 +1905,7 @@ local function CreateCustomSpellIcon(customDB, entry)
         end
 
         if event == "SPELL_UPDATE_COOLDOWN" or event == "PLAYER_ENTERING_WORLD" or event == "SPELL_UPDATE_CHARGES" then
-            local spellCharges = C_Spell.GetSpellCharges(spellId)
-            if spellCharges and (spellCharges.maxCharges or 0) > 1 then
-                customIcon.Charges:SetText(tostring(spellCharges.currentCharges))
-                local spellChargeCooldown = C_Spell.GetSpellChargeDuration(spellId)
-                customIcon.Cooldown:SetCooldownFromDurationObject(spellChargeCooldown, true)
-            else
-                customIcon.Charges:SetText("")
-                local spellCooldown = C_Spell.GetSpellCooldownDuration(spellId)
-                customIcon.Cooldown:SetCooldownFromDurationObject(spellCooldown, true)
-            end
+            UpdateCustomSpellIconCooldown(customIcon, spellId)
             UpdateSpellIconDesaturation(self, spellId)
         end
     end)
@@ -1924,6 +2150,9 @@ local function ReleaseContainerChildren(frame)
 
     frame.ActiveIcons = nil
     frame.VisibleItemIds = nil
+    frame.SpellCooldownIndex = nil
+    frame.SpellIcons = nil
+    frame.HasSpellIcons = nil
     frame.StyleSignature = nil
 end
 
@@ -1964,7 +2193,7 @@ local function SetupFrameEventHandler(frame)
             return
         end
 
-        if event == "BAG_UPDATE_COOLDOWN" or event == "SPELL_UPDATE_COOLDOWN" or event == "SPELL_UPDATE_CHARGES" or event == "ACTIONBAR_UPDATE_COOLDOWN" then
+        if event == "BAG_UPDATE_COOLDOWN" or event == "ACTIONBAR_UPDATE_COOLDOWN" then
             DispatchContainerIconEvents(self, event, eventArg1, eventArg2)
             return
         end
@@ -2100,7 +2329,9 @@ local function LayoutCustomItemSpellContainer(container)
 
     frame.ActiveIcons = customItemBarIcons
     frame.VisibleItemIds = visibleItemIds
+    frame.SpellCooldownIndex, frame.SpellIcons = BuildSpellCooldownIndex(customItemBarIcons)
     local hasItemIcons, hasSpellIcons, hasTrinketIcons = GetActiveIconTypeFlags(customItemBarIcons)
+    frame.HasSpellIcons = hasSpellIcons
 
     local iconWidth, iconHeight = BCDM:GetIconDimensions(container)
     local iconSpacing = container.Spacing
@@ -2221,14 +2452,6 @@ local function LayoutCustomItemSpellContainer(container)
         frame:UnregisterEvent("BAG_UPDATE_COOLDOWN")
     end
 
-    if hasSpellIcons then
-        frame:RegisterEvent("SPELL_UPDATE_COOLDOWN")
-        frame:RegisterEvent("SPELL_UPDATE_CHARGES")
-    else
-        frame:UnregisterEvent("SPELL_UPDATE_COOLDOWN")
-        frame:UnregisterEvent("SPELL_UPDATE_CHARGES")
-    end
-
     if hasTrinketIcons then
         frame:RegisterEvent("ACTIONBAR_UPDATE_COOLDOWN")
     else
@@ -2258,10 +2481,12 @@ function BCDM:UpdateCustomItemSpellContainer(containerId)
             ReleaseContainerChildren(frame)
             frame:Hide()
         end
+        UpdateCustomViewerSpellEventRegistration()
         return
     end
 
     LayoutCustomItemSpellContainer(container)
+    UpdateCustomViewerSpellEventRegistration()
 end
 
 function BCDM:SetupCustomItemsSpellsBar()
@@ -2276,4 +2501,5 @@ function BCDM:UpdateCustomItemsSpellsBar()
         LayoutCustomItemSpellContainer(container)
     end
     HideUnusedContainerFrames(activeContainerIds)
+    UpdateCustomViewerSpellEventRegistration()
 end

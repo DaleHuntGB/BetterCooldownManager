@@ -1312,33 +1312,29 @@ local function CreateGlobalSettings(parentContainer)
     local enableCooldownButtonHighlightCheckbox = AG:Create("CheckBox")
     enableCooldownButtonHighlightCheckbox:SetLabel(LL("Enable Highlight"))
     enableCooldownButtonHighlightCheckbox:SetValue(CooldownButtonHighlightDB.Enabled)
-    enableCooldownButtonHighlightCheckbox:SetRelativeWidth(0.25)
+    enableCooldownButtonHighlightCheckbox:SetRelativeWidth(1)
     cooldownButtonHighlightContainer:AddChild(enableCooldownButtonHighlightCheckbox)
 
     local highlightStyleDropdown = AG:Create("Dropdown")
     highlightStyleDropdown:SetLabel(LL("Style"))
-    highlightStyleDropdown:SetList({
-        ["Blizzard"] = LL("Blizzard"),
-        ["Flat"] = LL("Flat"),
-        ["Border"] = LL("Border"),
-    }, { "Blizzard", "Flat", "Border" })
+    highlightStyleDropdown:SetList({ ["Blizzard"] = LL("Blizzard"), ["Flat"] = LL("Flat"), ["Border"] = LL("Border"), }, { "Blizzard", "Flat", "Border" })
     highlightStyleDropdown:SetValue(CooldownButtonHighlightDB.Style)
-    highlightStyleDropdown:SetRelativeWidth(0.25)
+    highlightStyleDropdown:SetRelativeWidth(0.33)
     cooldownButtonHighlightContainer:AddChild(highlightStyleDropdown)
-
-    local highlightColourPicker = AG:Create("ColorPicker")
-    highlightColourPicker:SetLabel(LL("Colour"))
-    highlightColourPicker:SetColor(unpack(CooldownButtonHighlightDB.Colour))
-    highlightColourPicker:SetRelativeWidth(0.25)
-    cooldownButtonHighlightContainer:AddChild(highlightColourPicker)
 
     local highlightOpacitySlider = AG:Create("Slider")
     highlightOpacitySlider:SetLabel(LL("Opacity"))
     highlightOpacitySlider:SetValue(CooldownButtonHighlightDB.Opacity)
     highlightOpacitySlider:SetSliderValues(0, 1, 0.01)
     highlightOpacitySlider:SetIsPercent(true)
-    highlightOpacitySlider:SetRelativeWidth(0.25)
+    highlightOpacitySlider:SetRelativeWidth(0.33)
     cooldownButtonHighlightContainer:AddChild(highlightOpacitySlider)
+
+    local highlightColourPicker = AG:Create("ColorPicker")
+    highlightColourPicker:SetLabel(LL("Colour"))
+    highlightColourPicker:SetColor(unpack(CooldownButtonHighlightDB.Colour))
+    highlightColourPicker:SetRelativeWidth(0.33)
+    cooldownButtonHighlightContainer:AddChild(highlightColourPicker)
 
     local function RefreshCooldownButtonHighlightSettings()
         local isEnabled = CooldownButtonHighlightDB.Enabled
