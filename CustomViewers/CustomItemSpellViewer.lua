@@ -100,8 +100,13 @@ local CONTAINER_SETTING_KEYS = {
 
 local function FetchCooldownTextRegion(cooldown)
     if not cooldown then return end
+    if cooldown.BCDMCachedTextRegion then
+        return cooldown.BCDMCachedTextRegion
+    end
+
     for _, region in ipairs({ cooldown:GetRegions() }) do
         if region:GetObjectType() == "FontString" then
+            cooldown.BCDMCachedTextRegion = region
             return region
         end
     end
@@ -113,7 +118,8 @@ local function ApplyCooldownText(viewer)
     local CooldownTextDB = CooldownManagerDB.CooldownManager.General.CooldownText
     if not viewer then return end
 
-    for _, icon in ipairs({ viewer:GetChildren() }) do
+    local icons = viewer.ActiveIcons or { viewer:GetChildren() }
+    for _, icon in ipairs(icons) do
         if icon and icon.Cooldown then
             local textRegion = FetchCooldownTextRegion(icon.Cooldown)
             if textRegion then
@@ -166,6 +172,25 @@ local function GetReadableNumber(value)
     if type(value) ~= "number" then return nil end
     if BCDM:IsSecretValue(value) then return nil end
     return value
+end
+
+local function IsTrackedSpellCooldownUpdate(spellId, updatedSpellId, updatedBaseSpellId)
+    if updatedSpellId == nil and updatedBaseSpellId == nil then
+        return true
+    end
+
+    if updatedSpellId == spellId or updatedBaseSpellId == spellId then
+        return true
+    end
+
+    if FindSpellOverrideByID then
+        local overrideSpellId = FindSpellOverrideByID(spellId)
+        if overrideSpellId and (updatedSpellId == overrideSpellId or updatedBaseSpellId == overrideSpellId) then
+            return true
+        end
+    end
+
+    return false
 end
 
 local function UpdateSpellIconDesaturation(customIcon, spellId)
@@ -1133,11 +1158,7 @@ function BCDM:DeleteCustomItemSpellContainer(containerId)
         if self.CustomItemSpellContainerFrames and self.CustomItemSpellContainerFrames[deletedContainer.Id] then
             local frame = self.CustomItemSpellContainerFrames[deletedContainer.Id]
             frame:UnregisterAllEvents()
-            for _, child in ipairs({ frame:GetChildren() }) do
-                child:UnregisterAllEvents()
-                child:Hide()
-                child:SetParent(nil)
-            end
+            ReleaseContainerChildren(frame)
             frame:Hide()
             self.CustomItemSpellContainerFrames[deletedContainer.Id] = nil
         end
@@ -1236,6 +1257,150 @@ function BCDM:AdjustItemsSpellsLayoutIndex(direction, entryUid, containerId)
     self:AdjustCustomItemSpellLayoutIndex(containerId or self:GetSelectedCustomItemSpellContainerId(), direction, entryUid)
 end
 
+local function BuildTextSettingsSignature(textSettings)
+    textSettings = textSettings or {}
+    local layout = textSettings.Layout or {}
+    local colour = textSettings.Colour or {}
+
+    return table.concat({
+        tostring(textSettings.FontSize or ""),
+        tostring(colour[1] or ""),
+        tostring(colour[2] or ""),
+        tostring(colour[3] or ""),
+        tostring(layout[1] or ""),
+        tostring(layout[2] or ""),
+        tostring(layout[3] or ""),
+        tostring(layout[4] or ""),
+    }, "|")
+end
+
+local function BuildFontShadowSignature(shadowSettings)
+    shadowSettings = shadowSettings or {}
+    local colour = shadowSettings.Colour or {}
+
+    return table.concat({
+        tostring(shadowSettings.Enabled and 1 or 0),
+        tostring(colour[1] or ""),
+        tostring(colour[2] or ""),
+        tostring(colour[3] or ""),
+        tostring(colour[4] or ""),
+        tostring(shadowSettings.OffsetX or ""),
+        tostring(shadowSettings.OffsetY or ""),
+    }, "|")
+end
+
+local function BuildCustomItemSpellStyleSignature(customDB)
+    local cooldownManagerDB = BCDM.db.profile.CooldownManager
+    local generalDB = BCDM.db.profile.General
+    local iconWidth, iconHeight = BCDM:GetIconDimensions(customDB)
+    local keepAspectRatio = customDB.KeepAspectRatio
+    local showItemQualityBorder = customDB.ShowItemQualityBorder ~= false
+    if keepAspectRatio == nil then
+        keepAspectRatio = true
+    end
+
+    return table.concat({
+        tostring(iconWidth or ""),
+        tostring(iconHeight or ""),
+        tostring(keepAspectRatio and 1 or 0),
+        tostring(customDB.FrameStrata or ""),
+        tostring(showItemQualityBorder and 1 or 0),
+        tostring(cooldownManagerDB.General.BorderSize or ""),
+        tostring(cooldownManagerDB.General.IconZoom or ""),
+        tostring(BCDM.Media and BCDM.Media.Font or ""),
+        tostring(generalDB.Fonts and generalDB.Fonts.FontFlag or ""),
+        BuildTextSettingsSignature(customDB.Text),
+        BuildFontShadowSignature(generalDB.Fonts and generalDB.Fonts.Shadow),
+    }, "::")
+end
+
+local function DeactivateCachedIcon(customIcon)
+    if not customIcon then
+        return
+    end
+
+    if customIcon.BCDMDeactivate then
+        customIcon:BCDMDeactivate()
+        return
+    end
+
+    customIcon:UnregisterAllEvents()
+    customIcon:Hide()
+    customIcon:SetParent(nil)
+end
+
+local function ActivateCachedIcon(customIcon)
+    if not customIcon then
+        return
+    end
+
+    if customIcon.BCDMActivate then
+        customIcon:BCDMActivate()
+    end
+end
+
+local function RefreshCustomViewerIcon(customIcon, event, ...)
+    if not customIcon or not customIcon.BCDMIsActive then
+        return
+    end
+
+    local onEvent = customIcon:GetScript("OnEvent")
+    if onEvent then
+        onEvent(customIcon, event, ...)
+    end
+end
+
+local function DispatchContainerIconEvents(frame, event, ...)
+    if not frame or not frame.ActiveIcons then
+        return
+    end
+
+    local updatedSpellId, updatedBaseSpellId = ...
+
+    for _, customIcon in ipairs(frame.ActiveIcons) do
+        if customIcon and customIcon.BCDMIsActive then
+            if customIcon.BCDMIconType == "item" then
+                if event == "BAG_UPDATE_COOLDOWN" then
+                    RefreshCustomViewerIcon(customIcon, event, ...)
+                elseif event == "ITEM_COUNT_CHANGED" then
+                    local itemId = ...
+                    if not itemId or itemId == customIcon.BCDMItemId then
+                        RefreshCustomViewerIcon(customIcon, event, ...)
+                    end
+                end
+            elseif customIcon.BCDMIconType == "spell" then
+                if event == "SPELL_UPDATE_COOLDOWN" then
+                    RefreshCustomViewerIcon(customIcon, event, ...)
+                elseif event == "SPELL_UPDATE_CHARGES" and IsTrackedSpellCooldownUpdate(customIcon.BCDMSpellId, updatedSpellId, updatedBaseSpellId) then
+                    RefreshCustomViewerIcon(customIcon, event, ...)
+                end
+            elseif customIcon.BCDMIconType == "trinket" then
+                if event == "ACTIONBAR_UPDATE_COOLDOWN" then
+                    RefreshCustomViewerIcon(customIcon, event, ...)
+                end
+            end
+        end
+    end
+end
+
+local function GetActiveIconTypeFlags(activeIcons)
+    local hasItemIcons, hasSpellIcons, hasTrinketIcons = false, false, false
+
+    for _, customIcon in ipairs(activeIcons or {}) do
+        if customIcon and customIcon.BCDMIsActive then
+            if customIcon.BCDMIconType == "item" then
+                hasItemIcons = true
+            elseif customIcon.BCDMIconType == "spell" then
+                hasSpellIcons = true
+            elseif customIcon.BCDMIconType == "trinket" then
+                hasTrinketIcons = true
+            end
+        end
+    end
+
+    return hasItemIcons, hasSpellIcons, hasTrinketIcons
+end
+
 local function CreateCustomItemIcon(customDB, entry)
     local CooldownManagerDB = BCDM.db.profile
     local GeneralDB = CooldownManagerDB.General
@@ -1254,9 +1419,6 @@ local function CreateCustomItemIcon(customDB, entry)
 
     local iconWidth, iconHeight = BCDM:GetIconDimensions(customDB)
     customIcon:SetSize(iconWidth, iconHeight)
-    customIcon:RegisterEvent("SPELL_UPDATE_COOLDOWN")
-    customIcon:RegisterEvent("PLAYER_ENTERING_WORLD")
-    customIcon:RegisterEvent("ITEM_COUNT_CHANGED")
     customIcon:EnableMouse(false)
     customIcon:SetFrameStrata(customDB.FrameStrata or "LOW")
 
@@ -1285,13 +1447,15 @@ local function CreateCustomItemIcon(customDB, entry)
     customIcon.Cooldown:SetSwipeColor(0, 0, 0, 0.8)
     customIcon.Cooldown:SetHideCountdownNumbers(false)
     customIcon.Cooldown:SetReverse(false)
+    customIcon.BCDMIconType = "item"
+    customIcon.BCDMItemId = itemId
 
     customIcon.QualityAtlas = highLevelContainer:CreateTexture(nil, "OVERLAY")
     customIcon.QualityAtlas:Hide()
     ApplyItemQualityAtlas(customIcon, itemId, customDB, iconWidth, iconHeight)
 
     customIcon:SetScript("OnEvent", function(self, event)
-        if event == "SPELL_UPDATE_COOLDOWN" or event == "PLAYER_ENTERING_WORLD" or event == "ITEM_COUNT_CHANGED" then
+        if event == "BAG_UPDATE_COOLDOWN" or event == "PLAYER_ENTERING_WORLD" or event == "ITEM_COUNT_CHANGED" then
             local itemCount, startTime, durationTime = FetchItemData(itemId)
             if itemCount then
                 local hasActiveCooldown = (startTime and durationTime and startTime > 0 and durationTime > 0) or false
@@ -1339,10 +1503,28 @@ local function CreateCustomItemIcon(customDB, entry)
     BCDM:ApplyIconTexCoord(customIcon.Icon, iconWidth, iconHeight, iconZoom)
     customIcon.Icon:SetTexture(select(10, C_Item.GetItemInfo(itemId)))
 
-    local onEvent = customIcon:GetScript("OnEvent")
-    if onEvent then
-        onEvent(customIcon, "PLAYER_ENTERING_WORLD")
+    customIcon.BCDMActivate = function(self)
+        if self.BCDMIsActive then
+            return
+        end
+
+        self.BCDMIsActive = true
+
+        RefreshCustomViewerIcon(self, "PLAYER_ENTERING_WORLD")
     end
+
+    customIcon.BCDMDeactivate = function(self)
+        if not self.BCDMIsActive then
+            return
+        end
+
+        self:UnregisterAllEvents()
+        self.BCDMIsActive = false
+        self:Hide()
+        self:SetParent(nil)
+    end
+
+    customIcon:BCDMActivate()
 
     return customIcon
 end
@@ -1363,8 +1545,6 @@ local function CreateEquippedTrinketIcon(customDB, itemId)
 
     local iconWidth, iconHeight = BCDM:GetIconDimensions(customDB)
     customIcon:SetSize(iconWidth, iconHeight)
-    customIcon:RegisterEvent("SPELL_UPDATE_COOLDOWN")
-    customIcon:RegisterEvent("PLAYER_ENTERING_WORLD")
     customIcon:EnableMouse(false)
     customIcon:SetFrameStrata(customDB.FrameStrata or "LOW")
 
@@ -1376,9 +1556,11 @@ local function CreateEquippedTrinketIcon(customDB, itemId)
     customIcon.Cooldown:SetSwipeColor(0, 0, 0, 0.8)
     customIcon.Cooldown:SetHideCountdownNumbers(false)
     customIcon.Cooldown:SetReverse(false)
+    customIcon.BCDMIconType = "trinket"
+    customIcon.BCDMItemId = itemId
 
     customIcon:SetScript("OnEvent", function(self, event)
-        if event == "SPELL_UPDATE_COOLDOWN" or event == "PLAYER_ENTERING_WORLD" then
+        if event == "ACTIONBAR_UPDATE_COOLDOWN" or event == "PLAYER_ENTERING_WORLD" then
             local startTime, durationTime = select(2, FetchItemData(itemId))
             local hasActiveCooldown = (startTime and durationTime and startTime > 0 and durationTime > 0) or false
             if hasActiveCooldown then
@@ -1405,10 +1587,28 @@ local function CreateEquippedTrinketIcon(customDB, itemId)
     BCDM:ApplyIconTexCoord(customIcon.Icon, iconWidth, iconHeight, iconZoom)
     customIcon.Icon:SetTexture(select(10, C_Item.GetItemInfo(itemId)))
 
-    local onEvent = customIcon:GetScript("OnEvent")
-    if onEvent then
-        onEvent(customIcon, "PLAYER_ENTERING_WORLD")
+    customIcon.BCDMActivate = function(self)
+        if self.BCDMIsActive then
+            return
+        end
+
+        self.BCDMIsActive = true
+
+        RefreshCustomViewerIcon(self, "PLAYER_ENTERING_WORLD")
     end
+
+    customIcon.BCDMDeactivate = function(self)
+        if not self.BCDMIsActive then
+            return
+        end
+
+        self:UnregisterAllEvents()
+        self.BCDMIsActive = false
+        self:Hide()
+        self:SetParent(nil)
+    end
+
+    customIcon:BCDMActivate()
 
     return customIcon
 end
@@ -1431,9 +1631,6 @@ local function CreateCustomSpellIcon(customDB, entry)
 
     local iconWidth, iconHeight = BCDM:GetIconDimensions(customDB)
     customIcon:SetSize(iconWidth, iconHeight)
-    customIcon:RegisterEvent("SPELL_UPDATE_COOLDOWN")
-    customIcon:RegisterEvent("PLAYER_ENTERING_WORLD")
-    customIcon:RegisterEvent("SPELL_UPDATE_CHARGES")
     customIcon:EnableMouse(false)
     customIcon:SetFrameStrata(customDB.FrameStrata or "LOW")
 
@@ -1461,8 +1658,17 @@ local function CreateCustomSpellIcon(customDB, entry)
     customIcon.Cooldown:SetSwipeColor(0, 0, 0, 0.8)
     customIcon.Cooldown:SetHideCountdownNumbers(false)
     customIcon.Cooldown:SetReverse(false)
+    customIcon.BCDMIconType = "spell"
+    customIcon.BCDMSpellId = spellId
 
-    customIcon:SetScript("OnEvent", function(self, event)
+    customIcon:SetScript("OnEvent", function(self, event, updatedSpellId, updatedBaseSpellId)
+        if event == "SPELL_UPDATE_CHARGES" then
+            -- Retail can now tell us which spell changed, so skip unrelated invalidations.
+            if not IsTrackedSpellCooldownUpdate(spellId, updatedSpellId, updatedBaseSpellId) then
+                return
+            end
+        end
+
         if event == "SPELL_UPDATE_COOLDOWN" or event == "PLAYER_ENTERING_WORLD" or event == "SPELL_UPDATE_CHARGES" then
             local spellCharges = C_Spell.GetSpellCharges(spellId)
             if spellCharges and (spellCharges.maxCharges or 0) > 1 then
@@ -1485,6 +1691,29 @@ local function CreateCustomSpellIcon(customDB, entry)
     local iconZoom = BCDM.db.profile.CooldownManager.General.IconZoom * 0.5
     BCDM:ApplyIconTexCoord(customIcon.Icon, iconWidth, iconHeight, iconZoom)
     customIcon.Icon:SetTexture(C_Spell.GetSpellInfo(spellId).iconID)
+
+    customIcon.BCDMActivate = function(self)
+        if self.BCDMIsActive then
+            return
+        end
+
+        self.BCDMIsActive = true
+
+        RefreshCustomViewerIcon(self, "PLAYER_ENTERING_WORLD")
+    end
+
+    customIcon.BCDMDeactivate = function(self)
+        if not self.BCDMIsActive then
+            return
+        end
+
+        self:UnregisterAllEvents()
+        self.BCDMIsActive = false
+        self:Hide()
+        self:SetParent(nil)
+    end
+
+    customIcon:BCDMActivate()
 
     return customIcon
 end
@@ -1520,11 +1749,34 @@ local function GetTrackedHealthstoneInfo(entries, playerClass, playerSpecializat
     return activeHealthstoneId, healthstoneIndex
 end
 
-local function CreateCustomIcons(customDB, entries, iconTable, visibleItemIds)
+local function GetOrCreateCachedCustomIcon(iconCache, cacheKey, iconType, customDB, entryData)
+    local customIcon = iconCache and iconCache[cacheKey]
+    if customIcon then
+        ActivateCachedIcon(customIcon)
+        return customIcon
+    end
+
+    if iconType == "spell" then
+        customIcon = CreateCustomSpellIcon(customDB, entryData)
+    elseif iconType == "trinket" then
+        customIcon = CreateEquippedTrinketIcon(customDB, entryData.itemId)
+    else
+        customIcon = CreateCustomItemIcon(customDB, entryData)
+    end
+
+    if customIcon and iconCache then
+        iconCache[cacheKey] = customIcon
+    end
+
+    return customIcon
+end
+
+local function CreateCustomIcons(customDB, entries, iconTable, visibleItemIds, iconCache)
     local playerClass, playerSpecialization = GetPlayerSpecState()
     local activeEntries = {}
     local potionGroups = {}
     local activeHealthstoneId, healthstoneIndex = GetTrackedHealthstoneInfo(entries, playerClass, playerSpecialization)
+    local activeIconKeys = {}
 
     wipe(iconTable)
     if visibleItemIds then wipe(visibleItemIds) end
@@ -1554,6 +1806,7 @@ local function CreateCustomIcons(customDB, entries, iconTable, visibleItemIds)
                     entryType = entryType,
                     layoutIndex = layoutIndex,
                     entry = entry,
+                    cacheKey = entryType .. ":" .. tostring(entry.uid or entry.entryId),
                 }
             end
         end
@@ -1567,6 +1820,7 @@ local function CreateCustomIcons(customDB, entries, iconTable, visibleItemIds)
                 entryType = "item",
                 layoutIndex = potionGroup.index or math.huge,
                 entry = { entryId = selected.id, entryType = "item" },
+                cacheKey = "potion:" .. tostring(potionGroup.index or math.huge) .. ":" .. tostring(selected.id),
             }
         end
     end
@@ -1577,6 +1831,7 @@ local function CreateCustomIcons(customDB, entries, iconTable, visibleItemIds)
             entryType = "item",
             layoutIndex = healthstoneIndex,
             entry = { entryId = activeHealthstoneId, entryType = "item" },
+            cacheKey = "healthstone:" .. tostring(activeHealthstoneId),
         }
     end
 
@@ -1590,29 +1845,29 @@ local function CreateCustomIcons(customDB, entries, iconTable, visibleItemIds)
     end)
 
     for _, entry in ipairs(activeEntries) do
-        local customIcon
-        if entry.entryType == "spell" then
-            customIcon = CreateCustomSpellIcon(customDB, entry.entry)
-        else
-            customIcon = CreateCustomItemIcon(customDB, entry.entry)
-            if visibleItemIds then
-                visibleItemIds[entry.entryId] = true
-            end
-        end
+        local customIcon = GetOrCreateCachedCustomIcon(iconCache, entry.cacheKey, entry.entryType, customDB, entry.entry)
 
         if customIcon then
+            activeIconKeys[entry.cacheKey] = true
             iconTable[#iconTable + 1] = customIcon
+            if entry.entryType ~= "spell" and visibleItemIds then
+                visibleItemIds[entry.entryId] = true
+            end
         end
     end
 
     if customDB.IncludeUsableTrinkets then
         for _, trinketEntry in ipairs(FetchEquippedOnUseTrinkets()) do
-            local customTrinket = CreateEquippedTrinketIcon(customDB, trinketEntry.itemId)
+            local cacheKey = "trinket:" .. tostring(trinketEntry.slotID or 0) .. ":" .. tostring(trinketEntry.itemId)
+            local customTrinket = GetOrCreateCachedCustomIcon(iconCache, cacheKey, "trinket", customDB, trinketEntry)
             if customTrinket then
+                activeIconKeys[cacheKey] = true
                 iconTable[#iconTable + 1] = customTrinket
             end
         end
     end
+
+    return activeIconKeys
 end
 
 local function GetColumnWrapLimit(customDB)
@@ -1650,10 +1905,37 @@ local function GetOrCreateContainerFrame(container)
 end
 
 local function ReleaseContainerChildren(frame)
-    for _, child in ipairs({ frame:GetChildren() }) do
-        child:UnregisterAllEvents()
-        child:Hide()
-        child:SetParent(nil)
+    if not frame then
+        return
+    end
+
+    if frame.IconCache then
+        for _, customIcon in pairs(frame.IconCache) do
+            DeactivateCachedIcon(customIcon)
+        end
+        wipe(frame.IconCache)
+    else
+        for _, child in ipairs({ frame:GetChildren() }) do
+            child:UnregisterAllEvents()
+            child:Hide()
+            child:SetParent(nil)
+        end
+    end
+
+    frame.ActiveIcons = nil
+    frame.VisibleItemIds = nil
+    frame.StyleSignature = nil
+end
+
+local function HideUnusedCachedIcons(frame, activeIconKeys)
+    if not frame or not frame.IconCache then
+        return
+    end
+
+    for cacheKey, customIcon in pairs(frame.IconCache) do
+        if not activeIconKeys[cacheKey] then
+            DeactivateCachedIcon(customIcon)
+        end
     end
 end
 
@@ -1675,14 +1957,20 @@ local function SetupFrameEventHandler(frame)
     end
 
     frame.HideZeroEventHooked = true
-    frame:SetScript("OnEvent", function(self, event, itemId)
+    frame:SetScript("OnEvent", function(self, event, ...)
+        local eventArg1, eventArg2 = ...
         local container = BCDM:GetCustomItemSpellContainer(self.ContainerId)
         if not container then
             return
         end
 
+        if event == "BAG_UPDATE_COOLDOWN" or event == "SPELL_UPDATE_COOLDOWN" or event == "SPELL_UPDATE_CHARGES" or event == "ACTIONBAR_UPDATE_COOLDOWN" then
+            DispatchContainerIconEvents(self, event, eventArg1, eventArg2)
+            return
+        end
+
         if event == "PLAYER_EQUIPMENT_CHANGED" then
-            if itemId == 13 or itemId == 14 then
+            if eventArg1 == 13 or eventArg1 == 14 then
                 RequestDeferredContainerUpdate(self)
             end
             return
@@ -1697,6 +1985,7 @@ local function SetupFrameEventHandler(frame)
             return
         end
 
+        local itemId = eventArg1
         if not itemId then
             RequestDeferredContainerUpdate(self)
             return
@@ -1731,6 +2020,9 @@ local function SetupFrameEventHandler(frame)
         end
 
         if not container.HideZeroCharges then
+            if event == "ITEM_COUNT_CHANGED" then
+                DispatchContainerIconEvents(self, event, itemId)
+            end
             return
         end
 
@@ -1739,6 +2031,8 @@ local function SetupFrameEventHandler(frame)
         local shouldShow = ShouldShowItem(container, activeItemId)
         if visible ~= shouldShow then
             RequestDeferredContainerUpdate(self)
+        elseif event == "ITEM_COUNT_CHANGED" then
+            DispatchContainerIconEvents(self, event, itemId)
         end
     end)
 end
@@ -1752,6 +2046,15 @@ local function LayoutCustomItemSpellContainer(container)
     local visibleItemIds = {}
     local frame = GetOrCreateContainerFrame(container)
     local growthDirection = container.GrowthDirection or "RIGHT"
+    local styleSignature = BuildCustomItemSpellStyleSignature(container)
+
+    if frame.StyleSignature ~= styleSignature then
+        ReleaseContainerChildren(frame)
+        frame.IconCache = {}
+        frame.StyleSignature = styleSignature
+    end
+
+    frame.IconCache = frame.IconCache or {}
 
     local containerAnchorFrom = container.Layout[1]
     if growthDirection == "UP" then
@@ -1792,9 +2095,12 @@ local function LayoutCustomItemSpellContainer(container)
         frame:UnregisterEvent("PLAYER_EQUIPMENT_CHANGED")
     end
 
-    ReleaseContainerChildren(frame)
-    CreateCustomIcons(container, container.Entries, customItemBarIcons, visibleItemIds)
+    local activeIconKeys = CreateCustomIcons(container, container.Entries, customItemBarIcons, visibleItemIds, frame.IconCache)
+    HideUnusedCachedIcons(frame, activeIconKeys)
+
+    frame.ActiveIcons = customItemBarIcons
     frame.VisibleItemIds = visibleItemIds
+    local hasItemIcons, hasSpellIcons, hasTrinketIcons = GetActiveIconTypeFlags(customItemBarIcons)
 
     local iconWidth, iconHeight = BCDM:GetIconDimensions(container)
     local iconSpacing = container.Spacing
@@ -1902,6 +2208,33 @@ local function LayoutCustomItemSpellContainer(container)
     end
 
     ApplyCooldownText(frame)
+
+    if hasItemIcons or shouldTrackItemCountChanges then
+        frame:RegisterEvent("ITEM_COUNT_CHANGED")
+    else
+        frame:UnregisterEvent("ITEM_COUNT_CHANGED")
+    end
+
+    if hasItemIcons then
+        frame:RegisterEvent("BAG_UPDATE_COOLDOWN")
+    else
+        frame:UnregisterEvent("BAG_UPDATE_COOLDOWN")
+    end
+
+    if hasSpellIcons then
+        frame:RegisterEvent("SPELL_UPDATE_COOLDOWN")
+        frame:RegisterEvent("SPELL_UPDATE_CHARGES")
+    else
+        frame:UnregisterEvent("SPELL_UPDATE_COOLDOWN")
+        frame:UnregisterEvent("SPELL_UPDATE_CHARGES")
+    end
+
+    if hasTrinketIcons then
+        frame:RegisterEvent("ACTIONBAR_UPDATE_COOLDOWN")
+    else
+        frame:UnregisterEvent("ACTIONBAR_UPDATE_COOLDOWN")
+    end
+
     frame:Show()
 end
 

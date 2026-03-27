@@ -2,8 +2,12 @@ local _, BCDM = ...
 
 local function FetchCooldownTextRegion(cooldown)
     if not cooldown then return end
+    if cooldown.BCDMCachedTextRegion then
+        return cooldown.BCDMCachedTextRegion
+    end
     for _, region in ipairs({ cooldown:GetRegions() }) do
         if region:GetObjectType() == "FontString" then
+            cooldown.BCDMCachedTextRegion = region
             return region
         end
     end
@@ -15,7 +19,8 @@ local function ApplyCooldownText()
     local CooldownTextDB = CooldownManagerDB.CooldownManager.General.CooldownText
     local Viewer = _G["BCDM_TrinketBar"]
     if not Viewer then return end
-    for _, icon in ipairs({ Viewer:GetChildren() }) do
+    local icons = Viewer.ActiveIcons or { Viewer:GetChildren() }
+    for _, icon in ipairs(icons) do
         if icon and icon.Cooldown then
             local textRegion = FetchCooldownTextRegion(icon.Cooldown)
             if textRegion then
@@ -84,6 +89,77 @@ local function FetchEquippedOnUseTrinkets()
     return equipped
 end
 
+local function BuildTextSettingsSignature(textSettings)
+    textSettings = textSettings or {}
+    local layout = textSettings.Layout or {}
+    local colour = textSettings.Colour or {}
+
+    return table.concat({
+        tostring(textSettings.FontSize or ""),
+        tostring(colour[1] or ""),
+        tostring(colour[2] or ""),
+        tostring(colour[3] or ""),
+        tostring(layout[1] or ""),
+        tostring(layout[2] or ""),
+        tostring(layout[3] or ""),
+        tostring(layout[4] or ""),
+    }, "|")
+end
+
+local function BuildFontShadowSignature(shadowSettings)
+    shadowSettings = shadowSettings or {}
+    local colour = shadowSettings.Colour or {}
+
+    return table.concat({
+        tostring(shadowSettings.Enabled and 1 or 0),
+        tostring(colour[1] or ""),
+        tostring(colour[2] or ""),
+        tostring(colour[3] or ""),
+        tostring(colour[4] or ""),
+        tostring(shadowSettings.OffsetX or ""),
+        tostring(shadowSettings.OffsetY or ""),
+    }, "|")
+end
+
+local function BuildTrinketBarStyleSignature(customDB)
+    local cooldownManagerDB = BCDM.db.profile.CooldownManager
+    local generalDB = BCDM.db.profile.General
+    local iconWidth, iconHeight = BCDM:GetIconDimensions(customDB)
+
+    return table.concat({
+        tostring(iconWidth or ""),
+        tostring(iconHeight or ""),
+        tostring(customDB.FrameStrata or ""),
+        tostring(cooldownManagerDB.General.BorderSize or ""),
+        tostring(cooldownManagerDB.General.IconZoom or ""),
+        tostring(BCDM.Media and BCDM.Media.Font or ""),
+        tostring(generalDB.Fonts and generalDB.Fonts.FontFlag or ""),
+        BuildTextSettingsSignature(cooldownManagerDB.General.CooldownText),
+        BuildFontShadowSignature(generalDB.Fonts and generalDB.Fonts.Shadow),
+    }, "::")
+end
+
+local function ActivateCachedIcon(customIcon)
+    if customIcon and customIcon.BCDMActivate then
+        customIcon:BCDMActivate()
+    end
+end
+
+local function DeactivateCachedIcon(customIcon)
+    if not customIcon then
+        return
+    end
+
+    if customIcon.BCDMDeactivate then
+        customIcon:BCDMDeactivate()
+        return
+    end
+
+    customIcon:UnregisterAllEvents()
+    customIcon:Hide()
+    customIcon:SetParent(nil)
+end
+
 local function CreateCustomIcon(itemId, slotID)
     local CooldownManagerDB = BCDM.db.profile
     local GeneralDB = CooldownManagerDB.General
@@ -104,8 +180,6 @@ local function CreateCustomIcon(itemId, slotID)
     customIcon:SetSize(iconWidth, iconHeight)
     local anchorParent = BCDM:ResolveAnchorFrame(CustomDB.Layout[2])
     customIcon:SetPoint(CustomDB.Layout[1], anchorParent, CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
-    customIcon:RegisterEvent("SPELL_UPDATE_COOLDOWN")
-    customIcon:RegisterEvent("PLAYER_ENTERING_WORLD")
     customIcon:EnableMouse(false)
     customIcon:SetFrameStrata(CustomDB.FrameStrata or "LOW")
 
@@ -121,8 +195,8 @@ local function CreateCustomIcon(itemId, slotID)
     customIcon.Cooldown:SetHideCountdownNumbers(false)
     customIcon.Cooldown:SetReverse(false)
 
-    customIcon:HookScript("OnEvent", function(self, event, ...)
-        if event == "SPELL_UPDATE_COOLDOWN" or event == "PLAYER_ENTERING_WORLD" then
+    customIcon:SetScript("OnEvent", function(self, event, ...)
+        if event == "ACTIONBAR_UPDATE_COOLDOWN" or event == "PLAYER_ENTERING_WORLD" then
             local startTime, durationTime = FetchItemData(itemId)
             local hasActiveCooldown = (startTime and durationTime and startTime > 0 and durationTime > 0) or false
             if hasActiveCooldown then
@@ -149,19 +223,103 @@ local function CreateCustomIcon(itemId, slotID)
     BCDM:ApplyIconTexCoord(customIcon.Icon, iconWidth, iconHeight, iconZoom)
     customIcon.Icon:SetTexture(select(10, C_Item.GetItemInfo(itemId)))
 
+    customIcon.BCDMActivate = function(self)
+        if self.BCDMIsActive then
+            return
+        end
+
+        self:RegisterEvent("ACTIONBAR_UPDATE_COOLDOWN")
+        self:RegisterEvent("PLAYER_ENTERING_WORLD")
+        self.BCDMIsActive = true
+
+        local onEvent = self:GetScript("OnEvent")
+        if onEvent then
+            onEvent(self, "PLAYER_ENTERING_WORLD")
+        end
+    end
+
+    customIcon.BCDMDeactivate = function(self)
+        if not self.BCDMIsActive then
+            return
+        end
+
+        self:UnregisterAllEvents()
+        self.BCDMIsActive = false
+        self:Hide()
+        self:SetParent(nil)
+    end
+
+    customIcon:BCDMActivate()
+
     return customIcon
 end
 
-local function CreateCustomIcons(iconTable)
+local function ReleaseTrinketIcons(container)
+    if not container then
+        return
+    end
+
+    if container.IconCache then
+        for _, customIcon in pairs(container.IconCache) do
+            DeactivateCachedIcon(customIcon)
+        end
+        wipe(container.IconCache)
+    else
+        for _, child in ipairs({ container:GetChildren() }) do
+            child:UnregisterAllEvents()
+            child:Hide()
+            child:SetParent(nil)
+        end
+    end
+
+    container.ActiveIcons = nil
+    container.StyleSignature = nil
+end
+
+local function HideUnusedTrinketIcons(container, activeIconKeys)
+    if not container or not container.IconCache then
+        return
+    end
+
+    for cacheKey, customIcon in pairs(container.IconCache) do
+        if not activeIconKeys[cacheKey] then
+            DeactivateCachedIcon(customIcon)
+        end
+    end
+end
+
+local function GetOrCreateTrinketIcon(container, cacheKey, itemId, slotID)
+    container.IconCache = container.IconCache or {}
+
+    local customIcon = container.IconCache[cacheKey]
+    if customIcon then
+        ActivateCachedIcon(customIcon)
+        return customIcon
+    end
+
+    customIcon = CreateCustomIcon(itemId, slotID)
+    if customIcon then
+        container.IconCache[cacheKey] = customIcon
+    end
+
+    return customIcon
+end
+
+local function CreateCustomIcons(container, iconTable)
+    local activeIconKeys = {}
     wipe(iconTable)
 
     local trinkets = FetchEquippedOnUseTrinkets()
     for _, trinketEntry in ipairs(trinkets) do
-        local customTrinket = CreateCustomIcon(trinketEntry.itemId, trinketEntry.slotID)
+        local cacheKey = "trinket:" .. tostring(trinketEntry.slotID or 0) .. ":" .. tostring(trinketEntry.itemId)
+        local customTrinket = GetOrCreateTrinketIcon(container, cacheKey, trinketEntry.itemId, trinketEntry.slotID)
         if customTrinket then
             table.insert(iconTable, customTrinket)
+            activeIconKeys[cacheKey] = true
         end
     end
+
+    return activeIconKeys
 end
 
 local function LayoutTrinketBar()
@@ -189,14 +347,21 @@ local function LayoutTrinketBar()
         BCDM.TrinketBarContainer:SetSize(1, 1)
     end
 
+    local styleSignature = BuildTrinketBarStyleSignature(CustomDB)
+    if BCDM.TrinketBarContainer.StyleSignature ~= styleSignature then
+        ReleaseTrinketIcons(BCDM.TrinketBarContainer)
+        BCDM.TrinketBarContainer.IconCache = {}
+        BCDM.TrinketBarContainer.StyleSignature = styleSignature
+    end
+
     BCDM.TrinketBarContainer:ClearAllPoints()
     BCDM.TrinketBarContainer:SetFrameStrata(CustomDB.FrameStrata or "LOW")
     local anchorParent = BCDM:ResolveAnchorFrame(CustomDB.Layout[2])
     BCDM.TrinketBarContainer:SetPoint(containerAnchorFrom, anchorParent, CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
 
-    for _, child in ipairs({BCDM.TrinketBarContainer:GetChildren()}) do child:UnregisterAllEvents() child:Hide() child:SetParent(nil) end
-
-    CreateCustomIcons(customTrinketIcons)
+    local activeIconKeys = CreateCustomIcons(BCDM.TrinketBarContainer, customTrinketIcons)
+    HideUnusedTrinketIcons(BCDM.TrinketBarContainer, activeIconKeys)
+    BCDM.TrinketBarContainer.ActiveIcons = customTrinketIcons
 
     local iconWidth, iconHeight = BCDM:GetIconDimensions(CustomDB)
     local iconSpacing = CustomDB.Spacing
@@ -245,7 +410,6 @@ local function LayoutTrinketBar()
 
             local xOffset = startOffset + ((i - 1) * (iconWidth + iconSpacing))
             spellIcon:SetPoint("CENTER", BCDM.TrinketBarContainer, "CENTER", xOffset, 0)
-            ApplyCooldownText()
             spellIcon:Show()
         end
     else
@@ -268,10 +432,11 @@ local function LayoutTrinketBar()
                     spellIcon:SetPoint("TOP", customTrinketIcons[i - 1], "BOTTOM", 0, -iconSpacing)
                 end
             end
-            ApplyCooldownText()
             spellIcon:Show()
         end
     end
+
+    ApplyCooldownText()
 
     if CustomDB.Enabled and #customTrinketIcons > 0 then
         BCDM.TrinketBarContainer:Show()
@@ -295,6 +460,7 @@ function BCDM:UpdateTrinketBar()
         LayoutTrinketBar()
     else
         if BCDM.TrinketBarContainer then
+            ReleaseTrinketIcons(BCDM.TrinketBarContainer)
             BCDM.TrinketBarContainer:Hide()
         end
     end
