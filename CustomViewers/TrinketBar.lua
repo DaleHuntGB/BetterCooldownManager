@@ -64,6 +64,23 @@ local function CalculateFallbackDesaturation(startTime, duration)
     return remaining > 0.001 and 1 or 0
 end
 
+local function GetReadableNumber(value)
+    if type(value) ~= "number" then return nil end
+    if BCDM:IsSecretValue(value) then return nil end
+    return value
+end
+
+local function HasReadableActiveCooldown(startTime, duration)
+    startTime = GetReadableNumber(startTime)
+    duration = GetReadableNumber(duration)
+
+    if startTime == nil or duration == nil then
+        return false, nil, nil
+    end
+
+    return startTime > 0 and duration > 0, startTime, duration
+end
+
 local function FetchItemData(itemId)
     local startTime, durationTime = C_Item.GetItemCooldown(itemId)
     return startTime, durationTime
@@ -198,15 +215,15 @@ local function CreateCustomIcon(itemId, slotID)
     customIcon:SetScript("OnEvent", function(self, event, ...)
         if event == "ACTIONBAR_UPDATE_COOLDOWN" or event == "PLAYER_ENTERING_WORLD" then
             local startTime, durationTime = FetchItemData(itemId)
-            local hasActiveCooldown = (startTime and durationTime and startTime > 0 and durationTime > 0) or false
+            local hasActiveCooldown, readableStartTime, readableDurationTime = HasReadableActiveCooldown(startTime, durationTime)
             if hasActiveCooldown then
                 local durationObject = C_DurationUtil.CreateDuration()
-                durationObject:SetTimeFromStart(startTime, durationTime)
+                durationObject:SetTimeFromStart(readableStartTime, readableDurationTime)
                 customIcon.Cooldown:SetCooldownFromDurationObject(durationObject, true)
                 if BCDM:IsSecretValue(startTime) or BCDM:IsSecretValue(durationTime) then
                     SetIconDesaturation(customIcon.Icon, 0)
                 else
-                    SetIconDesaturation(customIcon.Icon, CalculateFallbackDesaturation(startTime, durationTime))
+                    SetIconDesaturation(customIcon.Icon, CalculateFallbackDesaturation(readableStartTime, readableDurationTime))
                 end
             else
                 customIcon.Cooldown:SetCooldownFromDurationObject(C_DurationUtil.CreateDuration(), true)

@@ -174,6 +174,17 @@ local function GetReadableNumber(value)
     return value
 end
 
+local function HasReadableActiveCooldown(startTime, duration)
+    startTime = GetReadableNumber(startTime)
+    duration = GetReadableNumber(duration)
+
+    if startTime == nil or duration == nil then
+        return false, nil, nil
+    end
+
+    return startTime > 0 and duration > 0, startTime, duration
+end
+
 local GetTrackedSpellOverrideId
 
 local function IsTrackedSpellCooldownUpdate(spellId, updatedSpellId, updatedBaseSpellId)
@@ -253,22 +264,18 @@ local function BuildSpellCooldownIndex(activeIcons)
 end
 
 local function GetCustomViewerGCDState()
-    local cooldownData = C_Spell.GetSpellCooldown(CUSTOM_VIEWER_GCD_SPELL_ID)
-    local startTime = cooldownData and cooldownData.startTime or 0
-    local duration = cooldownData and cooldownData.duration or 0
-    local modRate = cooldownData and cooldownData.modRate or 1
-
-    if type(startTime) ~= "number" or type(duration) ~= "number" or startTime <= 0 or duration <= 0 then
-        return nil, nil, nil
+    local durationObject = C_Spell.GetSpellCooldownDuration and C_Spell.GetSpellCooldownDuration(CUSTOM_VIEWER_GCD_SPELL_ID)
+    if durationObject then
+        return true
     end
 
-    return startTime, duration, modRate
+    local cooldownData = C_Spell.GetSpellCooldown(CUSTOM_VIEWER_GCD_SPELL_ID)
+    local hasReadableCooldown = HasReadableActiveCooldown(cooldownData and cooldownData.startTime, cooldownData and cooldownData.duration)
+    return hasReadableCooldown
 end
 
-local function HasCooldownStateChanged(previousStartTime, previousDuration, previousModRate, currentStartTime, currentDuration, currentModRate)
-    return previousStartTime ~= currentStartTime
-        or previousDuration ~= currentDuration
-        or previousModRate ~= currentModRate
+local function HasCooldownStateChanged(previousState, currentState)
+    return previousState ~= currentState
 end
 
 local function UpdateSpellIconDesaturation(customIcon, spellId)
@@ -282,7 +289,8 @@ local function UpdateSpellIconDesaturation(customIcon, spellId)
     end
 
     local spellCharges = C_Spell.GetSpellCharges(spellId)
-    local currentCharges = spellCharges and (spellCharges.maxCharges or 0) > 1 and GetReadableNumber(spellCharges.currentCharges)
+    local maxCharges = GetReadableNumber(spellCharges and spellCharges.maxCharges) or 0
+    local currentCharges = maxCharges > 1 and GetReadableNumber(spellCharges.currentCharges)
     if currentCharges then
         if currentCharges > 0 then
             SetIconDesaturation(customIcon.Icon, 0)
@@ -316,16 +324,21 @@ local function ShouldRefreshItemCooldownFrame(cooldownFrame, hasActiveCooldown, 
     end
 
     local oldStart, oldDuration = cooldownFrame:GetCooldownTimes()
-    oldStart = tonumber(oldStart) or 0
-    oldDuration = tonumber(oldDuration) or 0
+    oldStart = GetReadableNumber(tonumber(oldStart)) or 0
+    oldDuration = GetReadableNumber(tonumber(oldDuration)) or 0
 
     if hasActiveCooldown then
         if oldStart <= 0 or oldDuration <= 0 then
             return true
         end
 
+        local hasReadableCooldown, readableStartTime, readableDurationTime = HasReadableActiveCooldown(startTime, durationTime)
+        if not hasReadableCooldown then
+            return true
+        end
+
         local oldEnd = (oldStart + oldDuration) / 1000
-        local newEnd = (startTime or 0) + (durationTime or 0)
+        local newEnd = readableStartTime + readableDurationTime
         return math.abs(oldEnd - newEnd) > 0.01
     end
 
@@ -338,26 +351,29 @@ local function UpdateCustomSpellIconCooldown(customIcon, spellId)
     end
 
     local spellCharges = C_Spell.GetSpellCharges(spellId)
-    local hasCharges = spellCharges and (spellCharges.maxCharges or 0) > 1
+    local maxCharges = GetReadableNumber(spellCharges and spellCharges.maxCharges) or 0
+    local currentCharges = GetReadableNumber(spellCharges and spellCharges.currentCharges)
+    local hasCharges = maxCharges > 1
 
     if hasCharges then
-        customIcon.Charges:SetText(tostring(spellCharges.currentCharges or 0))
+        customIcon.Charges:SetText(tostring(currentCharges or 0))
     else
         customIcon.Charges:SetText("")
     end
 
     local chargeStartTime = hasCharges and spellCharges.cooldownStartTime or 0
     local chargeDuration = hasCharges and spellCharges.cooldownDuration or 0
-    local hasChargeCooldown = type(chargeStartTime) == "number" and type(chargeDuration) == "number" and chargeStartTime > 0 and chargeDuration > 0
+    local hasReadableChargeCooldown, readableChargeStartTime, readableChargeDuration = HasReadableActiveCooldown(chargeStartTime, chargeDuration)
+    local spellChargeCooldown = hasCharges and C_Spell.GetSpellChargeDuration and C_Spell.GetSpellChargeDuration(spellId)
+    local hasChargeCooldown = hasCharges and (spellChargeCooldown ~= nil or hasReadableChargeCooldown)
 
     if hasChargeCooldown then
         if ShouldRefreshItemCooldownFrame(customIcon.Cooldown, true, chargeStartTime, chargeDuration) then
-            local spellChargeCooldown = C_Spell.GetSpellChargeDuration and C_Spell.GetSpellChargeDuration(spellId)
             if spellChargeCooldown then
                 customIcon.Cooldown:SetCooldownFromDurationObject(spellChargeCooldown, true)
-            else
+            elseif hasReadableChargeCooldown then
                 local durationObject = C_DurationUtil.CreateDuration()
-                durationObject:SetTimeFromStart(chargeStartTime, chargeDuration)
+                durationObject:SetTimeFromStart(readableChargeStartTime, readableChargeDuration)
                 customIcon.Cooldown:SetCooldownFromDurationObject(durationObject, true)
             end
         end
@@ -368,16 +384,17 @@ local function UpdateCustomSpellIconCooldown(customIcon, spellId)
     local cooldownData = C_Spell.GetSpellCooldown(spellId)
     local cooldownStartTime = cooldownData and cooldownData.startTime or 0
     local cooldownDuration = cooldownData and cooldownData.duration or 0
-    local hasCooldown = type(cooldownStartTime) == "number" and type(cooldownDuration) == "number" and cooldownStartTime > 0 and cooldownDuration > 0
+    local hasReadableCooldown, readableCooldownStartTime, readableCooldownDuration = HasReadableActiveCooldown(cooldownStartTime, cooldownDuration)
+    local spellCooldown = C_Spell.GetSpellCooldownDuration and C_Spell.GetSpellCooldownDuration(spellId)
+    local hasCooldown = spellCooldown ~= nil or hasReadableCooldown
 
     if hasCooldown then
         if ShouldRefreshItemCooldownFrame(customIcon.Cooldown, true, cooldownStartTime, cooldownDuration) then
-            local spellCooldown = C_Spell.GetSpellCooldownDuration and C_Spell.GetSpellCooldownDuration(spellId)
             if spellCooldown then
                 customIcon.Cooldown:SetCooldownFromDurationObject(spellCooldown, true)
-            else
+            elseif hasReadableCooldown then
                 local durationObject = C_DurationUtil.CreateDuration()
-                durationObject:SetTimeFromStart(cooldownStartTime, cooldownDuration)
+                durationObject:SetTimeFromStart(readableCooldownStartTime, readableCooldownDuration)
                 customIcon.Cooldown:SetCooldownFromDurationObject(durationObject, true)
             end
         end
@@ -1521,19 +1538,10 @@ local function ResetCustomViewerGCDState()
 end
 
 local function UpdateCustomViewerGCDState()
-    local startTime, duration, modRate = GetCustomViewerGCDState()
-    local hasChanged = HasCooldownStateChanged(
-        CustomViewerGCDState.startTime,
-        CustomViewerGCDState.duration,
-        CustomViewerGCDState.modRate,
-        startTime,
-        duration,
-        modRate
-    )
+    local isActive = GetCustomViewerGCDState()
+    local hasChanged = HasCooldownStateChanged(CustomViewerGCDState.isActive, isActive)
 
-    CustomViewerGCDState.startTime = startTime
-    CustomViewerGCDState.duration = duration
-    CustomViewerGCDState.modRate = modRate
+    CustomViewerGCDState.isActive = isActive
 
     return hasChanged
 end
@@ -1693,13 +1701,13 @@ local function CreateCustomItemIcon(customDB, entry)
         if event == "BAG_UPDATE_COOLDOWN" or event == "PLAYER_ENTERING_WORLD" or event == "ITEM_COUNT_CHANGED" then
             local itemCount, startTime, durationTime = FetchItemData(itemId)
             if itemCount then
-                local hasActiveCooldown = (startTime and durationTime and startTime > 0 and durationTime > 0) or false
+                local hasActiveCooldown, readableStartTime, readableDurationTime = HasReadableActiveCooldown(startTime, durationTime)
                 customIcon.Charges:SetText(tostring(itemCount))
                 if C_Item.IsUsableItem(itemId) then
                     local shouldRefreshCooldown = ShouldRefreshItemCooldownFrame(customIcon.Cooldown, hasActiveCooldown, startTime, durationTime)
                     if hasActiveCooldown and shouldRefreshCooldown then
                         local durationObject = C_DurationUtil.CreateDuration()
-                        durationObject:SetTimeFromStart(startTime, durationTime)
+                        durationObject:SetTimeFromStart(readableStartTime, readableDurationTime)
                         customIcon.Cooldown:SetCooldownFromDurationObject(durationObject, true)
                     elseif not hasActiveCooldown and event ~= "ITEM_COUNT_CHANGED" and shouldRefreshCooldown then
                         customIcon.Cooldown:SetCooldownFromDurationObject(C_DurationUtil.CreateDuration(), true)
@@ -1715,7 +1723,7 @@ local function CreateCustomItemIcon(customDB, entry)
                 if BCDM:IsSecretValue(startTime) or BCDM:IsSecretValue(durationTime) then
                     SetIconDesaturation(customIcon.Icon, 0)
                 elseif hasActiveCooldown then
-                    SetIconDesaturation(customIcon.Icon, CalculateFallbackDesaturation(startTime, durationTime))
+                    SetIconDesaturation(customIcon.Icon, CalculateFallbackDesaturation(readableStartTime, readableDurationTime))
                 else
                     SetIconDesaturation(customIcon.Icon, 0)
                 end
@@ -1797,15 +1805,15 @@ local function CreateEquippedTrinketIcon(customDB, itemId)
     customIcon:SetScript("OnEvent", function(self, event)
         if event == "ACTIONBAR_UPDATE_COOLDOWN" or event == "PLAYER_ENTERING_WORLD" then
             local startTime, durationTime = select(2, FetchItemData(itemId))
-            local hasActiveCooldown = (startTime and durationTime and startTime > 0 and durationTime > 0) or false
+            local hasActiveCooldown, readableStartTime, readableDurationTime = HasReadableActiveCooldown(startTime, durationTime)
             if hasActiveCooldown then
                 local durationObject = C_DurationUtil.CreateDuration()
-                durationObject:SetTimeFromStart(startTime, durationTime)
+                durationObject:SetTimeFromStart(readableStartTime, readableDurationTime)
                 customIcon.Cooldown:SetCooldownFromDurationObject(durationObject, true)
                 if BCDM:IsSecretValue(startTime) or BCDM:IsSecretValue(durationTime) then
                     SetIconDesaturation(customIcon.Icon, 0)
                 else
-                    SetIconDesaturation(customIcon.Icon, CalculateFallbackDesaturation(startTime, durationTime))
+                    SetIconDesaturation(customIcon.Icon, CalculateFallbackDesaturation(readableStartTime, readableDurationTime))
                 end
             else
                 customIcon.Cooldown:SetCooldownFromDurationObject(C_DurationUtil.CreateDuration(), true)
