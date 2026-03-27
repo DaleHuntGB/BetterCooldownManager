@@ -205,7 +205,11 @@ local function GetColumnWrapLimit(customDB)
 end
 
 local function IsCenteredHorizontalLayout(point, growthDirection)
-    return (point == "TOP" or point == "BOTTOM") and (growthDirection == "LEFT" or growthDirection == "RIGHT")
+    return growthDirection == "HORIZONTAL" or ((point == "TOP" or point == "BOTTOM") and (growthDirection == "LEFT" or growthDirection == "RIGHT"))
+end
+
+local function IsCenteredVerticalLayout(growthDirection)
+    return growthDirection == "VERTICAL"
 end
 
 local function ShouldGrowUp(point)
@@ -549,10 +553,11 @@ local function LayoutCustomTimerViewer()
     local iconSpacing = customDB.Spacing or 0
     local point = select(1, container:GetPoint(1))
     local growthDirection = customDB.GrowthDirection or "RIGHT"
-    local isHorizontalGrowth = growthDirection == "LEFT" or growthDirection == "RIGHT"
+    local isHorizontalGrowth = growthDirection == "LEFT" or growthDirection == "RIGHT" or growthDirection == "HORIZONTAL"
     local wrapLimit = GetColumnWrapLimit(customDB)
     local lineLimit = (wrapLimit > 0) and wrapLimit or math.max(#activeIcons, 1)
-    local useCenteredLayout = IsCenteredHorizontalLayout(point, growthDirection)
+    local useCenteredHorizontalLayout = IsCenteredHorizontalLayout(point, growthDirection)
+    local useCenteredVerticalLayout = IsCenteredVerticalLayout(growthDirection)
 
     if #activeIcons == 0 or not customDB.Enabled then
         container:SetSize(1, 1)
@@ -584,7 +589,7 @@ local function LayoutCustomTimerViewer()
         CENTER = { anchor = "CENTER" },
     }
 
-    if useCenteredLayout then
+    if useCenteredHorizontalLayout then
         local rowCount = math.ceil(#activeIcons / lineLimit)
         local rowDirection = ShouldGrowUp(point) and 1 or -1
 
@@ -602,6 +607,27 @@ local function LayoutCustomTimerViewer()
                 timerIcon:SetSize(iconWidth, iconHeight)
                 timerIcon:ClearAllPoints()
                 timerIcon:SetPoint("CENTER", container, "CENTER", startOffset + ((i - rowStart) * (iconWidth + iconSpacing)), yOffset)
+                timerIcon:Show()
+            end
+        end
+    elseif useCenteredVerticalLayout then
+        local columnCount = math.ceil(#activeIcons / lineLimit)
+        local columnDirection = ShouldGrowLeft(point) and -1 or 1
+
+        for columnIndex = 1, columnCount do
+            local columnStart = ((columnIndex - 1) * lineLimit) + 1
+            local columnEnd = math.min(columnStart + lineLimit - 1, #activeIcons)
+            local columnIcons = columnEnd - columnStart + 1
+            local columnHeight = (columnIcons * iconHeight) + ((columnIcons - 1) * iconSpacing)
+            local startOffset = -(columnHeight / 2) + (iconHeight / 2)
+            local xOffset = (columnIndex - 1) * (iconWidth + iconSpacing) * columnDirection
+
+            for i = columnStart, columnEnd do
+                local timerIcon = activeIcons[i]
+                timerIcon:SetParent(container)
+                timerIcon:SetSize(iconWidth, iconHeight)
+                timerIcon:ClearAllPoints()
+                timerIcon:SetPoint("CENTER", container, "CENTER", xOffset, startOffset + ((i - columnStart) * (iconHeight + iconSpacing)))
                 timerIcon:Show()
             end
         end

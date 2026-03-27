@@ -2453,7 +2453,14 @@ local function CreateCustomTimerSettings(parentContainer)
 
     local growthDirectionDropdown = AG:Create("Dropdown")
     growthDirectionDropdown:SetLabel(LL("Growth Direction"))
-    growthDirectionDropdown:SetList({["LEFT"] = "Left", ["RIGHT"] = "Right", ["UP"] = "Up", ["DOWN"] = "Down"}, {"UP", "DOWN", "LEFT", "RIGHT"})
+    growthDirectionDropdown:SetList({
+        ["LEFT"] = "Left",
+        ["RIGHT"] = "Right",
+        ["UP"] = "Up",
+        ["DOWN"] = "Down",
+        ["HORIZONTAL"] = "Centered Horizontal",
+        ["VERTICAL"] = "Centered Vertical",
+    }, {"UP", "DOWN", "LEFT", "RIGHT", "HORIZONTAL", "VERTICAL"})
     growthDirectionDropdown:SetValue(containerDB.GrowthDirection)
     growthDirectionDropdown:SetCallback("OnValueChanged", function(_, _, value)
         containerDB.GrowthDirection = value
