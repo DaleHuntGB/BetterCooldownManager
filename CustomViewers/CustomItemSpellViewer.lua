@@ -76,7 +76,7 @@ local function UpdateSpellIconDesaturation(customIcon, spellId)
     end
 
     local spellCharges = C_Spell.GetSpellCharges(spellId)
-    local currentCharges = spellCharges and GetReadableNumber(spellCharges.currentCharges)
+    local currentCharges = spellCharges and (spellCharges.maxCharges or 0) > 1 and GetReadableNumber(spellCharges.currentCharges)
     if currentCharges then
         if currentCharges > 0 then
             SetIconDesaturation(customIcon.Icon, 0)
@@ -489,11 +489,12 @@ local function CreateCustomSpellIcon(spellId)
     customIcon:SetScript("OnEvent", function(self, event, ...)
         if event == "SPELL_UPDATE_COOLDOWN" or event == "PLAYER_ENTERING_WORLD" or event == "SPELL_UPDATE_CHARGES" then
             local spellCharges = C_Spell.GetSpellCharges(spellId)
-            if spellCharges then
+            if spellCharges and (spellCharges.maxCharges or 0) > 1 then
                 customIcon.Charges:SetText(tostring(spellCharges.currentCharges))
                 local spellChargeCooldown = C_Spell.GetSpellChargeDuration(spellId)
                 customIcon.Cooldown:SetCooldownFromDurationObject(spellChargeCooldown, true)
             else
+                customIcon.Charges:SetText("")
                 local spellCooldown = C_Spell.GetSpellCooldownDuration(spellId)
                 customIcon.Cooldown:SetCooldownFromDurationObject(spellCooldown, true)
             end
