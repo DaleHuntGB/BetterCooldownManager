@@ -1960,6 +1960,11 @@ local function GetPlayerSpecState()
     return playerClass, playerSpecialization
 end
 
+local function GetPlayerSpecStateSignature()
+    local playerClass, playerSpecialization = GetPlayerSpecState()
+    return tostring(playerClass or "") .. ":" .. tostring(playerSpecialization or "")
+end
+
 local function GetTrackedHealthstoneInfo(entries, playerClass, playerSpecialization)
     if playerClass ~= "WARLOCK" then
         return nil, nil
@@ -2162,6 +2167,7 @@ local function ReleaseContainerChildren(frame)
     frame.SpellIcons = nil
     frame.HasSpellIcons = nil
     frame.StyleSignature = nil
+    frame.PlayerSpecState = nil
 end
 
 local function HideUnusedCachedIcons(frame, activeIconKeys)
@@ -2284,14 +2290,18 @@ local function LayoutCustomItemSpellContainer(container)
     local frame = GetOrCreateContainerFrame(container)
     local growthDirection = container.GrowthDirection or "RIGHT"
     local styleSignature = BuildCustomItemSpellStyleSignature(container)
+    local playerSpecState = GetPlayerSpecStateSignature()
 
-    if frame.StyleSignature ~= styleSignature then
+    -- Spec swaps can change which spells exist in the spellbook, so cached icons
+    -- need to be recreated instead of only being re-laid out.
+    if frame.StyleSignature ~= styleSignature or frame.PlayerSpecState ~= playerSpecState then
         ReleaseContainerChildren(frame)
         frame.IconCache = {}
-        frame.StyleSignature = styleSignature
     end
 
     frame.IconCache = frame.IconCache or {}
+    frame.StyleSignature = styleSignature
+    frame.PlayerSpecState = playerSpecState
 
     local containerAnchorFrom = container.Layout[1]
     if growthDirection == "UP" then
