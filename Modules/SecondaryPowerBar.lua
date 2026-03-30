@@ -8,6 +8,7 @@ local resizeTimer = nil
 local isDestruction
 
 local SPEC_ARCANE = 62
+local SPEC_FROST = 64
 local SPEC_SHADOW = 258
 local SPEC_ELEMENTAL = 262
 local SPEC_ENHANCEMENT = 263
@@ -55,6 +56,7 @@ local function DetectSecondaryPower()
         return Enum.PowerType.SoulShards
     elseif class == "MAGE" then
         if specID == SPEC_ARCANE then return Enum.PowerType.ArcaneCharges end
+        if specID == SPEC_FROST then return "ICICLES" end
     elseif class == "EVOKER" then
         return Enum.PowerType.Essence
     elseif class == "DEATHKNIGHT" then
@@ -510,6 +512,12 @@ local function UpdatePowerValues()
         secondaryPowerBar.Status:SetValue(powerCurrent)
         secondaryPowerBar.Text:SetText(tostring(powerCurrent))
         secondaryPowerBar.Status:Show()
+    elseif powerType == "ICICLES" then
+        powerCurrent = GetAuraStacks(205473)
+        secondaryPowerBar.Status:SetMinMaxValues(0, 5)
+        secondaryPowerBar.Status:SetValue(powerCurrent)
+        secondaryPowerBar.Text:SetText(tostring(powerCurrent))
+        secondaryPowerBar.Status:Show()
     elseif powerType == "SOUL_FRAGMENTS" then
         powerCurrent = GetSpellCharges(228477)
         secondaryPowerBar.Status:SetMinMaxValues(0, 6)
@@ -616,6 +624,11 @@ local function CreateTicksBasedOnPowerType()
 
     if not secondaryPowerResource then
         BCDM:ClearTicks()
+        return
+    end
+
+    if secondaryPowerResource == "ICICLES" then
+        BCDM:CreateTicks(5)
         return
     end
 
