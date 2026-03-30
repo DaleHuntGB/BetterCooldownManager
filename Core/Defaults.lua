@@ -127,6 +127,7 @@ local Defaults = {
                 IconHeight = 42,
                 KeepAspectRatio = true,
                 CenterHorizontally = false,
+                GrowRowsUpward = false,
                 Layout = {"CENTER", "CENTER", 0, -275.1},
                 Text = {
                     FontSize = 15,
