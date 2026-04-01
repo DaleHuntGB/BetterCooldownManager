@@ -356,7 +356,7 @@ local function UpdateCustomSpellIconCooldown(customIcon, spellId)
     local hasCharges = maxCharges > 1
 
     if hasCharges then
-        customIcon.Charges:SetText(tostring(currentCharges or 0))
+        customIcon.Charges:SetText(C_Spell.GetSpellDisplayCount(spellId))
     else
         customIcon.Charges:SetText("")
     end
