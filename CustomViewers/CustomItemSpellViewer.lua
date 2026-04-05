@@ -206,7 +206,6 @@ local function IsTrackedSpellCooldownUpdate(spellId, updatedSpellId, updatedBase
     return false
 end
 
-local CUSTOM_VIEWER_GCD_SPELL_ID = 61304
 GetTrackedSpellOverrideId = (C_Spell and C_Spell.GetOverrideSpell) or FindSpellOverrideByID
 
 local function BuildTrackedSpellEventIds(spellId)
@@ -261,21 +260,6 @@ local function BuildSpellCooldownIndex(activeIcons)
     end
 
     return spellCooldownIndex, spellIcons
-end
-
-local function GetCustomViewerGCDState()
-    local durationObject = C_Spell.GetSpellCooldownDuration and C_Spell.GetSpellCooldownDuration(CUSTOM_VIEWER_GCD_SPELL_ID)
-    if durationObject then
-        return true
-    end
-
-    local cooldownData = C_Spell.GetSpellCooldown(CUSTOM_VIEWER_GCD_SPELL_ID)
-    local hasReadableCooldown = HasReadableActiveCooldown(cooldownData and cooldownData.startTime, cooldownData and cooldownData.duration)
-    return hasReadableCooldown
-end
-
-local function HasCooldownStateChanged(previousState, currentState)
-    return previousState ~= currentState
 end
 
 local function UpdateSpellIconDesaturation(customIcon, spellId)
@@ -1531,26 +1515,10 @@ local function DispatchIndexedSpellIconEvents(frame, event, updatedSpellId, upda
 end
 
 local CustomViewerSpellEventFrame
-local CustomViewerGCDState = {}
-
-local function ResetCustomViewerGCDState()
-    wipe(CustomViewerGCDState)
-end
-
-local function UpdateCustomViewerGCDState()
-    local isActive = GetCustomViewerGCDState()
-    local hasChanged = HasCooldownStateChanged(CustomViewerGCDState.isActive, isActive)
-
-    CustomViewerGCDState.isActive = isActive
-
-    return hasChanged
-end
 
 local function DispatchCustomViewerSpellEvents(event, updatedSpellId, updatedBaseSpellId)
-    local refreshAllSpellIcons = false
-    if event == "SPELL_UPDATE_COOLDOWN" then
-        refreshAllSpellIcons = UpdateCustomViewerGCDState()
-    end
+    -- Spell cooldown updates can affect every icon because GCD state is shared.
+    local refreshAllSpellIcons = event == "SPELL_UPDATE_COOLDOWN"
 
     for _, frame in pairs(BCDM.CustomItemSpellContainerFrames or {}) do
         if frame and frame.HasSpellIcons and frame.SpellIcons and #frame.SpellIcons > 0 and frame:IsShown() then
@@ -1586,11 +1554,9 @@ local function UpdateCustomViewerSpellEventRegistration()
     if hasActiveSpellIcons then
         spellEventFrame:RegisterEvent("SPELL_UPDATE_COOLDOWN")
         spellEventFrame:RegisterEvent("SPELL_UPDATE_CHARGES")
-        UpdateCustomViewerGCDState()
     else
         spellEventFrame:UnregisterEvent("SPELL_UPDATE_COOLDOWN")
         spellEventFrame:UnregisterEvent("SPELL_UPDATE_CHARGES")
-        ResetCustomViewerGCDState()
     end
 end
 
