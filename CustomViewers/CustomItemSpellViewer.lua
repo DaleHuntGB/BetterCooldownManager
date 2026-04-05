@@ -341,6 +341,7 @@ local function UpdateCustomSpellIconCooldown(customIcon, spellId)
 
     if hasCharges then
         customIcon.Charges:SetText(C_Spell.GetSpellDisplayCount(spellId))
+        if customIcon.CastCount then customIcon.CastCount:SetText("") end
     else
         customIcon.Charges:SetText("")
     end
@@ -1554,9 +1555,11 @@ local function UpdateCustomViewerSpellEventRegistration()
     if hasActiveSpellIcons then
         spellEventFrame:RegisterEvent("SPELL_UPDATE_COOLDOWN")
         spellEventFrame:RegisterEvent("SPELL_UPDATE_CHARGES")
+        spellEventFrame:RegisterEvent("SPELL_UPDATE_USES")
     else
         spellEventFrame:UnregisterEvent("SPELL_UPDATE_COOLDOWN")
         spellEventFrame:UnregisterEvent("SPELL_UPDATE_CHARGES")
+        spellEventFrame:UnregisterEvent("SPELL_UPDATE_USES")
     end
 end
 
@@ -1567,7 +1570,7 @@ local function DispatchContainerIconEvents(frame, event, ...)
 
     local updatedSpellId, updatedBaseSpellId = ...
 
-    if event == "SPELL_UPDATE_COOLDOWN" or event == "SPELL_UPDATE_CHARGES" then
+    if event == "SPELL_UPDATE_COOLDOWN" or event == "SPELL_UPDATE_CHARGES" or event == "SPELL_UPDATE_USES" then
         DispatchIndexedSpellIconEvents(frame, event, updatedSpellId, updatedBaseSpellId)
         return
     end
@@ -1859,6 +1862,19 @@ local function CreateCustomSpellIcon(customDB, entry)
         customIcon.Charges:SetShadowOffset(0, 0)
     end
 
+    customIcon.CastCount = highLevelContainer:CreateFontString(nil, "OVERLAY")
+    customIcon.CastCount:SetFont(BCDM.Media.Font, customDB.Text.FontSize, GeneralDB.Fonts.FontFlag)
+    customIcon.CastCount:SetPoint(customDB.Text.Layout[1], customIcon, customDB.Text.Layout[2], customDB.Text.Layout[3], customDB.Text.Layout[4])
+    customIcon.CastCount:SetTextColor(customDB.Text.Colour[1], customDB.Text.Colour[2], customDB.Text.Colour[3], 1)
+    if GeneralDB.Fonts.Shadow.Enabled then
+        customIcon.CastCount:SetShadowColor(GeneralDB.Fonts.Shadow.Colour[1], GeneralDB.Fonts.Shadow.Colour[2], GeneralDB.Fonts.Shadow.Colour[3], GeneralDB.Fonts.Shadow.Colour[4])
+        customIcon.CastCount:SetShadowOffset(GeneralDB.Fonts.Shadow.OffsetX, GeneralDB.Fonts.Shadow.OffsetY)
+    else
+        customIcon.CastCount:SetShadowColor(0, 0, 0, 0)
+        customIcon.CastCount:SetShadowOffset(0, 0)
+    end
+    customIcon.CastCount:SetText("")
+
     customIcon.Cooldown = CreateFrame("Cooldown", nil, customIcon, "CooldownFrameTemplate")
     customIcon.Cooldown:SetAllPoints(customIcon)
     customIcon.Cooldown:SetDrawEdge(false)
@@ -1871,7 +1887,7 @@ local function CreateCustomSpellIcon(customDB, entry)
     customIcon.BCDMSpellId = spellId
 
     customIcon:SetScript("OnEvent", function(self, event, updatedSpellId, updatedBaseSpellId)
-        if event == "SPELL_UPDATE_CHARGES" then
+        if event == "SPELL_UPDATE_CHARGES" or event == "SPELL_UPDATE_USES" then
             -- Retail can now tell us which spell changed, so skip unrelated invalidations.
             if not IsTrackedSpellCooldownUpdate(spellId, updatedSpellId, updatedBaseSpellId) then
                 return
@@ -1881,6 +1897,17 @@ local function CreateCustomSpellIcon(customDB, entry)
         if event == "SPELL_UPDATE_COOLDOWN" or event == "PLAYER_ENTERING_WORLD" or event == "SPELL_UPDATE_CHARGES" then
             UpdateCustomSpellIconCooldown(customIcon, spellId)
             UpdateSpellIconDesaturation(self, spellId)
+        end
+
+        if event == "SPELL_UPDATE_USES" then
+            local spellCharges = C_Spell.GetSpellCharges(spellId)
+            local maxCharges = GetReadableNumber(spellCharges and spellCharges.maxCharges) or 0
+            if maxCharges <= 1 then
+                local castCount = C_Spell.GetSpellCastCount(spellId)
+                local colour = customDB.Text.Colour
+                customIcon.CastCount:SetText(castCount)
+                customIcon.CastCount:SetTextColor(colour[1], colour[2], colour[3], castCount)
+            end
         end
     end)
 
