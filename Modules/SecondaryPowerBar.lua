@@ -613,6 +613,21 @@ local function UpdatePowerValues()
             secondaryPowerBar:SetBackdropColor(br * mult, bg * mult, bb * mult, ba)
         end
     end
+    if powerType == "STAGGER" and BCDM.IS_MONK and GetSpecializationInfo(GetSpecialization()) == SPEC_BREWMASTER and secondaryPowerBarDB.ColourByState then
+        local powerMax = UnitHealthMax("player") or 0
+        local staggerPct = powerMax > 0 and (powerCurrent / powerMax * 100) or 0
+        local staggerColours = BCDM.db.profile.General.Colours.SecondaryPower["STAGGER_COLOURS"]
+        local colour
+        if staggerPct < 30 then
+            colour = staggerColours.LIGHT
+        elseif staggerPct < 60 then
+            colour = staggerColours.MODERATE
+        else
+            colour = staggerColours.HEAVY
+        end
+        local mult = secondaryPowerBarDB.BackgroundMultiplier or 0.75
+        secondaryPowerBar:SetBackdropColor(colour[1] * mult, colour[2] * mult, colour[3] * mult, colour[4] or 1)
+    end
     secondaryPowerBar:Show()
 end
 
