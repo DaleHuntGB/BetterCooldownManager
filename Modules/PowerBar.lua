@@ -65,6 +65,7 @@ end
 local function UpdatePowerValues()
     local PowerBar = BCDM.PowerBar
     local GeneralDB = BCDM.db.profile.General
+    local PowerBarDB = BCDM.db.profile.PowerBar
     local _, class = UnitClass("player")
     local powerType = UnitPowerType("player")
     if class == "DRUID" then
@@ -85,6 +86,13 @@ local function UpdatePowerValues()
             PowerBar.Text:SetText(tostring(powerCurrent))
         end
         PowerBar.Status:SetStatusBarColor(FetchPowerBarColour(powerType))
+        if PowerBarDB.ColourBackgroundByType then
+            local br, bg, bb, ba = FetchPowerBarColour(powerType)
+            if br then
+                local mult = PowerBarDB.BackgroundMultiplier or 0.75
+                PowerBar:SetBackdropColor(br * mult, bg * mult, bb * mult, ba)
+            end
+        end
         PowerBar.Status:SetMinMaxValues(0, powerMax)
         local smoothBars = GeneralDB.Animation and GeneralDB.Animation.SmoothBars
         if smoothBars and Enum and Enum.StatusBarInterpolation then
@@ -126,7 +134,17 @@ function BCDM:CreatePowerBar()
     else
         PowerBar:SetBackdropBorderColor(0, 0, 0, 0)
     end
-    PowerBar:SetBackdropColor(PowerBarDB.BackgroundColour[1], PowerBarDB.BackgroundColour[2], PowerBarDB.BackgroundColour[3], PowerBarDB.BackgroundColour[4])
+    if PowerBarDB.ColourBackgroundByType then
+        local br, bg, bb, ba = FetchPowerBarColour()
+        if br then
+            local mult = PowerBarDB.BackgroundMultiplier or 0.75
+            PowerBar:SetBackdropColor(br * mult, bg * mult, bb * mult, ba)
+        else
+            PowerBar:SetBackdropColor(PowerBarDB.BackgroundColour[1], PowerBarDB.BackgroundColour[2], PowerBarDB.BackgroundColour[3], PowerBarDB.BackgroundColour[4])
+        end
+    else
+        PowerBar:SetBackdropColor(PowerBarDB.BackgroundColour[1], PowerBarDB.BackgroundColour[2], PowerBarDB.BackgroundColour[3], PowerBarDB.BackgroundColour[4])
+    end
     local hasSecondary = DetectSecondaryPower()
     PowerBar:SetSize(PowerBarDB.Width, hasSecondary and PowerBarDB.Height or PowerBarDB.HeightWithoutSecondary)
     PowerBar:SetPoint(PowerBarDB.Layout[1], _G[PowerBarDB.Layout[2]], PowerBarDB.Layout[3], PowerBarDB.Layout[4], PowerBarDB.Layout[5])
@@ -206,7 +224,17 @@ function BCDM:UpdatePowerBar()
             end
             local hasSecondary = DetectSecondaryPower()
             PowerBar:SetHeight(hasSecondary and PowerBarDB.Height or PowerBarDB.HeightWithoutSecondary)
-            PowerBar:SetBackdropColor(PowerBarDB.BackgroundColour[1], PowerBarDB.BackgroundColour[2], PowerBarDB.BackgroundColour[3], PowerBarDB.BackgroundColour[4])
+            if PowerBarDB.ColourBackgroundByType then
+                local br, bg, bb, ba = FetchPowerBarColour()
+                if br then
+                    local mult = PowerBarDB.BackgroundMultiplier or 0.75
+                    PowerBar:SetBackdropColor(br * mult, bg * mult, bb * mult, ba)
+                else
+                    PowerBar:SetBackdropColor(PowerBarDB.BackgroundColour[1], PowerBarDB.BackgroundColour[2], PowerBarDB.BackgroundColour[3], PowerBarDB.BackgroundColour[4])
+                end
+            else
+                PowerBar:SetBackdropColor(PowerBarDB.BackgroundColour[1], PowerBarDB.BackgroundColour[2], PowerBarDB.BackgroundColour[3], PowerBarDB.BackgroundColour[4])
+            end
             PowerBar.Status:SetStatusBarTexture(BCDM.Media.Foreground)
             PowerBar.Text:SetFont(BCDM.Media.Font, PowerBarDB.Text.FontSize, BCDM.db.profile.General.Fonts.FontFlag)
             PowerBar.Text:SetTextColor(PowerBarDB.Text.Colour[1], PowerBarDB.Text.Colour[2], PowerBarDB.Text.Colour[3], 1)

@@ -606,6 +606,13 @@ local function UpdatePowerValues()
     if not (powerType == "STAGGER" and secondaryPowerBarDB.ColourByState) then
         secondaryPowerBar.Status:SetStatusBarColor(GetPowerBarColor())
     end
+    if secondaryPowerBarDB.ColourBackgroundByType then
+        local br, bg, bb, ba = GetPowerBarColor()
+        if br then
+            local mult = secondaryPowerBarDB.BackgroundMultiplier or 0.75
+            secondaryPowerBar:SetBackdropColor(br * mult, bg * mult, bb * mult, ba)
+        end
+    end
     secondaryPowerBar:Show()
 end
 
@@ -780,7 +787,17 @@ function BCDM:CreateSecondaryPowerBar()
     else
         secondaryPowerBar:SetBackdropBorderColor(0, 0, 0, 0)
     end
-    secondaryPowerBar:SetBackdropColor(secondaryPowerBarDB.BackgroundColour[1], secondaryPowerBarDB.BackgroundColour[2], secondaryPowerBarDB.BackgroundColour[3], secondaryPowerBarDB.BackgroundColour[4])
+    if secondaryPowerBarDB.ColourBackgroundByType then
+        local br, bg, bb, ba = GetPowerBarColor()
+        if br then
+            local mult = secondaryPowerBarDB.BackgroundMultiplier or 0.75
+            secondaryPowerBar:SetBackdropColor(br * mult, bg * mult, bb * mult, ba)
+        else
+            secondaryPowerBar:SetBackdropColor(secondaryPowerBarDB.BackgroundColour[1], secondaryPowerBarDB.BackgroundColour[2], secondaryPowerBarDB.BackgroundColour[3], secondaryPowerBarDB.BackgroundColour[4])
+        end
+    else
+        secondaryPowerBar:SetBackdropColor(secondaryPowerBarDB.BackgroundColour[1], secondaryPowerBarDB.BackgroundColour[2], secondaryPowerBarDB.BackgroundColour[3], secondaryPowerBarDB.BackgroundColour[4])
+    end
     secondaryPowerBar:SetSize(secondaryPowerBarDB.Width, secondaryPowerBarDB.Height)
 
     if BCDM:RepositionSecondaryBar() then
@@ -866,7 +883,17 @@ function BCDM:UpdateSecondaryPowerBar()
     else
         secondaryPowerBar:SetBackdropBorderColor(0, 0, 0, 0)
     end
-    secondaryPowerBar:SetBackdropColor(secondaryPowerBarDB.BackgroundColour[1], secondaryPowerBarDB.BackgroundColour[2], secondaryPowerBarDB.BackgroundColour[3], secondaryPowerBarDB.BackgroundColour[4])
+    if secondaryPowerBarDB.ColourBackgroundByType then
+        local br, bg, bb, ba = GetPowerBarColor()
+        if br then
+            local mult = secondaryPowerBarDB.BackgroundMultiplier or 0.75
+            secondaryPowerBar:SetBackdropColor(br * mult, bg * mult, bb * mult, ba)
+        else
+            secondaryPowerBar:SetBackdropColor(secondaryPowerBarDB.BackgroundColour[1], secondaryPowerBarDB.BackgroundColour[2], secondaryPowerBarDB.BackgroundColour[3], secondaryPowerBarDB.BackgroundColour[4])
+        end
+    else
+        secondaryPowerBar:SetBackdropColor(secondaryPowerBarDB.BackgroundColour[1], secondaryPowerBarDB.BackgroundColour[2], secondaryPowerBarDB.BackgroundColour[3], secondaryPowerBarDB.BackgroundColour[4])
+    end
     secondaryPowerBar:SetSize(secondaryPowerBarDB.Width, secondaryPowerBarDB.Height)
 
     if BCDM:RepositionSecondaryBar() and BCDM.db.profile.SecondaryPowerBar.SwapToPowerBarPosition then

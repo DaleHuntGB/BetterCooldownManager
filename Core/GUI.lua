@@ -3115,6 +3115,21 @@ local function CreatePowerBarSettings(parentContainer)
     backgroundColourPicker:SetHasAlpha(true)
     toggleContainer:AddChild(backgroundColourPicker)
 
+    local colourBackgroundByTypeCheckbox = AG:Create("CheckBox")
+    colourBackgroundByTypeCheckbox:SetLabel(LL("Colour Background By Type"))
+    colourBackgroundByTypeCheckbox:SetValue(BCDM.db.profile.PowerBar.ColourBackgroundByType)
+    colourBackgroundByTypeCheckbox:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.PowerBar.ColourBackgroundByType = value BCDM:UpdatePowerBar() RefreshPowerBarGUISettings() end)
+    colourBackgroundByTypeCheckbox:SetRelativeWidth(0.5)
+    toggleContainer:AddChild(colourBackgroundByTypeCheckbox)
+
+    local backgroundMultiplierSlider = AG:Create("Slider")
+    backgroundMultiplierSlider:SetLabel(LL("Background Multiplier"))
+    backgroundMultiplierSlider:SetValue(BCDM.db.profile.PowerBar.BackgroundMultiplier * 100)
+    backgroundMultiplierSlider:SetSliderValues(0, 100, 1)
+    backgroundMultiplierSlider:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.PowerBar.BackgroundMultiplier = value / 100 BCDM:UpdatePowerBar() end)
+    backgroundMultiplierSlider:SetRelativeWidth(0.5)
+    toggleContainer:AddChild(backgroundMultiplierSlider)
+
     local layoutContainer = AG:Create("InlineGroup")
     layoutContainer:SetTitle(LL("Layout & Positioning"))
     layoutContainer:SetFullWidth(true)
@@ -3229,6 +3244,13 @@ local function CreatePowerBarSettings(parentContainer)
                 foregroundColourPicker:SetDisabled(true)
             else
                 foregroundColourPicker:SetDisabled(false)
+            end
+            if BCDM.db.profile.PowerBar.ColourBackgroundByType then
+                backgroundColourPicker:SetDisabled(true)
+                backgroundMultiplierSlider:SetDisabled(false)
+            else
+                backgroundColourPicker:SetDisabled(false)
+                backgroundMultiplierSlider:SetDisabled(true)
             end
             if BCDM.db.profile.PowerBar.MatchWidthOfAnchor then
                 widthSlider:SetDisabled(true)
@@ -3417,6 +3439,21 @@ local function CreateSecondaryPowerBarSettings(parentContainer)
     backgroundColourPicker:SetHasAlpha(true)
     toggleContainer:AddChild(backgroundColourPicker)
 
+    local colourBackgroundByTypeCheckbox = AG:Create("CheckBox")
+    colourBackgroundByTypeCheckbox:SetLabel(LL("Colour Background By Type"))
+    colourBackgroundByTypeCheckbox:SetValue(BCDM.db.profile.SecondaryPowerBar.ColourBackgroundByType)
+    colourBackgroundByTypeCheckbox:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.SecondaryPowerBar.ColourBackgroundByType = value BCDM:UpdateSecondaryPowerBar() RefreshSecondaryPowerBarGUISettings() end)
+    colourBackgroundByTypeCheckbox:SetRelativeWidth(0.5)
+    toggleContainer:AddChild(colourBackgroundByTypeCheckbox)
+
+    local backgroundMultiplierSlider = AG:Create("Slider")
+    backgroundMultiplierSlider:SetLabel(LL("Background Multiplier"))
+    backgroundMultiplierSlider:SetValue(BCDM.db.profile.SecondaryPowerBar.BackgroundMultiplier * 100)
+    backgroundMultiplierSlider:SetSliderValues(0, 100, 1)
+    backgroundMultiplierSlider:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.SecondaryPowerBar.BackgroundMultiplier = value / 100 BCDM:UpdateSecondaryPowerBar() end)
+    backgroundMultiplierSlider:SetRelativeWidth(0.5)
+    toggleContainer:AddChild(backgroundMultiplierSlider)
+
     local layoutContainer = AG:Create("InlineGroup")
     layoutContainer:SetTitle(LL("Layout & Positioning"))
     layoutContainer:SetFullWidth(true)
@@ -3538,6 +3575,13 @@ local function CreateSecondaryPowerBarSettings(parentContainer)
                 foregroundColourPicker:SetDisabled(true)
             else
                 foregroundColourPicker:SetDisabled(false)
+            end
+            if BCDM.db.profile.SecondaryPowerBar.ColourBackgroundByType then
+                backgroundColourPicker:SetDisabled(true)
+                backgroundMultiplierSlider:SetDisabled(false)
+            else
+                backgroundColourPicker:SetDisabled(false)
+                backgroundMultiplierSlider:SetDisabled(true)
             end
             if BCDM.db.profile.SecondaryPowerBar.MatchWidthOfAnchor then
                 widthSlider:SetDisabled(true)
@@ -3718,6 +3762,21 @@ local function CreateCastBarSettings(parentContainer)
     backgroundColourPicker:SetHasAlpha(true)
     toggleContainer:AddChild(backgroundColourPicker)
 
+    local colourBackgroundByCastCheckbox = AG:Create("CheckBox")
+    colourBackgroundByCastCheckbox:SetLabel(LL("Colour Background By Cast"))
+    colourBackgroundByCastCheckbox:SetValue(BCDM.db.profile.CastBar.ColourBackgroundByCast)
+    colourBackgroundByCastCheckbox:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.CastBar.ColourBackgroundByCast = value BCDM:UpdateCastBar() RefreshCastBarGUISettings() end)
+    colourBackgroundByCastCheckbox:SetRelativeWidth(0.5)
+    toggleContainer:AddChild(colourBackgroundByCastCheckbox)
+
+    local castBackgroundMultiplierSlider = AG:Create("Slider")
+    castBackgroundMultiplierSlider:SetLabel(LL("Background Multiplier"))
+    castBackgroundMultiplierSlider:SetValue(BCDM.db.profile.CastBar.CastBackgroundMultiplier * 100)
+    castBackgroundMultiplierSlider:SetSliderValues(0, 100, 1)
+    castBackgroundMultiplierSlider:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.CastBar.CastBackgroundMultiplier = value / 100 BCDM:UpdateCastBar() end)
+    castBackgroundMultiplierSlider:SetRelativeWidth(0.5)
+    toggleContainer:AddChild(castBackgroundMultiplierSlider)
+
     local layoutContainer = AG:Create("InlineGroup")
     layoutContainer:SetTitle(LL("Layout & Positioning"))
     layoutContainer:SetFullWidth(true)
@@ -3862,6 +3921,13 @@ local function CreateCastBarSettings(parentContainer)
             foregroundColourPicker:SetDisabled(true)
         else
             foregroundColourPicker:SetDisabled(false)
+        end
+        if BCDM.db.profile.CastBar.ColourBackgroundByCast then
+            backgroundColourPicker:SetDisabled(true)
+            castBackgroundMultiplierSlider:SetDisabled(false)
+        else
+            backgroundColourPicker:SetDisabled(false)
+            castBackgroundMultiplierSlider:SetDisabled(true)
         end
         if not BCDM.db.profile.CastBar.Icon.Enabled then
             for _, child in ipairs(iconContainer.children) do

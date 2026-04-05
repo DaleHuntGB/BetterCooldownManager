@@ -160,7 +160,13 @@ function BCDM:CreateCastBar()
     else
         CastBar:SetBackdropBorderColor(0, 0, 0, 0)
     end
-    CastBar:SetBackdropColor(CastBarDB.BackgroundColour[1], CastBarDB.BackgroundColour[2], CastBarDB.BackgroundColour[3], CastBarDB.BackgroundColour[4])
+    if CastBarDB.ColourBackgroundByCast then
+        local br, bg, bb, ba = FetchCastBarColour()
+        local mult = CastBarDB.CastBackgroundMultiplier or 0.75
+        CastBar:SetBackdropColor(br * mult, bg * mult, bb * mult, ba)
+    else
+        CastBar:SetBackdropColor(CastBarDB.BackgroundColour[1], CastBarDB.BackgroundColour[2], CastBarDB.BackgroundColour[3], CastBarDB.BackgroundColour[4])
+    end
     CastBar:SetSize(CastBarDB.Width, CastBarDB.Height)
     CastBar:SetPoint(CastBarDB.Layout[1], _G[CastBarDB.Layout[2]], CastBarDB.Layout[3], CastBarDB.Layout[4], CastBarDB.Layout[5])
     CastBar:SetFrameStrata(CastBarDB.FrameStrata or "LOW")
@@ -254,7 +260,13 @@ function BCDM:UpdateCastBar()
     local borderSize = BCDM.db.profile.CooldownManager.General.BorderSize
     if not CastBar then return end
 
-    BCDM.CastBar:SetBackdropColor(CastBarDB.BackgroundColour[1], CastBarDB.BackgroundColour[2], CastBarDB.BackgroundColour[3], CastBarDB.BackgroundColour[4])
+    if CastBarDB.ColourBackgroundByCast then
+        local br, bg, bb, ba = FetchCastBarColour()
+        local mult = CastBarDB.CastBackgroundMultiplier or 0.75
+        BCDM.CastBar:SetBackdropColor(br * mult, bg * mult, bb * mult, ba)
+    else
+        BCDM.CastBar:SetBackdropColor(CastBarDB.BackgroundColour[1], CastBarDB.BackgroundColour[2], CastBarDB.BackgroundColour[3], CastBarDB.BackgroundColour[4])
+    end
     BCDM.CastBar:SetSize(CastBarDB.Width, CastBarDB.Height)
     BCDM.CastBar:ClearAllPoints()
     BCDM.CastBar:SetPoint(CastBarDB.Layout[1], _G[CastBarDB.Layout[2]], CastBarDB.Layout[3], CastBarDB.Layout[4], CastBarDB.Layout[5])
@@ -265,7 +277,13 @@ function BCDM:UpdateCastBar()
     else
         CastBar:SetBackdropBorderColor(0, 0, 0, 0)
     end
-    BCDM.CastBar:SetBackdropColor(CastBarDB.BackgroundColour[1], CastBarDB.BackgroundColour[2], CastBarDB.BackgroundColour[3], CastBarDB.BackgroundColour[4])
+    if CastBarDB.ColourBackgroundByCast then
+        local br, bg, bb, ba = FetchCastBarColour()
+        local mult = CastBarDB.CastBackgroundMultiplier or 0.75
+        BCDM.CastBar:SetBackdropColor(br * mult, bg * mult, bb * mult, ba)
+    else
+        BCDM.CastBar:SetBackdropColor(CastBarDB.BackgroundColour[1], CastBarDB.BackgroundColour[2], CastBarDB.BackgroundColour[3], CastBarDB.BackgroundColour[4])
+    end
 
     BCDM.CastBar.Status:SetStatusBarColor(FetchCastBarColour())
     BCDM.CastBar.Status:SetStatusBarTexture(BCDM.Media.Foreground)
