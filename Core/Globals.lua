@@ -647,6 +647,142 @@ BCDM.AnchorParents = {
     }
 }
 
+-- -----------------------------------------------------------------------------
+-- Shared icon & cooldown utilities — used across CustomViewers/
+-- -----------------------------------------------------------------------------
+
+function BCDM:GetReadableNumber(value)
+    if type(value) ~= "number" then return nil end
+    if self:IsSecretValue(value) then return nil end
+    return value
+end
+
+function BCDM:HasReadableActiveCooldown(startTime, duration)
+    startTime = self:GetReadableNumber(startTime)
+    duration  = self:GetReadableNumber(duration)
+    if startTime == nil or duration == nil then
+        return false, nil, nil
+    end
+    return startTime > 0 and duration > 0, startTime, duration
+end
+
+function BCDM:SetIconDesaturation(icon, value)
+    if not icon then return end
+    if icon.SetDesaturation then
+        icon:SetDesaturation(value)
+    elseif icon.SetDesaturated then
+        icon:SetDesaturated(value > 0)
+    end
+end
+
+function BCDM:CalculateFallbackDesaturation(startTime, duration)
+    if not startTime or not duration then return 0 end
+    if self:IsSecretValue(startTime) or self:IsSecretValue(duration) then return 0 end
+    local remaining = (startTime + duration) - GetTime()
+    return remaining > 0.001 and 1 or 0
+end
+
+function BCDM:FetchCooldownTextRegion(cooldown)
+    if not cooldown then return end
+    if cooldown.BCDMCachedTextRegion then
+        return cooldown.BCDMCachedTextRegion
+    end
+    for _, region in ipairs({ cooldown:GetRegions() }) do
+        if region:GetObjectType() == "FontString" then
+            cooldown.BCDMCachedTextRegion = region
+            return region
+        end
+    end
+end
+
+function BCDM:ApplyCooldownText(viewer)
+    if not viewer then return end
+    local generalDB      = self.db.profile.General
+    local cooldownTextDB = self.db.profile.CooldownManager.General.CooldownText
+    local icons = viewer.ActiveIcons or { viewer:GetChildren() }
+    for _, icon in ipairs(icons) do
+        if icon and icon.Cooldown then
+            local textRegion = self:FetchCooldownTextRegion(icon.Cooldown)
+            if textRegion then
+                if cooldownTextDB.ScaleByIconSize then
+                    local scaleFactor = icon:GetWidth() / 36
+                    textRegion:SetFont(self.Media.Font, cooldownTextDB.FontSize * scaleFactor, generalDB.Fonts.FontFlag)
+                else
+                    textRegion:SetFont(self.Media.Font, cooldownTextDB.FontSize, generalDB.Fonts.FontFlag)
+                end
+                textRegion:SetTextColor(cooldownTextDB.Colour[1], cooldownTextDB.Colour[2], cooldownTextDB.Colour[3], 1)
+                textRegion:ClearAllPoints()
+                textRegion:SetPoint(cooldownTextDB.Layout[1], icon, cooldownTextDB.Layout[2], cooldownTextDB.Layout[3], cooldownTextDB.Layout[4])
+                if generalDB.Fonts.Shadow.Enabled then
+                    textRegion:SetShadowColor(
+                        generalDB.Fonts.Shadow.Colour[1], generalDB.Fonts.Shadow.Colour[2],
+                        generalDB.Fonts.Shadow.Colour[3], generalDB.Fonts.Shadow.Colour[4]
+                    )
+                    textRegion:SetShadowOffset(generalDB.Fonts.Shadow.OffsetX, generalDB.Fonts.Shadow.OffsetY)
+                else
+                    textRegion:SetShadowColor(0, 0, 0, 0)
+                    textRegion:SetShadowOffset(0, 0)
+                end
+            end
+        end
+    end
+end
+
+function BCDM:IsOnUseTrinket(itemId)
+    if not itemId then return false end
+    local spellName, spellID = C_Item.GetItemSpell(itemId)
+    return (spellID and spellID > 0) or (spellName and spellName ~= "")
+end
+
+function BCDM:FetchEquippedOnUseTrinkets()
+    local equipped = {}
+    for _, slotID in ipairs({ 13, 14 }) do
+        local itemId = GetInventoryItemID("player", slotID)
+        if itemId and self:IsOnUseTrinket(itemId) then
+            equipped[#equipped + 1] = { itemId = itemId, slotID = slotID }
+        end
+    end
+    return equipped
+end
+
+function BCDM:ActivateCachedIcon(customIcon)
+    if customIcon and customIcon.BCDMActivate then
+        customIcon:BCDMActivate()
+    end
+end
+
+function BCDM:DeactivateCachedIcon(customIcon)
+    if not customIcon then return end
+    if customIcon.BCDMDeactivate then
+        customIcon:BCDMDeactivate()
+        return
+    end
+    customIcon:UnregisterAllEvents()
+    customIcon:Hide()
+    customIcon:SetParent(nil)
+end
+
+function BCDM:BuildTextSettingsSignature(textSettings)
+    textSettings = textSettings or {}
+    local layout = textSettings.Layout or {}
+    local colour = textSettings.Colour or {}
+    return table.concat({
+        tostring(textSettings.FontSize or ""),
+        tostring(colour[1] or ""), tostring(colour[2] or ""), tostring(colour[3] or ""),
+        tostring(layout[1] or ""), tostring(layout[2] or ""), tostring(layout[3] or ""), tostring(layout[4] or ""),
+    }, "|")
+end
+
+function BCDM:BuildFontShadowSignature(shadowSettings)
+    shadowSettings = shadowSettings or {}
+    local colour = shadowSettings.Colour or {}
+    return table.concat({
+        tostring(shadowSettings.Enabled and 1 or 0),
+        tostring(colour[1] or ""), tostring(colour[2] or ""), tostring(colour[3] or ""), tostring(colour[4] or ""),
+        tostring(shadowSettings.OffsetX or ""), tostring(shadowSettings.OffsetY or ""),
+    }, "|")
+end
+
 StaticPopupDialogs["BCDM_RELOAD"] = {
     text = "You must |cFFFF4040reload|r in order for changes to take effect. Do you want to reload now?",
     button1 = "Reload",

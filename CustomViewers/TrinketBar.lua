@@ -1,142 +1,14 @@
 local _, BCDM = ...
 
-local function FetchCooldownTextRegion(cooldown)
-    if not cooldown then return end
-    if cooldown.BCDMCachedTextRegion then
-        return cooldown.BCDMCachedTextRegion
-    end
-    for _, region in ipairs({ cooldown:GetRegions() }) do
-        if region:GetObjectType() == "FontString" then
-            cooldown.BCDMCachedTextRegion = region
-            return region
-        end
-    end
-end
-
-local function ApplyCooldownText()
-    local CooldownManagerDB = BCDM.db.profile
-    local GeneralDB = CooldownManagerDB.General
-    local CooldownTextDB = CooldownManagerDB.CooldownManager.General.CooldownText
-    local Viewer = _G["BCDM_TrinketBar"]
-    if not Viewer then return end
-    local icons = Viewer.ActiveIcons or { Viewer:GetChildren() }
-    for _, icon in ipairs(icons) do
-        if icon and icon.Cooldown then
-            local textRegion = FetchCooldownTextRegion(icon.Cooldown)
-            if textRegion then
-                if CooldownTextDB.ScaleByIconSize then
-                    local iconWidth = icon:GetWidth()
-                    local scaleFactor = iconWidth / 36
-                    textRegion:SetFont(BCDM.Media.Font, CooldownTextDB.FontSize * scaleFactor, GeneralDB.Fonts.FontFlag)
-                else
-                    textRegion:SetFont(BCDM.Media.Font, CooldownTextDB.FontSize, GeneralDB.Fonts.FontFlag)
-                end
-                textRegion:SetTextColor(CooldownTextDB.Colour[1], CooldownTextDB.Colour[2], CooldownTextDB.Colour[3], 1)
-                textRegion:ClearAllPoints()
-                textRegion:SetPoint(CooldownTextDB.Layout[1], icon, CooldownTextDB.Layout[2], CooldownTextDB.Layout[3], CooldownTextDB.Layout[4])
-                if GeneralDB.Fonts.Shadow.Enabled then
-                    textRegion:SetShadowColor(GeneralDB.Fonts.Shadow.Colour[1], GeneralDB.Fonts.Shadow.Colour[2], GeneralDB.Fonts.Shadow.Colour[3], GeneralDB.Fonts.Shadow.Colour[4])
-                    textRegion:SetShadowOffset(GeneralDB.Fonts.Shadow.OffsetX, GeneralDB.Fonts.Shadow.OffsetY)
-                else
-                    textRegion:SetShadowColor(0, 0, 0, 0)
-                    textRegion:SetShadowOffset(0, 0)
-                end
-            end
-        end
-    end
-end
-
-local function SetIconDesaturation(icon, value)
-    if not icon then return end
-    if icon.SetDesaturation then
-        icon:SetDesaturation(value)
-        return
-    end
-    if icon.SetDesaturated then
-        icon:SetDesaturated(value > 0)
-    end
-end
-
-local function CalculateFallbackDesaturation(startTime, duration)
-    if not startTime or not duration then return 0 end
-    if BCDM:IsSecretValue(startTime) or BCDM:IsSecretValue(duration) then return 0 end
-    local remaining = (startTime + duration) - GetTime()
-    return remaining > 0.001 and 1 or 0
-end
-
-local function GetReadableNumber(value)
-    if type(value) ~= "number" then return nil end
-    if BCDM:IsSecretValue(value) then return nil end
-    return value
-end
-
-local function HasReadableActiveCooldown(startTime, duration)
-    startTime = GetReadableNumber(startTime)
-    duration = GetReadableNumber(duration)
-
-    if startTime == nil or duration == nil then
-        return false, nil, nil
-    end
-
-    return startTime > 0 and duration > 0, startTime, duration
-end
-
-local function FetchItemData(itemId)
-    local startTime, durationTime = C_Item.GetItemCooldown(itemId)
-    return startTime, durationTime
-end
-
-local function IsOnUseTrinket(itemId)
-    if not itemId then return false end
-    local spellName, spellID = C_Item.GetItemSpell(itemId)
-    return (spellID and spellID > 0) or (spellName and spellName ~= "")
-end
-
-local function FetchEquippedOnUseTrinkets()
-    local equipped = {}
-    local trinketSlots = { 13, 14 }
-
-    for _, slotID in ipairs(trinketSlots) do
-        local itemId = GetInventoryItemID("player", slotID)
-        if itemId and IsOnUseTrinket(itemId) then
-            equipped[#equipped + 1] = { itemId = itemId, slotID = slotID }
-        end
-    end
-
-    return equipped
-end
-
-local function BuildTextSettingsSignature(textSettings)
-    textSettings = textSettings or {}
-    local layout = textSettings.Layout or {}
-    local colour = textSettings.Colour or {}
-
-    return table.concat({
-        tostring(textSettings.FontSize or ""),
-        tostring(colour[1] or ""),
-        tostring(colour[2] or ""),
-        tostring(colour[3] or ""),
-        tostring(layout[1] or ""),
-        tostring(layout[2] or ""),
-        tostring(layout[3] or ""),
-        tostring(layout[4] or ""),
-    }, "|")
-end
-
-local function BuildFontShadowSignature(shadowSettings)
-    shadowSettings = shadowSettings or {}
-    local colour = shadowSettings.Colour or {}
-
-    return table.concat({
-        tostring(shadowSettings.Enabled and 1 or 0),
-        tostring(colour[1] or ""),
-        tostring(colour[2] or ""),
-        tostring(colour[3] or ""),
-        tostring(colour[4] or ""),
-        tostring(shadowSettings.OffsetX or ""),
-        tostring(shadowSettings.OffsetY or ""),
-    }, "|")
-end
+-- Shared utilities defined in Core/Globals.lua
+local GetReadableNumber             = function(v)    return BCDM:GetReadableNumber(v) end
+local HasReadableActiveCooldown     = function(s, d) return BCDM:HasReadableActiveCooldown(s, d) end
+local SetIconDesaturation           = function(i, v) BCDM:SetIconDesaturation(i, v) end
+local CalculateFallbackDesaturation = function(s, d) return BCDM:CalculateFallbackDesaturation(s, d) end
+local IsOnUseTrinket                = function(id)   return BCDM:IsOnUseTrinket(id) end
+local FetchEquippedOnUseTrinkets    = function()     return BCDM:FetchEquippedOnUseTrinkets() end
+local ActivateCachedIcon            = function(icon) BCDM:ActivateCachedIcon(icon) end
+local DeactivateCachedIcon          = function(icon) BCDM:DeactivateCachedIcon(icon) end
 
 local function BuildTrinketBarStyleSignature(customDB)
     local cooldownManagerDB = BCDM.db.profile.CooldownManager
@@ -151,30 +23,9 @@ local function BuildTrinketBarStyleSignature(customDB)
         tostring(cooldownManagerDB.General.IconZoom or ""),
         tostring(BCDM.Media and BCDM.Media.Font or ""),
         tostring(generalDB.Fonts and generalDB.Fonts.FontFlag or ""),
-        BuildTextSettingsSignature(cooldownManagerDB.General.CooldownText),
-        BuildFontShadowSignature(generalDB.Fonts and generalDB.Fonts.Shadow),
+        BCDM:BuildTextSettingsSignature(cooldownManagerDB.General.CooldownText),
+        BCDM:BuildFontShadowSignature(generalDB.Fonts and generalDB.Fonts.Shadow),
     }, "::")
-end
-
-local function ActivateCachedIcon(customIcon)
-    if customIcon and customIcon.BCDMActivate then
-        customIcon:BCDMActivate()
-    end
-end
-
-local function DeactivateCachedIcon(customIcon)
-    if not customIcon then
-        return
-    end
-
-    if customIcon.BCDMDeactivate then
-        customIcon:BCDMDeactivate()
-        return
-    end
-
-    customIcon:UnregisterAllEvents()
-    customIcon:Hide()
-    customIcon:SetParent(nil)
 end
 
 local function CreateCustomIcon(itemId, slotID)
@@ -214,7 +65,7 @@ local function CreateCustomIcon(itemId, slotID)
 
     customIcon:SetScript("OnEvent", function(self, event, ...)
         if event == "ACTIONBAR_UPDATE_COOLDOWN" or event == "PLAYER_ENTERING_WORLD" then
-            local startTime, durationTime = FetchItemData(itemId)
+            local startTime, durationTime = C_Item.GetItemCooldown(itemId)
             local hasActiveCooldown, readableStartTime, readableDurationTime = HasReadableActiveCooldown(startTime, durationTime)
             if hasActiveCooldown then
                 local durationObject = C_DurationUtil.CreateDuration()
@@ -453,7 +304,7 @@ local function LayoutTrinketBar()
         end
     end
 
-    ApplyCooldownText()
+    BCDM:ApplyCooldownText(BCDM.TrinketBarContainer)
 
     if CustomDB.Enabled and #customTrinketIcons > 0 then
         BCDM.TrinketBarContainer:Show()

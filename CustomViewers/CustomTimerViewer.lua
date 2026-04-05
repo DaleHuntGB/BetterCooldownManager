@@ -124,60 +124,6 @@ local function UpdateTimerTickerState()
     end
 end
 
-local function FetchCooldownTextRegion(cooldown)
-    if not cooldown then return end
-    if cooldown.BCDMCachedTextRegion then
-        return cooldown.BCDMCachedTextRegion
-    end
-
-    for _, region in ipairs({ cooldown:GetRegions() }) do
-        if region:GetObjectType() == "FontString" then
-            cooldown.BCDMCachedTextRegion = region
-            return region
-        end
-    end
-end
-
-local function ApplyCooldownText(viewer)
-    local cooldownManagerDB = BCDM.db.profile.CooldownManager
-    local generalDB = BCDM.db.profile.General
-    local cooldownTextDB = cooldownManagerDB.General.CooldownText
-    if not viewer then return end
-
-    local icons = viewer.ActiveIcons or { viewer:GetChildren() }
-    for _, icon in ipairs(icons) do
-        if icon and icon.Cooldown then
-            local textRegion = FetchCooldownTextRegion(icon.Cooldown)
-            if textRegion then
-                if cooldownTextDB.ScaleByIconSize then
-                    local iconWidth = icon:GetWidth()
-                    local scaleFactor = iconWidth / 36
-                    textRegion:SetFont(BCDM.Media.Font, cooldownTextDB.FontSize * scaleFactor, generalDB.Fonts.FontFlag)
-                else
-                    textRegion:SetFont(BCDM.Media.Font, cooldownTextDB.FontSize, generalDB.Fonts.FontFlag)
-                end
-
-                textRegion:SetTextColor(cooldownTextDB.Colour[1], cooldownTextDB.Colour[2], cooldownTextDB.Colour[3], 1)
-                textRegion:ClearAllPoints()
-                textRegion:SetPoint(cooldownTextDB.Layout[1], icon, cooldownTextDB.Layout[2], cooldownTextDB.Layout[3], cooldownTextDB.Layout[4])
-
-                if generalDB.Fonts.Shadow.Enabled then
-                    textRegion:SetShadowColor(
-                        generalDB.Fonts.Shadow.Colour[1],
-                        generalDB.Fonts.Shadow.Colour[2],
-                        generalDB.Fonts.Shadow.Colour[3],
-                        generalDB.Fonts.Shadow.Colour[4]
-                    )
-                    textRegion:SetShadowOffset(generalDB.Fonts.Shadow.OffsetX, generalDB.Fonts.Shadow.OffsetY)
-                else
-                    textRegion:SetShadowColor(0, 0, 0, 0)
-                    textRegion:SetShadowOffset(0, 0)
-                end
-            end
-        end
-    end
-end
-
 local function BuildCustomTimerStyleSignature(customDB)
     local cooldownManagerDB = BCDM.db.profile.CooldownManager
     local generalDB = BCDM.db.profile.General
@@ -208,17 +154,8 @@ local function IsCenteredHorizontalLayout(point, growthDirection)
     return growthDirection == "HORIZONTAL" or ((point == "TOP" or point == "BOTTOM") and (growthDirection == "LEFT" or growthDirection == "RIGHT"))
 end
 
-local function IsCenteredVerticalLayout(growthDirection)
-    return growthDirection == "VERTICAL"
-end
-
-local function ShouldGrowUp(point)
-    return point and point:find("BOTTOM") ~= nil
-end
-
-local function ShouldGrowLeft(point)
-    return point and point:find("RIGHT") ~= nil
-end
+local function ShouldGrowUp(point)   return point and point:find("BOTTOM") ~= nil end
+local function ShouldGrowLeft(point) return point and point:find("RIGHT") ~= nil end
 
 local function CreateCustomTimerIcon(customDB, entry)
     local spellData = entry and entry.spellId and C_Spell.GetSpellInfo(entry.spellId)
@@ -296,26 +233,8 @@ local function CreateCustomTimerIcon(customDB, entry)
     return customIcon
 end
 
-local function ActivateCachedIcon(customIcon)
-    if customIcon and customIcon.BCDMActivate then
-        customIcon:BCDMActivate()
-    end
-end
-
-local function DeactivateCachedIcon(customIcon)
-    if not customIcon then
-        return
-    end
-
-    if customIcon.BCDMDeactivate then
-        customIcon:BCDMDeactivate()
-        return
-    end
-
-    customIcon:UnregisterAllEvents()
-    customIcon:Hide()
-    customIcon:SetParent(nil)
-end
+local ActivateCachedIcon   = function(icon) BCDM:ActivateCachedIcon(icon) end
+local DeactivateCachedIcon = function(icon) BCDM:DeactivateCachedIcon(icon) end
 
 local function ReleaseTimerIcons(container)
     if not container then
@@ -557,12 +476,12 @@ local function LayoutCustomTimerViewer()
     local wrapLimit = GetColumnWrapLimit(customDB)
     local lineLimit = (wrapLimit > 0) and wrapLimit or math.max(#activeIcons, 1)
     local useCenteredHorizontalLayout = IsCenteredHorizontalLayout(point, growthDirection)
-    local useCenteredVerticalLayout = IsCenteredVerticalLayout(growthDirection)
+    local useCenteredVerticalLayout = growthDirection == "VERTICAL"
 
     if #activeIcons == 0 or not customDB.Enabled then
         container:SetSize(1, 1)
         container:Hide()
-        ApplyCooldownText(container)
+        BCDM:ApplyCooldownText(container)
         return
     end
 
@@ -674,7 +593,7 @@ local function LayoutCustomTimerViewer()
         end
     end
 
-    ApplyCooldownText(container)
+    BCDM:ApplyCooldownText(container)
     container:Show()
 end
 
