@@ -127,6 +127,47 @@ local function GetPowerBarColor()
     return 1, 1, 1, 1
 end
 
+local function SetSecondaryPowerBarBackdropColor(secondaryPowerBar, powerType, powerCurrent)
+    local secondaryPowerBarDB = BCDM.db.profile.SecondaryPowerBar
+    local backgroundColour = secondaryPowerBarDB.BackgroundColour
+
+    if not secondaryPowerBarDB.ColourBackgroundByType then
+        secondaryPowerBar:SetBackdropColor(backgroundColour[1], backgroundColour[2], backgroundColour[3], backgroundColour[4])
+        return
+    end
+
+    powerType = powerType or DetectSecondaryPower()
+    if powerType == "STAGGER" and BCDM.IS_MONK and GetSpecializationInfo(GetSpecialization()) == SPEC_BREWMASTER and secondaryPowerBarDB.ColourByState then
+        local powerMax = UnitHealthMax("player") or 0
+        local staggerPct = powerMax > 0 and ((powerCurrent or UnitStagger("player") or 0) / powerMax * 100) or 0
+        local staggerColours = BCDM.db.profile.General.Colours.SecondaryPower["STAGGER_COLOURS"]
+        local colour
+
+        if staggerPct < 30 then
+            colour = staggerColours.LIGHT
+        elseif staggerPct < 60 then
+            colour = staggerColours.MODERATE
+        else
+            colour = staggerColours.HEAVY
+        end
+
+        if colour then
+            local mult = secondaryPowerBarDB.BackgroundMultiplier or 0.75
+            secondaryPowerBar:SetBackdropColor(colour[1] * mult, colour[2] * mult, colour[3] * mult, colour[4] or 1)
+            return
+        end
+    end
+
+    local br, bg, bb, ba = GetPowerBarColor()
+    if br then
+        local mult = secondaryPowerBarDB.BackgroundMultiplier or 0.75
+        secondaryPowerBar:SetBackdropColor(br * mult, bg * mult, bb * mult, ba)
+        return
+    end
+
+    secondaryPowerBar:SetBackdropColor(backgroundColour[1], backgroundColour[2], backgroundColour[3], backgroundColour[4])
+end
+
 local function CreateRuneBars()
     local parent = BCDM.SecondaryPowerBar
     if not parent then return end
@@ -606,28 +647,7 @@ local function UpdatePowerValues()
     if not (powerType == "STAGGER" and secondaryPowerBarDB.ColourByState) then
         secondaryPowerBar.Status:SetStatusBarColor(GetPowerBarColor())
     end
-    if secondaryPowerBarDB.ColourBackgroundByType then
-        local br, bg, bb, ba = GetPowerBarColor()
-        if br then
-            local mult = secondaryPowerBarDB.BackgroundMultiplier or 0.75
-            secondaryPowerBar:SetBackdropColor(br * mult, bg * mult, bb * mult, ba)
-        end
-    end
-    if powerType == "STAGGER" and BCDM.IS_MONK and GetSpecializationInfo(GetSpecialization()) == SPEC_BREWMASTER and secondaryPowerBarDB.ColourByState then
-        local powerMax = UnitHealthMax("player") or 0
-        local staggerPct = powerMax > 0 and (powerCurrent / powerMax * 100) or 0
-        local staggerColours = BCDM.db.profile.General.Colours.SecondaryPower["STAGGER_COLOURS"]
-        local colour
-        if staggerPct < 30 then
-            colour = staggerColours.LIGHT
-        elseif staggerPct < 60 then
-            colour = staggerColours.MODERATE
-        else
-            colour = staggerColours.HEAVY
-        end
-        local mult = secondaryPowerBarDB.BackgroundMultiplier or 0.75
-        secondaryPowerBar:SetBackdropColor(colour[1] * mult, colour[2] * mult, colour[3] * mult, colour[4] or 1)
-    end
+    SetSecondaryPowerBarBackdropColor(secondaryPowerBar, powerType, powerCurrent)
     secondaryPowerBar:Show()
 end
 
@@ -802,17 +822,7 @@ function BCDM:CreateSecondaryPowerBar()
     else
         secondaryPowerBar:SetBackdropBorderColor(0, 0, 0, 0)
     end
-    if secondaryPowerBarDB.ColourBackgroundByType then
-        local br, bg, bb, ba = GetPowerBarColor()
-        if br then
-            local mult = secondaryPowerBarDB.BackgroundMultiplier or 0.75
-            secondaryPowerBar:SetBackdropColor(br * mult, bg * mult, bb * mult, ba)
-        else
-            secondaryPowerBar:SetBackdropColor(secondaryPowerBarDB.BackgroundColour[1], secondaryPowerBarDB.BackgroundColour[2], secondaryPowerBarDB.BackgroundColour[3], secondaryPowerBarDB.BackgroundColour[4])
-        end
-    else
-        secondaryPowerBar:SetBackdropColor(secondaryPowerBarDB.BackgroundColour[1], secondaryPowerBarDB.BackgroundColour[2], secondaryPowerBarDB.BackgroundColour[3], secondaryPowerBarDB.BackgroundColour[4])
-    end
+    SetSecondaryPowerBarBackdropColor(secondaryPowerBar)
     secondaryPowerBar:SetSize(secondaryPowerBarDB.Width, secondaryPowerBarDB.Height)
 
     if BCDM:RepositionSecondaryBar() then
@@ -898,17 +908,7 @@ function BCDM:UpdateSecondaryPowerBar()
     else
         secondaryPowerBar:SetBackdropBorderColor(0, 0, 0, 0)
     end
-    if secondaryPowerBarDB.ColourBackgroundByType then
-        local br, bg, bb, ba = GetPowerBarColor()
-        if br then
-            local mult = secondaryPowerBarDB.BackgroundMultiplier or 0.75
-            secondaryPowerBar:SetBackdropColor(br * mult, bg * mult, bb * mult, ba)
-        else
-            secondaryPowerBar:SetBackdropColor(secondaryPowerBarDB.BackgroundColour[1], secondaryPowerBarDB.BackgroundColour[2], secondaryPowerBarDB.BackgroundColour[3], secondaryPowerBarDB.BackgroundColour[4])
-        end
-    else
-        secondaryPowerBar:SetBackdropColor(secondaryPowerBarDB.BackgroundColour[1], secondaryPowerBarDB.BackgroundColour[2], secondaryPowerBarDB.BackgroundColour[3], secondaryPowerBarDB.BackgroundColour[4])
-    end
+    SetSecondaryPowerBarBackdropColor(secondaryPowerBar)
     secondaryPowerBar:SetSize(secondaryPowerBarDB.Width, secondaryPowerBarDB.Height)
 
     if BCDM:RepositionSecondaryBar() and BCDM.db.profile.SecondaryPowerBar.SwapToPowerBarPosition then
