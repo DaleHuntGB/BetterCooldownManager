@@ -16,9 +16,12 @@ local function GetDisplayCastText(text, maxChars)
         return text
     end
     if maxChars == 0 then
-        return text  -- Show full spellname
+        return text
     end
-    return string.sub(text, 1, maxChars)
+    if strlenutf8(text) > maxChars then
+        return string.utf8sub(text, 1, maxChars) .. "..."
+    end
+    return text
 end
 
 local function FetchCastBarColour()
