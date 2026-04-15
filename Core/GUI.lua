@@ -2541,14 +2541,15 @@ local function CreateSecondaryPowerBarTextSettings(parentContainer)
     fontSizeSlider:SetRelativeWidth(0.33)
     textContainer:AddChild(fontSizeSlider)
 
+    local staggerContainer, staggerDropdown, showStaggerDPSCheckbox
     if isUnitMonk then
-        local staggerContainer = AG:Create("InlineGroup")
+        staggerContainer = AG:Create("InlineGroup")
         staggerContainer:SetTitle(LL("Stagger Settings"))
         staggerContainer:SetFullWidth(true)
         staggerContainer:SetLayout("Flow")
         textContainer:AddChild(staggerContainer)
 
-        local staggerDropdown = AG:Create("Dropdown")
+        staggerDropdown = AG:Create("Dropdown")
         staggerDropdown:SetLabel(LL("Displayed As"))
         staggerDropdown:SetList(StaggerDisplayModes[1], StaggerDisplayModes[2], StaggerDisplayModes[3])
         staggerDropdown:SetValue(BCDM.db.profile.SecondaryPowerBar.StaggerDisplayMode)
@@ -2556,7 +2557,7 @@ local function CreateSecondaryPowerBarTextSettings(parentContainer)
         staggerDropdown:SetRelativeWidth(0.5)
         staggerContainer:AddChild(staggerDropdown)
 
-        local showStaggerDPSCheckbox = AG:Create("CheckBox")
+        showStaggerDPSCheckbox = AG:Create("CheckBox")
         showStaggerDPSCheckbox:SetLabel(LL("Show Stagger Damage Per Second"))
         showStaggerDPSCheckbox:SetValue(BCDM.db.profile.SecondaryPowerBar.Text.ShowStaggerDPS)
         showStaggerDPSCheckbox:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.SecondaryPowerBar.Text.ShowStaggerDPS = value BCDM:UpdateSecondaryPowerBar() RefreshSecondaryPowerBarGUISettings() end)
