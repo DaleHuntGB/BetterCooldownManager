@@ -121,7 +121,7 @@ local function CreateCustomIcon(spellId)
     end
     local iconWidth, iconHeight = BCDM:GetIconDimensions(CustomDB)
     customIcon:SetSize(iconWidth, iconHeight)
-    local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]]
+    local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]] or UIParent
     customIcon:SetPoint(CustomDB.Layout[1], anchorParent, CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
     customIcon:RegisterEvent("SPELL_UPDATE_COOLDOWN")
     customIcon:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -257,7 +257,8 @@ local function LayoutCustomCooldownViewer()
 
     BCDM.CustomCooldownViewerContainer:ClearAllPoints()
     BCDM.CustomCooldownViewerContainer:SetFrameStrata(CustomDB.FrameStrata or "LOW")
-    local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]]
+    local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]] or UIParent
+    BCDM.CustomCooldownViewerContainer:SetParent(anchorParent)
     BCDM.CustomCooldownViewerContainer:SetPoint(containerAnchorFrom, anchorParent, CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
 
     for _, child in ipairs({BCDM.CustomCooldownViewerContainer:GetChildren()}) do child:UnregisterAllEvents() child:Hide() child:SetParent(nil) end
@@ -383,7 +384,8 @@ function BCDM:UpdateCustomCooldownViewer()
     local CustomDB = CooldownManagerDB.CooldownManager.Custom
     if BCDM.CustomCooldownViewerContainer then
         BCDM.CustomCooldownViewerContainer:ClearAllPoints()
-        local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]]
+        local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]] or UIParent
+        BCDM.CustomCooldownViewerContainer:SetParent(anchorParent)
         BCDM.CustomCooldownViewerContainer:SetPoint(CustomDB.Layout[1], anchorParent, CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
     end
     LayoutCustomCooldownViewer()
