@@ -503,20 +503,24 @@ BCDM.AnchorParents = {
             ["EssentialCooldownViewer"] = "|cFF00AEF7Blizzard|r: Essential Cooldown Viewer",
             ["BCDM_PowerBar"] = "|cFF8080FFBCDM|r: Power Bar",
             ["BCDM_SecondaryPowerBar"] = "|cFF8080FFBCDM|r: Secondary Power Bar",
+            ["DandersPartyHeader"] = "|cFFFFA500DandersFrames|r: Party Header",
+            ["DandersRaidFramesContainer"] = "|cFFFFA500DandersFrames|r: Raid Container",
             ["NONE"] = "|cFF00AEF7Blizzard|r: UIParent",
         },
-        { "EssentialCooldownViewer", "NONE", "BCDM_PowerBar", "BCDM_SecondaryPowerBar"},
+        { "EssentialCooldownViewer", "NONE", "DandersPartyHeader", "DandersRaidFramesContainer", "BCDM_PowerBar", "BCDM_SecondaryPowerBar"},
     },
     ["Buffs"] = {
         {
             ["EssentialCooldownViewer"] = "|cFF00AEF7Blizzard|r: Essential Cooldown Viewer",
             ["UtilityCooldownViewer"] = "|cFF00AEF7Blizzard|r: Utility Cooldown Viewer",
             ["NONE"] = "|cFF00AEF7Blizzard|r: UIParent",
+            ["DandersPartyHeader"] = "|cFFFFA500DandersFrames|r: Party Header",
+            ["DandersRaidFramesContainer"] = "|cFFFFA500DandersFrames|r: Raid Container",
             ["BCDM_PowerBar"] = "|cFF8080FFBCDM|r: Power Bar",
             ["BCDM_SecondaryPowerBar"] = "|cFF8080FFBCDM|r: Secondary Power Bar",
             ["BCDM_CastBar"] = "|cFF8080FFBCDM|r: Cast Bar",
         },
-        { "EssentialCooldownViewer", "UtilityCooldownViewer", "NONE", "BCDM_PowerBar", "BCDM_SecondaryPowerBar", "BCDM_CastBar" },
+        { "EssentialCooldownViewer", "UtilityCooldownViewer", "NONE", "DandersPartyHeader", "DandersRaidFramesContainer", "BCDM_PowerBar", "BCDM_SecondaryPowerBar", "BCDM_CastBar" },
     },
     ["Custom"] = {
         {
@@ -612,26 +616,32 @@ BCDM.AnchorParents = {
         {
             ["EssentialCooldownViewer"] = "|cFF00AEF7Blizzard|r: Essential Cooldown Viewer",
             ["UtilityCooldownViewer"] = "|cFF00AEF7Blizzard|r: Utility Cooldown Viewer",
+            ["DandersPartyHeader"] = "|cFFFFA500DandersFrames|r: Party Header",
+            ["DandersRaidFramesContainer"] = "|cFFFFA500DandersFrames|r: Raid Container",
             ["BCDM_SecondaryPowerBar"] = "|cFF8080FFBCDM|r: Secondary Power Bar",
         },
-        { "EssentialCooldownViewer", "UtilityCooldownViewer", "BCDM_SecondaryPowerBar" },
+        { "EssentialCooldownViewer", "UtilityCooldownViewer", "DandersPartyHeader", "DandersRaidFramesContainer", "BCDM_SecondaryPowerBar" },
     },
     ["SecondaryPower"] = {
         {
             ["EssentialCooldownViewer"] = "|cFF00AEF7Blizzard|r: Essential Cooldown Viewer",
             ["UtilityCooldownViewer"] = "|cFF00AEF7Blizzard|r: Utility Cooldown Viewer",
+            ["DandersPartyHeader"] = "|cFFFFA500DandersFrames|r: Party Header",
+            ["DandersRaidFramesContainer"] = "|cFFFFA500DandersFrames|r: Raid Container",
             ["BCDM_PowerBar"] = "|cFF8080FFBCDM|r: Power Bar",
         },
-        { "EssentialCooldownViewer", "UtilityCooldownViewer", "BCDM_PowerBar"},
+        { "EssentialCooldownViewer", "UtilityCooldownViewer", "DandersPartyHeader", "DandersRaidFramesContainer", "BCDM_PowerBar"},
     },
     ["CastBar"] = {
         {
             ["EssentialCooldownViewer"] = "|cFF00AEF7Blizzard|r: Essential Cooldown Viewer",
             ["UtilityCooldownViewer"] = "|cFF00AEF7Blizzard|r: Utility Cooldown Viewer",
+            ["DandersPartyHeader"] = "|cFFFFA500DandersFrames|r: Party Header",
+            ["DandersRaidFramesContainer"] = "|cFFFFA500DandersFrames|r: Raid Container",
             ["BCDM_PowerBar"] = "|cFF8080FFBCDM|r: Power Bar",
             ["BCDM_SecondaryPowerBar"] = "|cFF8080FFBCDM|r: Secondary Power Bar",
         },
-        { "EssentialCooldownViewer", "UtilityCooldownViewer", "BCDM_PowerBar", "BCDM_SecondaryPowerBar" },
+        { "EssentialCooldownViewer", "UtilityCooldownViewer", "DandersPartyHeader", "DandersRaidFramesContainer", "BCDM_PowerBar", "BCDM_SecondaryPowerBar" },
     }
 }
 
