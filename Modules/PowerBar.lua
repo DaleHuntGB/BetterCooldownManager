@@ -39,6 +39,7 @@ local function DetectSecondaryPower()
         return true
     elseif class == "MAGE" then
         if specID == 62 then return true end
+        if specID == 64 then return true end
     elseif class == "EVOKER" then
         return true
     elseif class == "DEATHKNIGHT" then
@@ -49,7 +50,7 @@ local function DetectSecondaryPower()
         if specID == 262 and showMana then return true end
         if specID == 263 then return true end
     elseif class == "PRIEST" then
-        if specID == 258 and showMana then return true end    
+        if specID == 258 and showMana then return true end
     end
     return false
 end
@@ -69,11 +70,11 @@ local function UpdatePowerValues()
     local powerType = UnitPowerType("player")
     if class == "DRUID" then
         local spec = GetSpecialization()
-        local form = GetShapeshiftFormID() or 0 
+        local form = GetShapeshiftFormID() or 0
         local isHybridMoonkin = (spec == 2 or spec == 3 or spec == 4) and form == 31 or form == 32 or form == 33 or form == 34 or form == 35
         local isBalanceHumanoid = (spec == 1 and form == 0)
         if isHybridMoonkin or isBalanceHumanoid then
-            powerType = 0 
+            powerType = 0
         end
     end
     local powerCurrent = UnitPower("player", powerType)
