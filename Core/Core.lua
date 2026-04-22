@@ -32,4 +32,5 @@ function BetterCooldownManager:OnEnable()
         BCDM:CreateCooldownViewerOverlays()
     end)
     BCDM:SetupEditModeManager()
+    C_Timer.After(1, function() BCDM:RestoreMirrorFrames() end)
 end
