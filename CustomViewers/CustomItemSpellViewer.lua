@@ -347,7 +347,7 @@ local function CreateCustomItemIcon(itemId)
     end
     local iconWidth, iconHeight = BCDM:GetIconDimensions(CustomDB)
     customIcon:SetSize(iconWidth, iconHeight)
-    local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]]
+    local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]] or UIParent
     customIcon:SetPoint(CustomDB.Layout[1], anchorParent, CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
     customIcon:RegisterEvent("SPELL_UPDATE_COOLDOWN")
     customIcon:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -452,7 +452,7 @@ local function CreateCustomSpellIcon(spellId)
     end
     local iconWidth, iconHeight = BCDM:GetIconDimensions(CustomDB)
     customIcon:SetSize(iconWidth, iconHeight)
-    local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]]
+    local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]] or UIParent
     customIcon:SetPoint(CustomDB.Layout[1], anchorParent, CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
     customIcon:RegisterEvent("SPELL_UPDATE_COOLDOWN")
     customIcon:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -653,7 +653,8 @@ local function LayoutCustomItemsSpellsBar()
 
     BCDM.CustomItemSpellBarContainer:ClearAllPoints()
     BCDM.CustomItemSpellBarContainer:SetFrameStrata(CustomDB.FrameStrata or "LOW")
-    local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]]
+    local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]] or UIParent
+    BCDM.CustomItemSpellBarContainer:SetParent(anchorParent)
     BCDM.CustomItemSpellBarContainer:SetPoint(containerAnchorFrom, anchorParent, CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
     if not BCDM.CustomItemSpellBarContainer.HideZeroEventHooked then
         BCDM.CustomItemSpellBarContainer.HideZeroEventHooked = true
@@ -824,7 +825,8 @@ function BCDM:UpdateCustomItemsSpellsBar()
     local CustomDB = CooldownManagerDB.CooldownManager.ItemSpell
     if BCDM.CustomItemSpellBarContainer then
         BCDM.CustomItemSpellBarContainer:ClearAllPoints()
-        local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]]
+        local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]] or UIParent
+        BCDM.CustomItemSpellBarContainer:SetParent(anchorParent)
         BCDM.CustomItemSpellBarContainer:SetPoint(CustomDB.Layout[1], anchorParent, CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
     end
     LayoutCustomItemsSpellsBar()

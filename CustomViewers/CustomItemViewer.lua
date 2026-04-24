@@ -312,7 +312,7 @@ local function CreateCustomIcon(itemId)
     end
     local iconWidth, iconHeight = BCDM:GetIconDimensions(CustomDB)
     customIcon:SetSize(iconWidth, iconHeight)
-    local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]]
+    local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]] or UIParent
     customIcon:SetPoint(CustomDB.Layout[1], anchorParent, CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
     customIcon:RegisterEvent("SPELL_UPDATE_COOLDOWN")
     customIcon:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -525,7 +525,8 @@ local function LayoutCustomItemBar()
 
     BCDM.CustomItemBarContainer:ClearAllPoints()
     BCDM.CustomItemBarContainer:SetFrameStrata(CustomDB.FrameStrata or "LOW")
-    local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]]
+    local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]] or UIParent
+    BCDM.CustomItemBarContainer:SetParent(anchorParent)
     BCDM.CustomItemBarContainer:SetPoint(containerAnchorFrom, anchorParent, CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
 
     if not BCDM.CustomItemBarContainer.HideZeroEventHooked then
@@ -717,7 +718,8 @@ function BCDM:UpdateCustomItemBar()
     local CustomDB = CooldownManagerDB.CooldownManager.Item
     if BCDM.CustomItemBarContainer then
         BCDM.CustomItemBarContainer:ClearAllPoints()
-        local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]]
+        local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]] or UIParent
+        BCDM.CustomItemBarContainer:SetParent(anchorParent)
         BCDM.CustomItemBarContainer:SetPoint(CustomDB.Layout[1], anchorParent, CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
     end
     LayoutCustomItemBar()

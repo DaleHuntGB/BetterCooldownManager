@@ -121,7 +121,7 @@ local function CreateCustomIcon(spellId)
     end
     local iconWidth, iconHeight = BCDM:GetIconDimensions(CustomDB)
     customIcon:SetSize(iconWidth, iconHeight)
-    local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]]
+    local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]] or UIParent
     customIcon:SetPoint(CustomDB.Layout[1], anchorParent, CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
     customIcon:RegisterEvent("SPELL_UPDATE_COOLDOWN")
     customIcon:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -258,7 +258,8 @@ local function LayoutAdditionalCustomCooldownViewer()
 
     BCDM.AdditionalCustomCooldownViewerContainer:ClearAllPoints()
     BCDM.AdditionalCustomCooldownViewerContainer:SetFrameStrata(CustomDB.FrameStrata or "LOW")
-    local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]]
+    local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]] or UIParent
+    BCDM.AdditionalCustomCooldownViewerContainer:SetParent(anchorParent)
     BCDM.AdditionalCustomCooldownViewerContainer:SetPoint(containerAnchorFrom, anchorParent, CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
 
     for _, child in ipairs({BCDM.AdditionalCustomCooldownViewerContainer:GetChildren()}) do child:UnregisterAllEvents() child:Hide() child:SetParent(nil) end
@@ -383,7 +384,8 @@ function BCDM:UpdateAdditionalCustomCooldownViewer()
     local CustomDB = CooldownManagerDB.CooldownManager.AdditionalCustom
     if BCDM.AdditionalCustomCooldownViewerContainer then
         BCDM.AdditionalCustomCooldownViewerContainer:ClearAllPoints()
-        local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]]
+        local anchorParent = CustomDB.Layout[2] == "NONE" and UIParent or _G[CustomDB.Layout[2]] or UIParent
+        BCDM.AdditionalCustomCooldownViewerContainer:SetParent(anchorParent)
         BCDM.AdditionalCustomCooldownViewerContainer:SetPoint(CustomDB.Layout[1], anchorParent, CustomDB.Layout[3], CustomDB.Layout[4], CustomDB.Layout[5])
     end
     LayoutAdditionalCustomCooldownViewer()
