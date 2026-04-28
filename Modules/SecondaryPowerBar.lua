@@ -394,27 +394,14 @@ local function UpdateComboDisplay()
     end
 end
 
-local function StartEssenceOnUpdate(tick, tickDuration, nextTickTime)
-    tick.bar:SetScript("OnUpdate", function(self)
-        local now = GetTime()
-        local remaining = math.max(0, nextTickTime - now)
+local function GetEssencePartialProgress()
+    local displayMod = UnitPowerDisplayMod(Enum.PowerType.Essence) or 0
+    if displayMod <= 0 then
+        return 0
+    end
 
-        if remaining <= 0 then
-            self:SetScript("OnUpdate", nil)
-            tick.bar:SetValue(1)
-            local r, g, b, a = GetPowerBarColor()
-            tick.bar:SetStatusBarColor(r, g, b, a)
-            return
-        end
-
-        local value = 1 - (remaining / tickDuration)
-        tick.bar:SetValue(value)
-
-        local rechargeColour = BCDM.db.profile.General.Colours.SecondaryPower["ESSENCE_RECHARGE"]
-        if rechargeColour then
-            tick.bar:SetStatusBarColor(rechargeColour[1], rechargeColour[2], rechargeColour[3], rechargeColour[4] or 1)
-        end
-    end)
+    local partialPower = UnitPartialPower("player", Enum.PowerType.Essence) or 0
+    return math.max(0, math.min(1, partialPower / displayMod))
 end
 
 local function UpdateEssenceDisplay()
@@ -422,24 +409,28 @@ local function UpdateEssenceDisplay()
     if not parent or #essenceTicks == 0 then return end
 
     local powerCurrent = UnitPower("player", Enum.PowerType.Essence) or 0
+    local partialProgress = GetEssencePartialProgress()
     local r, g, b, a = GetPowerBarColor()
+    local rechargeColour = BCDM.db.profile.General.Colours.SecondaryPower["ESSENCE_RECHARGE"]
 
     for i = 1, #essenceTicks do
         local tick = essenceTicks[i]
         local bar = tick.bar
 
         bar:Show()
+        bar:SetScript("OnUpdate", nil)
 
         if i <= powerCurrent then
-            bar:SetScript("OnUpdate", nil)
             bar:SetValue(1)
             bar:SetStatusBarColor(r, g, b, a)
-        elseif i == powerCurrent + 1 and parent._NextEssenceTick then
-            local regen = GetPowerRegenForPowerType(Enum.PowerType.Essence) or 0.2
-            local tickDuration = 1 / regen
-            StartEssenceOnUpdate(tick, tickDuration, parent._NextEssenceTick)
+        elseif i == powerCurrent + 1 and powerCurrent < #essenceTicks then
+            bar:SetValue(partialProgress)
+            if rechargeColour then
+                bar:SetStatusBarColor(rechargeColour[1], rechargeColour[2], rechargeColour[3], rechargeColour[4] or 1)
+            else
+                bar:SetStatusBarColor(r, g, b, a)
+            end
         else
-            bar:SetScript("OnUpdate", nil)
             bar:SetValue(0)
             bar:SetStatusBarColor(0, 0, 0, 1)
         end
@@ -575,21 +566,6 @@ local function UpdatePowerValues()
         -- Inspired by Sensei's Resource Bar - <https://www.curseforge.com/wow/addons/senseiclassresourcebar>
         powerCurrent = UnitPower("player", Enum.PowerType.Essence) or 0
         local powerMax = UnitPowerMax("player", Enum.PowerType.Essence) or 0
-        local essenceRechargeRate = GetPowerRegenForPowerType(Enum.PowerType.Essence) or 0.2
-        local tickDuration = 5 / (5 / (1 / essenceRechargeRate))
-        local currentTime = GetTime()
-        secondaryPowerBar._NextEssenceTick = secondaryPowerBar._NextEssenceTick or nil
-        secondaryPowerBar._LastEssence = secondaryPowerBar._LastEssence or powerCurrent
-        if powerCurrent > secondaryPowerBar._LastEssence then
-            if powerCurrent < powerMax then
-                secondaryPowerBar._NextEssenceTick = currentTime + tickDuration
-            else
-                secondaryPowerBar._NextEssenceTick = nil
-            end
-        end
-        if powerCurrent < powerMax and not secondaryPowerBar._NextEssenceTick then secondaryPowerBar._NextEssenceTick = currentTime + tickDuration end
-        if powerCurrent >= powerMax then secondaryPowerBar._NextEssenceTick = nil end
-        secondaryPowerBar._LastEssence = powerCurrent
         UpdateEssenceDisplay()
         secondaryPowerBar.Status:SetMinMaxValues(0, powerMax)
         secondaryPowerBar.Status:SetValue(powerCurrent)

@@ -1351,7 +1351,7 @@ local function CreateGlobalSettings(parentContainer)
     local CooldownManagerFontFlagDropdown = AG:Create("Dropdown")
     CooldownManagerFontFlagDropdown:SetLabel(LL("Font Flag"))
     CooldownManagerFontFlagDropdown:SetList({
-        ["NONE"] = "NONE",
+        [""] = "NONE",
         ["OUTLINE"] = "Outline",
         ["THICKOUTLINE"] = "Thick Outline",
         ["MONOCHROME"] = "Monochrome",
