@@ -15,7 +15,13 @@ local function GetDisplayCastText(text, maxChars)
     if BCDM:IsSecretValue(text) then
         return text
     end
-    return string.sub(text, 1, maxChars)
+    if maxChars == 0 then
+        return text
+    end
+    if strlenutf8(text) > maxChars then
+        return string.utf8sub(text, 1, maxChars) .. "..."
+    end
+    return text
 end
 
 local function FetchCastBarColour()

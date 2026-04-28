@@ -15,7 +15,35 @@ local function LL(key)
     return (LocaleTable and rawget(LocaleTable, key)) or key
 end
 
-local AnchorPoints = { { ["TOPLEFT"] = LL("Top Left"), ["TOP"] = LL("Top"), ["TOPRIGHT"] = LL("Top Right"), ["LEFT"] = LL("Left"), ["CENTER"] = LL("Center"), ["RIGHT"] = LL("Right"), ["BOTTOMLEFT"] = LL("Bottom Left"), ["BOTTOM"] = LL("Bottom"), ["BOTTOMRIGHT"] = LL("Bottom Right") }, { "TOPLEFT", "TOP", "TOPRIGHT", "LEFT", "CENTER", "RIGHT", "BOTTOMLEFT", "BOTTOM", "BOTTOMRIGHT", } }
+local function SetFontForAceWidget(widget, fontSize)
+    if not widget or not widget.frame then return end
+    local font = BCDM.Media.Font
+    local flag = BCDM.db.profile.General.Fonts.FontFlag or "OUTLINE"
+    local textRegion = widget.frame.text or widget.frame:GetFontString()
+    if textRegion and textRegion.SetFont then
+        textRegion:SetFont(font, fontSize or 12, flag)
+    end
+    for _, child in ipairs({ widget.frame:GetRegions() }) do
+        if child and child.SetFont then
+            child:SetFont(font, fontSize or 12, flag)
+        end
+    end
+end
+
+local AnchorPoints = {
+    {
+        ["TOPLEFT"] = LL("Top Left"),
+        ["TOP"] = LL("Top"),
+        ["TOPRIGHT"] = LL("Top Right"),
+        ["LEFT"] = LL("Left"),
+        ["CENTER"] = LL("Center"),
+        ["RIGHT"] = LL("Right"),
+        ["BOTTOMLEFT"] = LL("Bottom Left"),
+        ["BOTTOM"] = LL("Bottom"),
+        ["BOTTOMRIGHT"] = LL("Bottom Right"),
+    },
+    { "TOPLEFT", "TOP", "TOPRIGHT", "LEFT", "CENTER", "RIGHT", "BOTTOMLEFT", "BOTTOM", "BOTTOMRIGHT", }
+}
 
 local PowerNames = {
     [0] = LL("Mana"),
@@ -605,6 +633,7 @@ local function AddItemSpellClassSpecFilterEditor(parentContainer, viewerKey, vie
         local classHeading = AG:Create("Heading")
         classHeading:SetText(classEntry.classLabel)
         classHeading:SetFullWidth(true)
+        SetFontForAceWidget(classHeading, 14)
         filterGroup:AddChild(classHeading)
 
         local specWidth = 0.25
@@ -652,6 +681,7 @@ local function PopulateClassSpecDropdown(dropdown, spellDB)
         classItem:SetText(classEntry.classLabel)
         classItem.userdata.obj = dropdown
         classItem.SetValue = function() end
+        SetFontForAceWidget(classItem, 12)
 
         local submenu = AG:Create("Dropdown-Pullout")
         submenu:SetHideOnLeave(true)
@@ -740,7 +770,8 @@ end
 local function CreateInformationTag(containerParent, labelDescription, textJustification)
     local informationLabel = AG:Create("Label")
     informationLabel:SetText(BCDM.INFOBUTTON .. labelDescription)
-    informationLabel:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
+    local fontFlag = BCDM.db.profile.General.Fonts.FontFlag or "OUTLINE"
+    informationLabel:SetFont(BCDM.Media.Font, 12, fontFlag)
     informationLabel:SetFullWidth(true)
     informationLabel:SetJustifyH(textJustification or "CENTER")
     informationLabel:SetHeight(24)
@@ -836,10 +867,10 @@ local function CreateCustomGlowSettings(parentContainer)
     local glowType = AG:Create("Dropdown")
     glowType:SetLabel(LL("Glow Type"))
     glowType:SetList({
-        Pixel = "Pixel",
-        Autocast = "Autocast",
-        Proc = "Proc",
-        Button = "Action Button",
+		Pixel = LL("Pixel"),
+		Autocast = LL("Autocast"),
+		Proc = LL("Proc"),
+		Button = LL("Action Button"),
     })
     glowType:SetValue(glowSettings.Type or "Pixel")
     glowType:SetRelativeWidth(0.5)
@@ -1221,7 +1252,8 @@ local function CreateGeneralSettings(parentContainer)
 
     local TwitchInteractive = AG:Create("InteractiveLabel")
     TwitchInteractive:SetText(LL("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\Twitch.png:25:21|t |cFF8080FFTwitch|r"))
-    TwitchInteractive:SetFont("Fonts\\FRIZQT__.TTF", 13, "OUTLINE")
+    local fontFlag = BCDM.db.profile.General.Fonts.FontFlag or "OUTLINE"
+    TwitchInteractive:SetFont(BCDM.Media.Font, 13, fontFlag)
     TwitchInteractive:SetJustifyV("MIDDLE")
     TwitchInteractive:SetRelativeWidth(0.33)
     TwitchInteractive:SetCallback("OnClick", function() BCDM:OpenURL(LL("Support Me on Twitch"), "https://www.twitch.tv/unhaltedgb") end)
@@ -1231,7 +1263,7 @@ local function CreateGeneralSettings(parentContainer)
 
     local DiscordInteractive = AG:Create("InteractiveLabel")
     DiscordInteractive:SetText(LL("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\Discord.png:21:21|t |cFF8080FFDiscord|r"))
-    DiscordInteractive:SetFont("Fonts\\FRIZQT__.TTF", 13, "OUTLINE")
+    DiscordInteractive:SetFont(BCDM.Media.Font, 13, fontFlag)
     DiscordInteractive:SetJustifyV("MIDDLE")
     DiscordInteractive:SetRelativeWidth(0.33)
     DiscordInteractive:SetCallback("OnClick", function() BCDM:OpenURL(LL("Support Me on Discord"), "https://discord.gg/UZCgWRYvVE") end)
@@ -1241,7 +1273,7 @@ local function CreateGeneralSettings(parentContainer)
 
     local GithubInteractive = AG:Create("InteractiveLabel")
     GithubInteractive:SetText(LL("|TInterface\\AddOns\\BetterCooldownManager\\Media\\Support\\Github.png:21:21|t |cFF8080FFGithub|r"))
-    GithubInteractive:SetFont("Fonts\\FRIZQT__.TTF", 13, "OUTLINE")
+    GithubInteractive:SetFont(BCDM.Media.Font, 13, fontFlag)
     GithubInteractive:SetJustifyV("MIDDLE")
     GithubInteractive:SetRelativeWidth(0.33)
     GithubInteractive:SetCallback("OnClick", function() BCDM:OpenURL(LL("Support Me on Github"), "https://github.com/dalehuntgb/BetterCooldownManager") end)
@@ -2842,7 +2874,7 @@ local function CreateCastBarTextSettings(parentContainer)
     local spellName_MaxCharactersSlider = AG:Create("Slider")
     spellName_MaxCharactersSlider:SetLabel(LL("Max Characters"))
     spellName_MaxCharactersSlider:SetValue(BCDM.db.profile.CastBar.Text.SpellName.MaxCharacters)
-    spellName_MaxCharactersSlider:SetSliderValues(0, 32, 1)
+    spellName_MaxCharactersSlider:SetSliderValues(0, 64, 1)
     spellName_MaxCharactersSlider:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.CastBar.Text.SpellName.MaxCharacters = value BCDM:UpdateCastBar() end)
     spellName_MaxCharactersSlider:SetRelativeWidth(0.25)
     spellNameContainer:AddChild(spellName_MaxCharactersSlider)
@@ -3126,6 +3158,7 @@ local function CreateProfileSettings(containerParent)
 
     local ActiveProfileHeading = AG:Create("Heading")
     ActiveProfileHeading:SetFullWidth(true)
+    --SetFontForAceWidget(ActiveProfileHeading, 14)
     ProfileContainer:AddChild(ActiveProfileHeading)
 
     local function RefreshProfiles()
@@ -3216,6 +3249,7 @@ local function CreateProfileSettings(containerParent)
     local GlobalProfileHeading = AG:Create("Heading")
     GlobalProfileHeading:SetText(LL("Global Profile Settings"))
     GlobalProfileHeading:SetFullWidth(true)
+    --SetFontForAceWidget(GlobalProfileHeading, 14)
     ProfileContainer:AddChild(GlobalProfileHeading)
 
     CreateInformationTag(ProfileContainer, LL("If |cFF8080FFUse Global Profile Settings|r is enabled, the profile selected below will be used as your active profile.\nThis is useful if you want to use the same profile across multiple characters."))
@@ -3271,6 +3305,7 @@ local function CreateProfileSettings(containerParent)
     local ExportingHeading = AG:Create("Heading")
     ExportingHeading:SetText(LL("Exporting"))
     ExportingHeading:SetFullWidth(true)
+    --SetFontForAceWidget(ExportingHeading, 14)
     SharingContainer:AddChild(ExportingHeading)
 
     CreateInformationTag(SharingContainer, LL("You can export your profile by pressing |cFF8080FFExport Profile|r button below & share the string with other |cFF8080FFBetter|rCooldownManager users."))
@@ -3293,6 +3328,7 @@ local function CreateProfileSettings(containerParent)
     local ImportingHeading = AG:Create("Heading")
     ImportingHeading:SetText(LL("Importing"))
     ImportingHeading:SetFullWidth(true)
+    --SetFontForAceWidget(ImportingHeading, 14)
     SharingContainer:AddChild(ImportingHeading)
 
     CreateInformationTag(SharingContainer, LL("If you have an exported string, paste it in the |cFF8080FFImport String|r box below & press |cFF8080FFImport Profile|r."))

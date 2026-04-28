@@ -15,6 +15,7 @@ Libraries/Init.xml
 # Load Locales
 Locales/enUS.lua
 Locales/koKR.lua
+Locales/ruRU.lua
 
 # Load Modules
 Modules/Init.xml
