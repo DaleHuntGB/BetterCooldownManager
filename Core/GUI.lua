@@ -54,6 +54,19 @@ local PowerNames = {
     }
 }
 
+local StaggerDisplayModes = {
+    {
+        ["AMOUNT"] = LL("Amount"),
+        ["PERCENTAGE"] = LL("Percentage"),
+        ["BOTH"] = LL("Both")
+    },
+    {
+        "AMOUNT",
+        "PERCENTAGE",
+        "BOTH"
+    }
+}
+
 local ClassToPrettyClass = {
     ["DEATHKNIGHT"] = "|cFFC41E31" .. LL("DEATHKNIGHT") .. "|r",
     ["DRUID"]       = "|cFFFF7C0A" .. LL("DRUID") .. "|r",
@@ -2528,6 +2541,30 @@ local function CreateSecondaryPowerBarTextSettings(parentContainer)
     fontSizeSlider:SetRelativeWidth(0.33)
     textContainer:AddChild(fontSizeSlider)
 
+    local staggerContainer, staggerDropdown, showStaggerDPSCheckbox
+    if isUnitMonk then
+        staggerContainer = AG:Create("InlineGroup")
+        staggerContainer:SetTitle(LL("Stagger Settings"))
+        staggerContainer:SetFullWidth(true)
+        staggerContainer:SetLayout("Flow")
+        textContainer:AddChild(staggerContainer)
+
+        staggerDropdown = AG:Create("Dropdown")
+        staggerDropdown:SetLabel(LL("Displayed As"))
+        staggerDropdown:SetList(StaggerDisplayModes[1], StaggerDisplayModes[2], StaggerDisplayModes[3])
+        staggerDropdown:SetValue(BCDM.db.profile.SecondaryPowerBar.StaggerDisplayMode)
+        staggerDropdown:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.SecondaryPowerBar.StaggerDisplayMode = value BCDM:UpdateSecondaryPowerBar() end)
+        staggerDropdown:SetRelativeWidth(0.5)
+        staggerContainer:AddChild(staggerDropdown)
+
+        showStaggerDPSCheckbox = AG:Create("CheckBox")
+        showStaggerDPSCheckbox:SetLabel(LL("Show Stagger Damage Per Second"))
+        showStaggerDPSCheckbox:SetValue(BCDM.db.profile.SecondaryPowerBar.Text.ShowStaggerDPS)
+        showStaggerDPSCheckbox:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.SecondaryPowerBar.Text.ShowStaggerDPS = value BCDM:UpdateSecondaryPowerBar() RefreshSecondaryPowerBarGUISettings() end)
+        showStaggerDPSCheckbox:SetRelativeWidth(0.5)
+        staggerContainer:AddChild(showStaggerDPSCheckbox)
+    end
+
     function RefreshSecondaryPowerBarTextGUISettings()
         local enabled = BCDM.db.profile.SecondaryPowerBar.Text.Enabled
         anchorFromDropdown:SetDisabled(not enabled)
@@ -2535,6 +2572,12 @@ local function CreateSecondaryPowerBarTextSettings(parentContainer)
         xOffsetSlider:SetDisabled(not enabled)
         yOffsetSlider:SetDisabled(not enabled)
         fontSizeSlider:SetDisabled(not enabled)
+        if staggerDropdown then
+            staggerDropdown:SetDisabled(not enabled)
+        end
+        if showStaggerDPSCheckbox then
+            showStaggerDPSCheckbox:SetDisabled(not enabled)
+        end
     end
 
     RefreshSecondaryPowerBarTextGUISettings()
@@ -2548,8 +2591,6 @@ local function CreateSecondaryPowerBarSettings(parentContainer)
     ScrollFrame:SetFullWidth(true)
     ScrollFrame:SetFullHeight(true)
     parentContainer:AddChild(ScrollFrame)
-
-    local isUnitMonkorDeathKnight = isUnitDeathKnight or isUnitMonk
 
     local toggleContainer = AG:Create("InlineGroup")
     toggleContainer:SetTitle(LL("Toggles & Colours"))
@@ -2603,13 +2644,6 @@ local function CreateSecondaryPowerBarSettings(parentContainer)
         colourStaggerByStateCheckbox:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.SecondaryPowerBar.ColourByState = value BCDM:UpdateSecondaryPowerBar() RefreshSecondaryPowerBarGUISettings() end)
         colourStaggerByStateCheckbox:SetRelativeWidth(1)
         toggleContainer:AddChild(colourStaggerByStateCheckbox)
-
-        local showStaggerDPSCheckbox = AG:Create("CheckBox")
-        showStaggerDPSCheckbox:SetLabel(LL("Stagger Damage Per Second"))
-        showStaggerDPSCheckbox:SetValue(BCDM.db.profile.SecondaryPowerBar.Text.ShowStaggerDPS)
-        showStaggerDPSCheckbox:SetCallback("OnValueChanged", function(self, _, value) BCDM.db.profile.SecondaryPowerBar.Text.ShowStaggerDPS = value BCDM:UpdateSecondaryPowerBar() RefreshSecondaryPowerBarGUISettings() end)
-        showStaggerDPSCheckbox:SetRelativeWidth(1)
-        toggleContainer:AddChild(showStaggerDPSCheckbox)
     end
 
     local matchAnchorWidthCheckbox = AG:Create("CheckBox")
