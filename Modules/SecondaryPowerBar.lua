@@ -387,6 +387,12 @@ local function UpdateComboDisplay()
                 bar:SetStatusBarColor(powerBarColourR, powerBarColourG, powerBarColourB, powerBarColourA or 1)
             end
             bar:Show()
+        elseif chargedLookup[i] then
+            bar:SetValue(1)
+            bar:SetStatusBarColor(chargedComboPointColourR, chargedComboPointColourG,
+                                     chargedComboPointColourB, 0.25)
+            end
+            bar:Show()    
         else
             bar:SetValue(0)
             bar:Hide()
