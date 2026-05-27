@@ -247,19 +247,59 @@ local function CenterWrappedRows(viewerName)
     local anchorPoint = "TOP"
     local relativePoint = "TOP"
     local yDirection = -1
-    if basePoint and basePoint:find("BOTTOM") then
+    local viewerName = viewer and viewer.GetName and viewer:GetName() or nil
+    local growRowsUpward = false
+    if viewerName == "EssentialCooldownViewer" then
+        local cm = BCDM and BCDM.db and BCDM.db.profile and BCDM.db.profile.CooldownManager
+        if cm and cm.Essential then
+            growRowsUpward = cm.Essential.GrowRowsUpward
+        end
+    end
+    if growRowsUpward then
+        anchorPoint = "BOTTOM"
+        relativePoint = "BOTTOM"
+        yDirection = 1
+    elseif basePoint and basePoint:find("BOTTOM") then
         anchorPoint = "BOTTOM"
         relativePoint = "BOTTOM"
         yDirection = 1
     end
 
     local rowCount = math.ceil(visibleCount / iconLimit)
+    local centerHorizontally = false
+    local isEssential = viewerName == "EssentialCooldownViewer"
+    local isUtility = viewerName == "UtilityCooldownViewer"
+    if isEssential or isUtility then
+        local cm = BCDM and BCDM.db and BCDM.db.profile and BCDM.db.profile.CooldownManager
+        if cm then
+            if isEssential and cm.Essential then
+                centerHorizontally = cm.Essential.CenterHorizontally
+            elseif isUtility and cm.Utility then
+                centerHorizontally = cm.Utility.CenterHorizontally
+            end
+        end
+    end
+    local firstRowStartX = 0
     for rowIndex = 1, rowCount do
         local rowStart = (rowIndex - 1) * iconLimit + 1
         local rowEnd = math.min(rowStart + iconLimit - 1, visibleCount)
         local rowIcons = rowEnd - rowStart + 1
         local rowWidth = (rowIcons * iconWidth) + ((rowIcons - 1) * iconSpacing)
-        local startX = -rowWidth / 2 + iconWidth / 2
+        local startX = 0
+        if isEssential or isUtility then
+            if rowIndex == 1 then
+                startX = -rowWidth / 2 + iconWidth / 2
+                firstRowStartX = startX
+            elseif rowIndex == 2 then
+                if centerHorizontally then
+                    startX = -rowWidth / 2 + iconWidth / 2
+                else
+                    startX = firstRowStartX
+                end
+            else
+                startX = firstRowStartX
+            end
+        end
         local rowY = baseY + yDirection * (rowIndex - 1) * rowHeight
 
         for index = rowStart, rowEnd do
@@ -275,7 +315,7 @@ local function CenterWrappedIcons()
     local essentialSettings = cooldownManagerSettings.Essential
     local utilitySettings = cooldownManagerSettings.Utility
 
-    if essentialSettings and essentialSettings.CenterHorizontally then CenterWrappedRows("EssentialCooldownViewer") end
+    if essentialSettings then CenterWrappedRows("EssentialCooldownViewer") end
     if utilitySettings and utilitySettings.CenterHorizontally then CenterWrappedRows("UtilityCooldownViewer") end
 end
 
